@@ -8,8 +8,11 @@ work=$1
 src=$work/linux
 mkdir -p "$work/kernel-debs"
 
-if [ ! -d "$src/.git" ]; then
+if [ ! -f "$src/Makefile" ]; then
   git clone --depth 1 --branch "$KERNEL_REF" "$KERNEL_REPO" "$src"
+  # Without git metadata, setlocalversion adds no "-dirty"/"+" suffix for
+  # our added devicetree, so the release is exactly 7.2.0-debondragon.
+  rm -rf "$src/.git"
 fi
 
 # Add our board next to the upstream ones.
@@ -31,11 +34,16 @@ while IFS= read -r line; do
   case $line in CONFIG_*=*) grep -qxF "$line" .config || echo "warning: $line not applied" ;; esac
 done < "$here/kernel/debondragon.config"
 
-kver=$(make -s kernelrelease)
+version=$(make -s kernelversion)
 make -j"$(nproc)" ARCH=arm64 INSTALL_MOD_STRIP=1 \
-  KDEB_PKGVERSION="${kver%%-*}-1~debondragon" KDEB_CHANGELOG_DIST="$DEBIAN_SUITE" bindeb-pkg
+  KDEB_PKGVERSION="$version-1~debondragon" KDEB_CHANGELOG_DIST="$DEBIAN_SUITE" bindeb-pkg
 
 mv "$work"/linux-image-*.deb "$work"/linux-headers-*.deb "$work/kernel-debs/"
 rm -f "$work"/linux-libc-dev_*.deb "$work"/linux-upstream_* "$work"/*.buildinfo "$work"/*.changes
+
+# The kernel release (uname -r) is whatever the image package was built as.
+image=$(ls "$work"/kernel-debs/linux-image-*.deb | grep -v -- -dbg_ | head -1)
+kver=$(basename "$image"); kver=${kver#linux-image-}; kver=${kver%%_*}
 echo "$kver" > "$work/kernel-debs/RELEASE"
+echo "kernel release: $kver"
 ls -l "$work/kernel-debs"
