@@ -1,0 +1,91 @@
+# Installed into the live root filesystem (and so into the installed system).
+# One package per line; comments and blank lines are ignored.
+
+# Base system
+systemd-sysv
+sudo
+locales
+console-setup
+keyboard-configuration
+initramfs-tools
+zstd
+xz-utils
+kmod
+linux-base
+ca-certificates
+curl
+wget
+nano
+less
+bash-completion
+man-db
+
+# Live session and installer
+live-boot
+live-config
+live-config-systemd
+calamares
+calamares-settings-debian
+pkexec
+polkitd
+
+# Bootloader (unsigned GRUB: devicetree loading is not allowed under Secure Boot).
+# Calamares' bootloader-config step runs "apt-get install grub-efi" (and the
+# LUKS tools for encrypted installs) in the target; having them installed
+# already lets that succeed offline.
+grub-efi
+grub-efi-arm64
+grub-efi-arm64-bin
+efibootmgr
+os-prober
+
+# Disks, including reading the Windows partition for firmware
+dosfstools
+e2fsprogs
+btrfs-progs
+ntfs-3g
+cryptsetup
+cryptsetup-bin
+cryptsetup-initramfs
+keyutils
+fdisk
+parted
+
+# Networking
+network-manager
+network-manager-gnome
+wpasupplicant
+iw
+wireless-regdb
+bluez
+blueman
+
+# Desktop (XFCE keeps the ISO under GitHub's 2 GB release limit)
+xserver-xorg-core
+xserver-xorg-input-libinput
+xfce4
+xfce4-terminal
+xfce4-power-manager
+xfce4-screenshooter
+thunar
+mousepad
+ristretto
+lightdm
+lightdm-gtk-greeter
+dbus-x11
+libgl1-mesa-dri
+mesa-vulkan-drivers
+fonts-dejavu
+fonts-noto-color-emoji
+adwaita-icon-theme
+firefox-esr
+
+# Hardware bring-up and debugging
+pciutils
+usbutils
+lshw
+dmidecode
+i2c-tools
+evtest
+device-tree-compiler
+acpica-tools

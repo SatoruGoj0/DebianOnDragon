@@ -1,0 +1,998 @@
+﻿[
+    {
+        "Class":  "Battery",
+        "Name":  "Qualcomm(R) Power Management Battery Miniclass Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C2A\u0026SUBSYS_CRD08380;ACPI\\QCOM0C2A;*QCOM0C2A"
+    },
+    {
+        "Class":  "Biometric",
+        "Name":  "EgisTec Touch Fingerprint Sensor",
+        "Status":  "OK",
+        "HardwareIds":  "USB\\VID_1C7A\u0026PID_0583\u0026REV_5215;USB\\VID_1C7A\u0026PID_0583"
+    },
+    {
+        "Class":  "Bluetooth",
+        "Name":  "Qualcomm(R) Aqstic(TM) BT ACX Transport Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0D04;ACPI\\QCOM0D04;*QCOM0D04"
+    },
+    {
+        "Class":  "Bluetooth",
+        "Name":  "Qualcomm(R) Bluetooth UART Transport Driver",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C6B\u0026SUBSYS_CRD08380;ACPI\\QCOM0C6B;*QCOM0C6B"
+    },
+    {
+        "Class":  "Camera",
+        "Name":  "Integrated Camera",
+        "Status":  "OK",
+        "HardwareIds":  "USB\\VID_13D3\u0026PID_54BF\u0026REV_2406\u0026MI_00;USB\\VID_13D3\u0026PID_54BF\u0026MI_00"
+    },
+    {
+        "Class":  "ComputeAccelerator",
+        "Name":  "Snapdragon(R) X - X126100 - Qualcomm(R) Hexagon(TM) NPU",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0D0A\u0026REV_012F;ACPI\\VEN_QCOM\u0026DEV_0D0A;ACPI\\QCOM0D0A;*QCOM0D0A"
+    },
+    {
+        "Class":  "Display",
+        "Name":  "Qualcomm(R) Adreno(TM) X1-45 GPU",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0D17\u0026SUBSYS_CRD08380\u0026REV_002F;ACPI\\VEN_QCOM\u0026DEV_0D17\u0026SUBSYS_CRD08380;ACPI\\VEN_QCOM\u0026DEV_0D17\u0026CLS_0003\u0026SUBCLS_0000\u0026PI_00;ACPI\\VEN_QCOM\u0026DEV_0D17\u0026CLS_0003\u0026SUBCLS_0000;ACPI\\QCOM0D17;*QCOM0D17"
+    },
+    {
+        "Class":  "HIDClass",
+        "Name":  "HID Button over Interrupt Driver",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_ACPI\u0026DEV_0011\u0026SUBSYS_CRD08380;ACPI\\ACPI0011;*ACPI0011"
+    },
+    {
+        "Class":  "HIDClass",
+        "Name":  "HID-compliant consumer control device",
+        "Status":  "OK",
+        "HardwareIds":  "HID\\ConvertedDevice\u0026Col02;HID\\VID_045E\u0026UP:000C_U:0001;HID_DEVICE_SYSTEM_CONSUMER;HID_DEVICE_UP:000C_U:0001;HID_DEVICE"
+    },
+    {
+        "Class":  "HIDClass",
+        "Name":  "HID-compliant consumer control device",
+        "Status":  "OK",
+        "HardwareIds":  "HID\\VEN_QTEC\u0026DEV_0001\u0026Col02;HID\\QTEC0001\u0026Col02;HID\\*QTEC0001\u0026Col02;HID\\VID_048D\u0026UP:000C_U:0001;HID_DEVICE_SYSTEM_CONSUMER;HID_DEVICE_UP:000C_U:0001;HID_DEVICE"
+    },
+    {
+        "Class":  "HIDClass",
+        "Name":  "HID-compliant consumer control device",
+        "Status":  "OK",
+        "HardwareIds":  "HID\\ConvertedDevice\u0026Col02;HID\\VID_045E\u0026UP:000C_U:0001;HID_DEVICE_SYSTEM_CONSUMER;HID_DEVICE_UP:000C_U:0001;HID_DEVICE"
+    },
+    {
+        "Class":  "HIDClass",
+        "Name":  "HID-compliant device",
+        "Status":  "OK",
+        "HardwareIds":  "HID\\VEN_ELAN\u0026DEV_901C\u0026SUBSYS_ELAN0001\u0026REV_0001\u0026Col02;HID\\VEN_ELAN\u0026DEV_901C\u0026SUBSYS_ELAN0001\u0026Col02;HID\\ELAN901C\u0026Col02;HID\\*ELAN901C\u0026Col02;HID\\VID_04F3\u0026UP:01FF_U:0001;HID_DEVICE_UP:01FF_U:0001;HID_DEVICE"
+    },
+    {
+        "Class":  "HIDClass",
+        "Name":  "HID-compliant system controller",
+        "Status":  "OK",
+        "HardwareIds":  "HID\\VEN_QTEC\u0026DEV_0001\u0026Col05;HID\\QTEC0001\u0026Col05;HID\\*QTEC0001\u0026Col05;HID\\VID_048D\u0026UP:0001_U:0080;HID_DEVICE_SYSTEM_CONTROL;HID_DEVICE_UP:0001_U:0080;HID_DEVICE"
+    },
+    {
+        "Class":  "HIDClass",
+        "Name":  "HID-compliant system controller",
+        "Status":  "OK",
+        "HardwareIds":  "HID\\ConvertedDevice\u0026Col03;HID\\VID_045E\u0026UP:0001_U:0080;HID_DEVICE_SYSTEM_CONTROL;HID_DEVICE_UP:0001_U:0080;HID_DEVICE"
+    },
+    {
+        "Class":  "HIDClass",
+        "Name":  "HID-compliant system controller",
+        "Status":  "OK",
+        "HardwareIds":  "HID\\ConvertedDevice\u0026Col03;HID\\VID_045E\u0026UP:0001_U:0080;HID_DEVICE_SYSTEM_CONTROL;HID_DEVICE_UP:0001_U:0080;HID_DEVICE"
+    },
+    {
+        "Class":  "HIDClass",
+        "Name":  "HID-compliant touch pad",
+        "Status":  "OK",
+        "HardwareIds":  "HID\\VEN_ELAN\u0026DEV_06FA\u0026SUBSYS_ELAN0001\u0026Col03;HID\\ELAN06FA\u0026Col03;HID\\*ELAN06FA\u0026Col03;HID\\VID_04F3\u0026UP:000D_U:0005;HID_DEVICE_UP:000D_U:0005;HID_DEVICE"
+    },
+    {
+        "Class":  "HIDClass",
+        "Name":  "HID-compliant touch screen",
+        "Status":  "OK",
+        "HardwareIds":  "HID\\VEN_ELAN\u0026DEV_901C\u0026SUBSYS_ELAN0001\u0026REV_0001\u0026Col01;HID\\VEN_ELAN\u0026DEV_901C\u0026SUBSYS_ELAN0001\u0026Col01;HID\\ELAN901C\u0026Col01;HID\\*ELAN901C\u0026Col01;HID\\VID_04F3\u0026UP:000D_U:0004;HID_DEVICE_UP:000D_U:0004;HID_DEVICE"
+    },
+    {
+        "Class":  "HIDClass",
+        "Name":  "HID-compliant vendor-defined device",
+        "Status":  "OK",
+        "HardwareIds":  "HID\\VEN_ELAN\u0026DEV_901C\u0026SUBSYS_ELAN0001\u0026REV_0001\u0026Col03;HID\\VEN_ELAN\u0026DEV_901C\u0026SUBSYS_ELAN0001\u0026Col03;HID\\ELAN901C\u0026Col03;HID\\*ELAN901C\u0026Col03;HID\\VID_04F3\u0026UP:FF00_U:0001;HID_DEVICE_UP:FF00_U:0001;HID_DEVICE_UPR:FF00-FFFF;HID_DEVICE"
+    },
+    {
+        "Class":  "HIDClass",
+        "Name":  "HID-compliant vendor-defined device",
+        "Status":  "OK",
+        "HardwareIds":  "HID\\VEN_ELAN\u0026DEV_06FA\u0026SUBSYS_ELAN0001\u0026Col02;HID\\ELAN06FA\u0026Col02;HID\\*ELAN06FA\u0026Col02;HID\\VID_04F3\u0026UP:FF00_U:0001;HID_DEVICE_UP:FF00_U:0001;HID_DEVICE_UPR:FF00-FFFF;HID_DEVICE"
+    },
+    {
+        "Class":  "HIDClass",
+        "Name":  "HID-compliant vendor-defined device",
+        "Status":  "OK",
+        "HardwareIds":  "HID\\VEN_ELAN\u0026DEV_901C\u0026SUBSYS_ELAN0001\u0026REV_0001\u0026Col05;HID\\VEN_ELAN\u0026DEV_901C\u0026SUBSYS_ELAN0001\u0026Col05;HID\\ELAN901C\u0026Col05;HID\\*ELAN901C\u0026Col05;HID\\VID_04F3\u0026UP:FF01_U:0001;HID_DEVICE_UP:FF01_U:0001;HID_DEVICE_UPR:FF00-FFFF;HID_DEVICE"
+    },
+    {
+        "Class":  "HIDClass",
+        "Name":  "HID-compliant vendor-defined device",
+        "Status":  "OK",
+        "HardwareIds":  "HID\\VEN_ELAN\u0026DEV_901C\u0026SUBSYS_ELAN0001\u0026REV_0001\u0026Col04;HID\\VEN_ELAN\u0026DEV_901C\u0026SUBSYS_ELAN0001\u0026Col04;HID\\ELAN901C\u0026Col04;HID\\*ELAN901C\u0026Col04;HID\\VID_04F3\u0026UP:FF00_U:0001;HID_DEVICE_UP:FF00_U:0001;HID_DEVICE_UPR:FF00-FFFF;HID_DEVICE"
+    },
+    {
+        "Class":  "HIDClass",
+        "Name":  "HID-compliant vendor-defined device",
+        "Status":  "OK",
+        "HardwareIds":  "HID\\VEN_QTEC\u0026DEV_0001\u0026Col04;HID\\QTEC0001\u0026Col04;HID\\*QTEC0001\u0026Col04;HID\\VID_048D\u0026UP:FF83_U:0080;HID_DEVICE_UP:FF83_U:0080;HID_DEVICE_UPR:FF00-FFFF;HID_DEVICE"
+    },
+    {
+        "Class":  "HIDClass",
+        "Name":  "HID-compliant wireless radio controls",
+        "Status":  "OK",
+        "HardwareIds":  "HID\\VEN_QTEC\u0026DEV_0001\u0026Col03;HID\\QTEC0001\u0026Col03;HID\\*QTEC0001\u0026Col03;HID\\VID_048D\u0026UP:0001_U:000C;HID_DEVICE_UP:0001_U:000C;HID_DEVICE"
+    },
+    {
+        "Class":  "HIDClass",
+        "Name":  "I2C HID Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_ELAN\u0026DEV_901C\u0026SUBSYS_ELAN0001\u0026REV_0001;ACPI\\VEN_ELAN\u0026DEV_901C\u0026SUBSYS_ELAN0001;ACPI\\ELAN901C;*ELAN901C"
+    },
+    {
+        "Class":  "HIDClass",
+        "Name":  "I2C HID Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QTEC\u0026DEV_0001;ACPI\\QTEC0001;*QTEC0001"
+    },
+    {
+        "Class":  "HIDClass",
+        "Name":  "I2C HID Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_ELAN\u0026DEV_06FA\u0026SUBSYS_ELAN0001;ACPI\\ELAN06FA;*ELAN06FA"
+    },
+    {
+        "Class":  "HIDClass",
+        "Name":  "Microsoft Input Configuration Device",
+        "Status":  "OK",
+        "HardwareIds":  "HID\\VEN_ELAN\u0026DEV_06FA\u0026SUBSYS_ELAN0001\u0026Col04;HID\\ELAN06FA\u0026Col04;HID\\*ELAN06FA\u0026Col04;HID\\VID_04F3\u0026UP:000D_U:000E;HID_DEVICE_UP:000D_U:000E;HID_DEVICE"
+    },
+    {
+        "Class":  "HIDClass",
+        "Name":  "Portable Device Control device",
+        "Status":  "OK",
+        "HardwareIds":  "HID\\HID_DEVICE_SYSTEM_VHF;HID_DEVICE_UP:0001_U:000D;HID_DEVICE"
+    },
+    {
+        "Class":  "HIDClass",
+        "Name":  "Portable Device Control device",
+        "Status":  "OK",
+        "HardwareIds":  "HID\\VEN_ACPI\u0026DEV_0011\u0026SUBSYS_CRD08380;HID\\ACPI0011;HID\\*ACPI0011;HID_DEVICE_UP:0001_U:000D;HID_DEVICE"
+    },
+    {
+        "Class":  "HIDClass",
+        "Name":  "USB Input Device",
+        "Status":  "OK",
+        "HardwareIds":  "USB\\VID_30FA\u0026PID_0300\u0026REV_0100;USB\\VID_30FA\u0026PID_0300"
+    },
+    {
+        "Class":  "Keyboard",
+        "Name":  "HID Keyboard Device",
+        "Status":  "OK",
+        "HardwareIds":  "HID\\ConvertedDevice\u0026Col01;HID\\VID_045E\u0026UP:0001_U:0006;HID_DEVICE_SYSTEM_KEYBOARD;HID_DEVICE_UP:0001_U:0006;HID_DEVICE"
+    },
+    {
+        "Class":  "Keyboard",
+        "Name":  "HID Keyboard Device",
+        "Status":  "OK",
+        "HardwareIds":  "HID\\ConvertedDevice\u0026Col01;HID\\VID_045E\u0026UP:0001_U:0006;HID_DEVICE_SYSTEM_KEYBOARD;HID_DEVICE_UP:0001_U:0006;HID_DEVICE"
+    },
+    {
+        "Class":  "Keyboard",
+        "Name":  "HID Keyboard Device",
+        "Status":  "OK",
+        "HardwareIds":  "HID\\VEN_QTEC\u0026DEV_0001\u0026Col01;HID\\QTEC0001\u0026Col01;HID\\*QTEC0001\u0026Col01;HID\\VID_048D\u0026UP:0001_U:0006;HID_DEVICE_SYSTEM_KEYBOARD;HID_DEVICE_UP:0001_U:0006;HID_DEVICE"
+    },
+    {
+        "Class":  "Mouse",
+        "Name":  "HID-compliant mouse",
+        "Status":  "OK",
+        "HardwareIds":  "HID\\VID_30FA\u0026PID_0300\u0026REV_0100;HID\\VID_30FA\u0026PID_0300;HID\\VID_30FA\u0026UP:0001_U:0002;HID_DEVICE_SYSTEM_MOUSE;HID_DEVICE_UP:0001_U:0002;HID_DEVICE"
+    },
+    {
+        "Class":  "Mouse",
+        "Name":  "HID-compliant mouse",
+        "Status":  "OK",
+        "HardwareIds":  "HID\\VEN_ELAN\u0026DEV_06FA\u0026SUBSYS_ELAN0001\u0026Col01;HID\\ELAN06FA\u0026Col01;HID\\*ELAN06FA\u0026Col01;HID\\VID_04F3\u0026UP:0001_U:0002;HID_DEVICE_SYSTEM_MOUSE;HID_DEVICE_UP:0001_U:0002;HID_DEVICE"
+    },
+    {
+        "Class":  "Net",
+        "Name":  "Qualcomm FastConnect 7800 Wi-Fi 7 High Band Simultaneous (HBS) Network Adapter",
+        "Status":  "OK",
+        "HardwareIds":  "PCI\\VEN_17CB\u0026DEV_1107\u0026SUBSYS_E11517AA\u0026REV_01;PCI\\VEN_17CB\u0026DEV_1107\u0026SUBSYS_E11517AA;PCI\\VEN_17CB\u0026DEV_1107\u0026CC_028000;PCI\\VEN_17CB\u0026DEV_1107\u0026CC_0280"
+    },
+    {
+        "Class":  "Processor",
+        "Name":  "Snapdragon(R) X - X126100 - Qualcomm(R) Oryon(TM) CPU",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_ACPI\u0026DEV_0007;ACPI\\Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)_Family_8_Model_1_Revision_201;*Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)_Family_8_Model_1_Revision_201;ACPI\\Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)_Family_8;*Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)_Family_8;ACPI\\Qualcomm_Technologies_Inc_-_ARMv8_(64-bit);*Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)"
+    },
+    {
+        "Class":  "Processor",
+        "Name":  "Snapdragon(R) X - X126100 - Qualcomm(R) Oryon(TM) CPU",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_ACPI\u0026DEV_0007;ACPI\\Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)_Family_8_Model_1_Revision_201;*Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)_Family_8_Model_1_Revision_201;ACPI\\Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)_Family_8;*Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)_Family_8;ACPI\\Qualcomm_Technologies_Inc_-_ARMv8_(64-bit);*Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)"
+    },
+    {
+        "Class":  "Processor",
+        "Name":  "Snapdragon(R) X - X126100 - Qualcomm(R) Oryon(TM) CPU",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_ACPI\u0026DEV_0007;ACPI\\Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)_Family_8_Model_1_Revision_201;*Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)_Family_8_Model_1_Revision_201;ACPI\\Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)_Family_8;*Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)_Family_8;ACPI\\Qualcomm_Technologies_Inc_-_ARMv8_(64-bit);*Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)"
+    },
+    {
+        "Class":  "Processor",
+        "Name":  "Snapdragon(R) X - X126100 - Qualcomm(R) Oryon(TM) CPU",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_ACPI\u0026DEV_0007;ACPI\\Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)_Family_8_Model_1_Revision_201;*Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)_Family_8_Model_1_Revision_201;ACPI\\Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)_Family_8;*Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)_Family_8;ACPI\\Qualcomm_Technologies_Inc_-_ARMv8_(64-bit);*Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)"
+    },
+    {
+        "Class":  "Processor",
+        "Name":  "Snapdragon(R) X - X126100 - Qualcomm(R) Oryon(TM) CPU",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_ACPI\u0026DEV_0007;ACPI\\Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)_Family_8_Model_1_Revision_201;*Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)_Family_8_Model_1_Revision_201;ACPI\\Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)_Family_8;*Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)_Family_8;ACPI\\Qualcomm_Technologies_Inc_-_ARMv8_(64-bit);*Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)"
+    },
+    {
+        "Class":  "Processor",
+        "Name":  "Snapdragon(R) X - X126100 - Qualcomm(R) Oryon(TM) CPU",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_ACPI\u0026DEV_0007;ACPI\\Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)_Family_8_Model_1_Revision_201;*Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)_Family_8_Model_1_Revision_201;ACPI\\Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)_Family_8;*Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)_Family_8;ACPI\\Qualcomm_Technologies_Inc_-_ARMv8_(64-bit);*Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)"
+    },
+    {
+        "Class":  "Processor",
+        "Name":  "Snapdragon(R) X - X126100 - Qualcomm(R) Oryon(TM) CPU",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_ACPI\u0026DEV_0007;ACPI\\Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)_Family_8_Model_1_Revision_201;*Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)_Family_8_Model_1_Revision_201;ACPI\\Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)_Family_8;*Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)_Family_8;ACPI\\Qualcomm_Technologies_Inc_-_ARMv8_(64-bit);*Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)"
+    },
+    {
+        "Class":  "Processor",
+        "Name":  "Snapdragon(R) X - X126100 - Qualcomm(R) Oryon(TM) CPU",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_ACPI\u0026DEV_0007;ACPI\\Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)_Family_8_Model_1_Revision_201;*Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)_Family_8_Model_1_Revision_201;ACPI\\Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)_Family_8;*Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)_Family_8;ACPI\\Qualcomm_Technologies_Inc_-_ARMv8_(64-bit);*Qualcomm_Technologies_Inc_-_ARMv8_(64-bit)"
+    },
+    {
+        "Class":  "SCSIAdapter",
+        "Name":  "BayHubTech Integrated MMC/SD controller(Generic)",
+        "Status":  "OK",
+        "HardwareIds":  "PCI\\VEN_1217\u0026DEV_8621\u0026SUBSYS_00021217\u0026REV_01;PCI\\VEN_1217\u0026DEV_8621\u0026SUBSYS_00021217;PCI\\VEN_1217\u0026DEV_8621\u0026CC_080501;PCI\\VEN_1217\u0026DEV_8621\u0026CC_0805"
+    },
+    {
+        "Class":  "SCSIAdapter",
+        "Name":  "Standard NVM Express Controller",
+        "Status":  "OK",
+        "HardwareIds":  "PCI\\VEN_1344\u0026DEV_5425\u0026SUBSYS_21001344\u0026REV_01;PCI\\VEN_1344\u0026DEV_5425\u0026SUBSYS_21001344;PCI\\VEN_1344\u0026DEV_5425\u0026CC_010802;PCI\\VEN_1344\u0026DEV_5425\u0026CC_0108"
+    },
+    {
+        "Class":  "SDHost",
+        "Name":  "Qualcomm SoC Secure Digital host controller",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_2466\u0026SUBSYS_CRD08380;ACPI\\QCOM2466;*QCOM2466"
+    },
+    {
+        "Class":  "Sensor",
+        "Name":  "Qualcomm(R) All-Ways Aware(TM) Sensor Platform Device - Display",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0693\u0026SUBSYS_CRD08380;ACPI\\QCOM0693;*QCOM0693"
+    },
+    {
+        "Class":  "System",
+        "Name":  "ACPI Fan",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_PNP\u0026DEV_0C0B;ACPI\\PNP0C0B;*PNP0C0B"
+    },
+    {
+        "Class":  "System",
+        "Name":  "ACPI Lid",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_PNP\u0026DEV_0C0D\u0026SUBSYS_CRD08380;ACPI\\PNP0C0D;*PNP0C0D"
+    },
+    {
+        "Class":  "System",
+        "Name":  "ACPI Processor Aggregator",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_ACPI\u0026DEV_000C;ACPI\\ACPI000C;*ACPI000C"
+    },
+    {
+        "Class":  "System",
+        "Name":  "ACPI Processor Container Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_ACPI\u0026DEV_0010;ACPI\\ACPI0010;*ACPI0010"
+    },
+    {
+        "Class":  "System",
+        "Name":  "ACPI Processor Container Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_ACPI\u0026DEV_0010;ACPI\\ACPI0010;*ACPI0010"
+    },
+    {
+        "Class":  "System",
+        "Name":  "ACPI Processor Container Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_ACPI\u0026DEV_0010;ACPI\\ACPI0010;*ACPI0010"
+    },
+    {
+        "Class":  "System",
+        "Name":  "ACPI Wake Alarm",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_ACPI\u0026DEV_000E;ACPI\\ACPI000E;*ACPI000E"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Generic Bus",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_PNP\u0026DEV_0A05;ACPI\\PNP0A05;*PNP0A05"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Generic Bus",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_PNP\u0026DEV_0A05;ACPI\\PNP0A05;*PNP0A05"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Lenovo Dispatcher",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_IDEA\u0026DEV_200D;ACPI\\IDEA200D;*IDEA200D"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Lenovo Fn and function keys",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_IDEA\u0026DEV_200E;ACPI\\IDEA200E;*IDEA200E"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Microsoft Windows Management Interface for ACPI",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_PNP\u0026DEV_0C14;ACPI\\PNP0C14;*PNP0C14"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Microsoft Windows Management Interface for ACPI",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_PNP\u0026DEV_0C14;ACPI\\PNP0C14;*PNP0C14"
+    },
+    {
+        "Class":  "System",
+        "Name":  "PCI Express Root Complex",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_PNP\u0026DEV_0A08;ACPI\\PNP0A08;*PNP0A08"
+    },
+    {
+        "Class":  "System",
+        "Name":  "PCI Express Root Complex",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_PNP\u0026DEV_0A08;ACPI\\PNP0A08;*PNP0A08"
+    },
+    {
+        "Class":  "System",
+        "Name":  "PCI Express Root Complex",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_PNP\u0026DEV_0A08;ACPI\\PNP0A08;*PNP0A08"
+    },
+    {
+        "Class":  "System",
+        "Name":  "PCI Express Root Port",
+        "Status":  "OK",
+        "HardwareIds":  "PCI\\VEN_17CB\u0026DEV_0111\u0026SUBSYS_00000000\u0026REV_00;PCI\\VEN_17CB\u0026DEV_0111\u0026SUBSYS_00000000;PCI\\VEN_17CB\u0026DEV_0111\u0026REV_00;PCI\\VEN_17CB\u0026DEV_0111;PCI\\VEN_17CB\u0026DEV_0111\u0026CC_060400;PCI\\VEN_17CB\u0026DEV_0111\u0026CC_0604"
+    },
+    {
+        "Class":  "System",
+        "Name":  "PCI Express Root Port",
+        "Status":  "OK",
+        "HardwareIds":  "PCI\\VEN_17CB\u0026DEV_0111\u0026SUBSYS_00000000\u0026REV_00;PCI\\VEN_17CB\u0026DEV_0111\u0026SUBSYS_00000000;PCI\\VEN_17CB\u0026DEV_0111\u0026REV_00;PCI\\VEN_17CB\u0026DEV_0111;PCI\\VEN_17CB\u0026DEV_0111\u0026CC_060400;PCI\\VEN_17CB\u0026DEV_0111\u0026CC_0604"
+    },
+    {
+        "Class":  "System",
+        "Name":  "PCI Express Root Port",
+        "Status":  "OK",
+        "HardwareIds":  "PCI\\VEN_17CB\u0026DEV_0111\u0026SUBSYS_00000000\u0026REV_00;PCI\\VEN_17CB\u0026DEV_0111\u0026SUBSYS_00000000;PCI\\VEN_17CB\u0026DEV_0111\u0026REV_00;PCI\\VEN_17CB\u0026DEV_0111;PCI\\VEN_17CB\u0026DEV_0111\u0026CC_060400;PCI\\VEN_17CB\u0026DEV_0111\u0026CC_0604"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm ADC Temperature Monitor Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C61;ACPI\\QCOM0C61;*QCOM0C61"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm ADC Temperature Monitor Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C62;ACPI\\QCOM0C62;*QCOM0C62"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm ADC Temperature Monitor Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C60;ACPI\\QCOM0C60;*QCOM0C60"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm ADC Temperature Monitor Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C5F;ACPI\\QCOM0C5F;*QCOM0C5F"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm ADC Temperature Monitor Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C5E;ACPI\\QCOM0C5E;*QCOM0C5E"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm ADC Temperature Monitor Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C63;ACPI\\QCOM0C63;*QCOM0C63"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm ADC Temperature Monitor Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C64;ACPI\\QCOM0C64;*QCOM0C64"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm CPU Core parking Policy Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0CF2\u0026SUBSYS_CRD08380\u0026REV_0100;ACPI\\VEN_QCOM\u0026DEV_0CF2\u0026SUBSYS_CRD08380;ACPI\\QCOM0CF2;*QCOM0CF2"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm CPU DCVS Cluster 0 Policy Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0CF4\u0026SUBSYS_CRD08380\u0026REV_0100;ACPI\\VEN_QCOM\u0026DEV_0CF4\u0026SUBSYS_CRD08380;ACPI\\QCOM0CF4;*QCOM0CF4"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm CPU DCVS Cluster 1 Policy Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0CF5\u0026SUBSYS_CRD08380\u0026REV_0100;ACPI\\VEN_QCOM\u0026DEV_0CF5\u0026SUBSYS_CRD08380;ACPI\\QCOM0CF5;*QCOM0CF5"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm CPU DCVS Policy Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0CF3\u0026SUBSYS_CRD08380\u0026REV_0100;ACPI\\VEN_QCOM\u0026DEV_0CF3\u0026SUBSYS_CRD08380;ACPI\\QCOM0CF3;*QCOM0CF3"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm Fan EC Interface Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0D05;ACPI\\QCOM0D05;*QCOM0D05"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm GPU limits Policy Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0CF7\u0026SUBSYS_CRD08380\u0026REV_0100;ACPI\\VEN_QCOM\u0026DEV_0CF7\u0026SUBSYS_CRD08380;ACPI\\QCOM0CF7;*QCOM0CF7"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm Modem BCL Policy Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0CFB\u0026SUBSYS_CRD08380\u0026REV_0100;ACPI\\VEN_QCOM\u0026DEV_0CFB\u0026SUBSYS_CRD08380;ACPI\\QCOM0CFB;*QCOM0CFB"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm Modem skin Policy Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0CF9\u0026SUBSYS_CRD08380\u0026REV_0100;ACPI\\VEN_QCOM\u0026DEV_0CF9\u0026SUBSYS_CRD08380;ACPI\\QCOM0CF9;*QCOM0CF9"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm NSP limits Policy Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0CF8\u0026SUBSYS_CRD08380\u0026REV_0100;ACPI\\VEN_QCOM\u0026DEV_0CF8\u0026SUBSYS_CRD08380;ACPI\\QCOM0CF8;*QCOM0CF8"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm Power Engine Plug-in Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C17\u0026SUBSYS_CRD08380\u0026REV_012F;ACPI\\VEN_QCOM\u0026DEV_0C17\u0026SUBSYS_CRD08380;ACPI\\QCOM0C17;*QCOM0C17"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm Secure Processor Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C87\u0026SUBSYS_CRD08380;ACPI\\QCOM0C87;*QCOM0C87"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm Shared Memory Port Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C84\u0026SUBSYS_CRD08380;ACPI\\QCOM0C84;*QCOM0C84"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm Subsystem Dependency Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C20\u0026SUBSYS_CRD08380;ACPI\\QCOM0C20;*QCOM0C20"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm System Cache Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C83\u0026SUBSYS_CRD08380\u0026REV_0001;ACPI\\VEN_QCOM\u0026DEV_0C83\u0026SUBSYS_CRD08380;ACPI\\QCOM0C83;*QCOM0C83"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm System MMU Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C09\u0026SUBSYS_CRD08380\u0026REV_0001;ACPI\\VEN_QCOM\u0026DEV_0C09\u0026SUBSYS_CRD08380;ACPI\\QCOM0C09;*QCOM0C09"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm System MMU Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C09\u0026SUBSYS_CRD08380\u0026REV_0001;ACPI\\VEN_QCOM\u0026DEV_0C09\u0026SUBSYS_CRD08380;ACPI\\QCOM0C09;*QCOM0C09"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm Temperature Sensor Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C58;ACPI\\QCOM0C58;*QCOM0C58"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm Temperature Sensor Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C58;ACPI\\QCOM0C58;*QCOM0C58"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm Temperature Sensor Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C59;ACPI\\QCOM0C59;*QCOM0C59"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm Temperature Sensor Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C5A;ACPI\\QCOM0C5A;*QCOM0C5A"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm Temperature Sensor Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C5A;ACPI\\QCOM0C5A;*QCOM0C5A"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm Temperature Sensor Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C91;ACPI\\QCOM0C91;*QCOM0C91"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm Temperature Sensor Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C59;ACPI\\QCOM0C59;*QCOM0C59"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm Temperature Sensor Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0CBF;ACPI\\QCOM0CBF;*QCOM0CBF"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm WLAN Limits Policy Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0CFC\u0026SUBSYS_CRD08380\u0026REV_0100;ACPI\\VEN_QCOM\u0026DEV_0CFC\u0026SUBSYS_CRD08380;ACPI\\QCOM0CFC;*QCOM0CFC"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm Wwan Power Down Driver",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0CDA\u0026SUBSYS_CRD08380;ACPI\\QCOM0CDA;*QCOM0CDA"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) ACPI Bridge Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0427\u0026SUBSYS_CRD08380;ACPI\\QCOM0427;*QCOM0427"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) Analog-to-Digital Converter Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C11\u0026SUBSYS_CRD08380;ACPI\\QCOM0C11;*QCOM0C11"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) Audio DSP Subsystem Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C1B\u0026SUBSYS_380317AA;ACPI\\QCOM0C1B;*QCOM0C1B"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) Audio RPC Daemon Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C82\u0026SUBSYS_CRD08380;ACPI\\QCOM0C82;*QCOM0C82"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) Bam Bus Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C0A\u0026SUBSYS_CRD08380;ACPI\\QCOM0C0A;*QCOM0C0A"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) Bam Bus Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C0A\u0026SUBSYS_CRD08380;ACPI\\QCOM0C0A;*QCOM0C0A"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) Bus Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C16\u0026SUBSYS_CRD08380;ACPI\\QCOM0C16;*QCOM0C16"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) Bus Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C88\u0026SUBSYS_CRD08380;ACPI\\QCOM0C88;*QCOM0C88"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) Bus Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C88\u0026SUBSYS_CRD08380;ACPI\\QCOM0C88;*QCOM0C88"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) Bus Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C16\u0026SUBSYS_CRD08380;ACPI\\QCOM0C16;*QCOM0C16"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) Bus Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C88\u0026SUBSYS_CRD08380;ACPI\\QCOM0C88;*QCOM0C88"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) Compute DSP Subsystem Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0CB0\u0026SUBSYS_CRD08380;ACPI\\QCOM0CB0;*QCOM0CB0"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) Connection Security Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0CA8;ACPI\\QCOM0CA8;*QCOM0CA8"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) Data IPC Router Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C0D\u0026SUBSYS_CRD08380;ACPI\\QCOM0C0D;*QCOM0C0D"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) DCF Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_06E7\u0026SUBSYS_CRD08380;ACPI\\QCOM06E7;*QCOM06E7"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) EVA Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0CF1\u0026SUBSYS_CRD08380;ACPI\\QCOM0CF1;*QCOM0CF1"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) FastRPC Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C5C\u0026SUBSYS_CRD08380;ACPI\\QCOM0C5C;*QCOM0C5C"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) I2C Bus Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C10\u0026SUBSYS_CRD08380;ACPI\\QCOM0C10;*QCOM0C10"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) I2C Bus Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C10\u0026SUBSYS_CRD08380;ACPI\\QCOM0C10;*QCOM0C10"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) I2C Bus Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C10\u0026SUBSYS_CRD08380;ACPI\\QCOM0C10;*QCOM0C10"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) I2C Bus Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C10\u0026SUBSYS_CRD08380;ACPI\\QCOM0C10;*QCOM0C10"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) I2C Bus Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C10\u0026SUBSYS_CRD08380;ACPI\\QCOM0C10;*QCOM0C10"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) I2C Bus Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C10\u0026SUBSYS_CRD08380;ACPI\\QCOM0C10;*QCOM0C10"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) I2C Bus Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C10\u0026SUBSYS_CRD08380;ACPI\\QCOM0C10;*QCOM0C10"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) I2C Bus Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C10\u0026SUBSYS_CRD08380;ACPI\\QCOM0C10;*QCOM0C10"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) I2C Bus Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C10\u0026SUBSYS_CRD08380;ACPI\\QCOM0C10;*QCOM0C10"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) Inter Processor Communication Interrupt Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_06C2\u0026SUBSYS_CRD08380;ACPI\\QCOM06C2;*QCOM06C2"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) IOMMU Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_068F\u0026SUBSYS_CRD08380;ACPI\\QCOM068F;*QCOM068F"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) IOMMU Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_068F\u0026SUBSYS_CRD08380;ACPI\\QCOM068F;*QCOM068F"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) NSP0 CDSP SW Thermal Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0CC3\u0026SUBSYS_CRD08380;ACPI\\QCOM0CC3;*QCOM0CC3"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) PCIe Platform Extension Plugin",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C96\u0026SUBSYS_CRD08380;ACPI\\QCOM0C96;*QCOM0C96"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) Peripheral Image Loader Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_06E0\u0026SUBSYS_CRD08380\u0026REV_0008;ACPI\\VEN_QCOM\u0026DEV_06E0\u0026SUBSYS_CRD08380;ACPI\\QCOM06E0;*QCOM06E0"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) Power Management FGBCL Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C77\u0026SUBSYS_CRD08380;ACPI\\QCOM0C77;*QCOM0C77"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) Power Management PMIC Apps Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C2C\u0026SUBSYS_CRD08380;ACPI\\QCOM0C2C;*QCOM0C2C"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) Power Management PMIC Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C2B\u0026SUBSYS_CRD08380;ACPI\\QCOM0C2B;*QCOM0C2B"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) Power Management PMIC GLink Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C8E\u0026SUBSYS_CRD08380;ACPI\\QCOM0C8E;*QCOM0C8E"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) Protection Domain Service Registry Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_06DF\u0026SUBSYS_CRD08380\u0026REV_0008;ACPI\\VEN_QCOM\u0026DEV_06DF\u0026SUBSYS_CRD08380;ACPI\\QCOM06DF;*QCOM06DF"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) QcSocServiceKMDF Service",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0D18\u0026SUBSYS_CRD08380;ACPI\\QCOM0D18;*QCOM0D18"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) Reset Power Error Notifier Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_06E1\u0026SUBSYS_CRD08380;ACPI\\QCOM06E1;*QCOM06E1"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) Secure Kernel Extension",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0CAC\u0026SUBSYS_CRD08380;ACPI\\QCOM0CAC;*QCOM0CAC"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) Secure Processor Subsystem Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C8D\u0026SUBSYS_CRD08380;ACPI\\QCOM0C8D;*QCOM0C8D"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) SOC Partition Interface Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_06DD\u0026SUBSYS_CRD08380;ACPI\\QCOM06DD;*QCOM06DD"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) SPI Bus Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C0E\u0026SUBSYS_CRD08380;ACPI\\QCOM0C0E;*QCOM0C0E"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) SPMI Bus Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C0B\u0026SUBSYS_CRD08380;ACPI\\QCOM0C0B;*QCOM0C0B"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) SSG Secure Services Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_06D8\u0026SUBSYS_CRD08380;ACPI\\QCOM06D8;*QCOM06D8"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) Subsys Base Thermal Mitigation Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_06E5\u0026SUBSYS_CRD08380;ACPI\\QCOM06E5;*QCOM06E5"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) System Manager Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_04DE\u0026SUBSYS_CRD08380;ACPI\\QCOM04DE;*QCOM04DE"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) System Manager Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C85;ACPI\\QCOM0C85;*QCOM0C85"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) System Manager Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C2F\u0026SUBSYS_CRD08380;ACPI\\QCOM0C2F;*QCOM0C2F"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) System Manager GPIO Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C0C\u0026SUBSYS_CRD08380;ACPI\\QCOM0C0C;*QCOM0C0C"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) System Manager PMIC GPIO Framework Extension Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C2D\u0026SUBSYS_CRD08380;ACPI\\QCOM0C2D;*QCOM0C2D"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) System Manager SCM Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_04DD\u0026SUBSYS_CRD08380;ACPI\\QCOM04DD;*QCOM04DD"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) System Manager Secapp Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0CE4\u0026SUBSYS_CRD08380;ACPI\\QCOM0CE4;*QCOM0CE4"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) TFTP Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_06DC\u0026SUBSYS_CRD08380;ACPI\\QCOM06DC;*QCOM06DC"
+    },
+    {
+        "Class":  "System",
+        "Name":  "Qualcomm(R) Wlan Thermal Mitigation Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0CD5\u0026SUBSYS_CRD08380;ACPI\\QCOM0CD5;*QCOM0CD5"
+    },
+    {
+        "Class":  "UCM",
+        "Name":  "UCM-UCSI ACPI Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_USB\u0026DEV_C000;ACPI\\USBC000;*USBC000"
+    },
+    {
+        "Class":  "USB",
+        "Name":  "Qualcomm(R) USB3(TM) eXtensible Host Controller",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0D09\u0026SUBSYS_CRD08380;ACPI\\QCOM0D09;*QCOM0D09"
+    },
+    {
+        "Class":  "USB",
+        "Name":  "Qualcomm(R) USB3(TM) eXtensible Host Controller",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0D08\u0026SUBSYS_CRD08380;ACPI\\QCOM0D08;*QCOM0D08"
+    },
+    {
+        "Class":  "USB",
+        "Name":  "Qualcomm(R) USB3(TM) eXtensible Host Controller",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0CA1\u0026SUBSYS_CRD08380;ACPI\\QCOM0CA1;*QCOM0CA1"
+    },
+    {
+        "Class":  "USB",
+        "Name":  "Synopsys USB 3.0 Dual-Role Controller",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0C8B\u0026SUBSYS_CRD08380;ACPI\\QCOM0C8B;*QCOM0C8B"
+    },
+    {
+        "Class":  "USB",
+        "Name":  "USB Composite Device",
+        "Status":  "OK",
+        "HardwareIds":  "USB\\VID_13D3\u0026PID_54BF\u0026REV_2406;USB\\VID_13D3\u0026PID_54BF"
+    },
+    {
+        "Class":  "USB",
+        "Name":  "USB Mass Storage Device",
+        "Status":  "OK",
+        "HardwareIds":  "USB\\VID_058F\u0026PID_6387\u0026REV_0100;USB\\VID_058F\u0026PID_6387"
+    },
+    {
+        "Class":  "USB",
+        "Name":  "USB Root Hub (USB 3.0)",
+        "Status":  "OK",
+        "HardwareIds":  "USB\\ROOT_HUB30\u0026VIDQCOM\u0026PID0D08\u0026REV0000;USB\\ROOT_HUB30\u0026VIDQCOM\u0026PID0D08;USB\\ROOT_HUB30"
+    },
+    {
+        "Class":  "USB",
+        "Name":  "USB Root Hub (USB 3.0)",
+        "Status":  "OK",
+        "HardwareIds":  "USB\\ROOT_HUB30\u0026VIDQCOM\u0026PID0D09\u0026REV0000;USB\\ROOT_HUB30\u0026VIDQCOM\u0026PID0D09;USB\\ROOT_HUB30"
+    },
+    {
+        "Class":  "USB",
+        "Name":  "USB Root Hub (USB 3.0)",
+        "Status":  "OK",
+        "HardwareIds":  "USB\\ROOT_HUB30\u0026VIDQCOM\u0026PID0CA1\u0026REV0000;USB\\ROOT_HUB30\u0026VIDQCOM\u0026PID0CA1;USB\\ROOT_HUB30"
+    },
+    {
+        "Class":  "USBDevice",
+        "Name":  "Qualcomm(R) USB Type-C Device",
+        "Status":  "OK",
+        "HardwareIds":  "ACPI\\VEN_QCOM\u0026DEV_0CA4\u0026SUBSYS_CRD08380;ACPI\\QCOM0CA4;*QCOM0CA4"
+    }
+]

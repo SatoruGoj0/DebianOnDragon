@@ -1,0 +1,20 @@
+#!/bin/sh
+# Load the DebOnDragon board devicetree once, before the menu. Debian's
+# 10_linux has no devicetree support; GRUB keeps a loaded devicetree for
+# whichever Linux entry boots next.
+set -e
+. /usr/share/grub/grub-mkconfig_lib
+[ -r /etc/default/debondragon ] && . /etc/default/debondragon
+[ "${DEBONDRAGON_DTB:-none}" = none ] && exit 0
+
+dtb=/boot/dtb/debondragon.dtb
+[ -f "$dtb" ] || exit 0
+echo "Found DebOnDragon devicetree: $dtb" >&2
+
+device=$(${grub_probe} --target=device "$dtb")
+path=$(make_system_path_relative_to_its_root "$dtb")
+
+echo 'set debondragon_saved_root="$root"'
+prepare_grub_to_access_device "$device"
+echo "devicetree \"$path\""
+echo 'set root="$debondragon_saved_root"'

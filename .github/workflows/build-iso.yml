@@ -1,0 +1,58 @@
+name: Build ISO
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+    paths-ignore: ['**.md', 'docs/**', 'hardware-reports/**']
+  workflow_dispatch:
+    inputs:
+      release:
+        description: 'Publish the ISO as a GitHub release (tag = nightly-<run number>)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-iso-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    # Native arm64: the root filesystem is assembled with chroot.
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build in Debian 13 container
+        run: |
+          docker run --rm --privileged -v "$PWD:/src" -w /src debian:trixie ./build.sh
+          sudo chown -R "$(id -u):$(id -g)" out
+
+      - name: Upload ISO artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: debondragon-iso
+          path: |
+            out/*.iso
+            out/SHA256SUMS
+          compression-level: 0
+          retention-days: 14
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            tag=${GITHUB_REF#refs/tags/}
+            flags=""
+          else
+            tag=nightly-${GITHUB_RUN_NUMBER}
+            flags="--prerelease --target $GITHUB_SHA"
+          fi
+          gh release create "$tag" out/*.iso out/SHA256SUMS out/linux-image-*.deb \
+            --title "DebOnDragon $tag" --notes-file docs/release-notes.md $flags

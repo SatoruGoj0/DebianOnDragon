@@ -1,0 +1,3938 @@
+[
+  {
+    "Source": "APIC.bin",
+    "Kind": "Acpi",
+    "SHA256": "5E91437BC7EB968310F2A3A04FF8F312EC1088E0E617A8E9F021D81D4A6AFA52",
+    "Status": "0x0000000000000000",
+    "Accepted": true,
+    "Fields": [
+      {
+        "Field": "ACPI signature",
+        "Value": "APIC"
+      },
+      {
+        "Field": "MADT entry type",
+        "Value": "0x000000000000000B"
+      },
+      {
+        "Field": "GICC processor UID",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "GICC flags",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "GICC MPIDR (firmware declaration)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "GICC interface base",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "GICC GICR base",
+        "Value": "0x0000000017080000"
+      },
+      {
+        "Field": "MADT entry type",
+        "Value": "0x000000000000000B"
+      },
+      {
+        "Field": "GICC processor UID",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "GICC flags",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "GICC MPIDR (firmware declaration)",
+        "Value": "0x0000000000000100"
+      },
+      {
+        "Field": "GICC interface base",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "GICC GICR base",
+        "Value": "0x00000000170C0000"
+      },
+      {
+        "Field": "MADT entry type",
+        "Value": "0x000000000000000B"
+      },
+      {
+        "Field": "GICC processor UID",
+        "Value": "0x0000000000000002"
+      },
+      {
+        "Field": "GICC flags",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "GICC MPIDR (firmware declaration)",
+        "Value": "0x0000000000000200"
+      },
+      {
+        "Field": "GICC interface base",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "GICC GICR base",
+        "Value": "0x0000000017100000"
+      },
+      {
+        "Field": "MADT entry type",
+        "Value": "0x000000000000000B"
+      },
+      {
+        "Field": "GICC processor UID",
+        "Value": "0x0000000000000003"
+      },
+      {
+        "Field": "GICC flags",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "GICC MPIDR (firmware declaration)",
+        "Value": "0x0000000000000300"
+      },
+      {
+        "Field": "GICC interface base",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "GICC GICR base",
+        "Value": "0x0000000017140000"
+      },
+      {
+        "Field": "MADT entry type",
+        "Value": "0x000000000000000B"
+      },
+      {
+        "Field": "GICC processor UID",
+        "Value": "0x0000000000000004"
+      },
+      {
+        "Field": "GICC flags",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "GICC MPIDR (firmware declaration)",
+        "Value": "0x0000000000010000"
+      },
+      {
+        "Field": "GICC interface base",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "GICC GICR base",
+        "Value": "0x0000000017180000"
+      },
+      {
+        "Field": "MADT entry type",
+        "Value": "0x000000000000000B"
+      },
+      {
+        "Field": "GICC processor UID",
+        "Value": "0x0000000000000005"
+      },
+      {
+        "Field": "GICC flags",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "GICC MPIDR (firmware declaration)",
+        "Value": "0x0000000000010100"
+      },
+      {
+        "Field": "GICC interface base",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "GICC GICR base",
+        "Value": "0x00000000171C0000"
+      },
+      {
+        "Field": "MADT entry type",
+        "Value": "0x000000000000000B"
+      },
+      {
+        "Field": "GICC processor UID",
+        "Value": "0x0000000000000006"
+      },
+      {
+        "Field": "GICC flags",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "GICC MPIDR (firmware declaration)",
+        "Value": "0x0000000000010200"
+      },
+      {
+        "Field": "GICC interface base",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "GICC GICR base",
+        "Value": "0x0000000017200000"
+      },
+      {
+        "Field": "MADT entry type",
+        "Value": "0x000000000000000B"
+      },
+      {
+        "Field": "GICC processor UID",
+        "Value": "0x0000000000000007"
+      },
+      {
+        "Field": "GICC flags",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "GICC MPIDR (firmware declaration)",
+        "Value": "0x0000000000010300"
+      },
+      {
+        "Field": "GICC interface base",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "GICC GICR base",
+        "Value": "0x0000000017240000"
+      },
+      {
+        "Field": "MADT entry type",
+        "Value": "0x000000000000000B"
+      },
+      {
+        "Field": "GICC processor UID",
+        "Value": "0x0000000000000008"
+      },
+      {
+        "Field": "GICC flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "GICC MPIDR (firmware declaration)",
+        "Value": "0x0000000000020000"
+      },
+      {
+        "Field": "GICC interface base",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "GICC GICR base",
+        "Value": "0x0000000017280000"
+      },
+      {
+        "Field": "MADT entry type",
+        "Value": "0x000000000000000B"
+      },
+      {
+        "Field": "GICC processor UID",
+        "Value": "0x0000000000000009"
+      },
+      {
+        "Field": "GICC flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "GICC MPIDR (firmware declaration)",
+        "Value": "0x0000000000020100"
+      },
+      {
+        "Field": "GICC interface base",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "GICC GICR base",
+        "Value": "0x00000000172C0000"
+      },
+      {
+        "Field": "MADT entry type",
+        "Value": "0x000000000000000B"
+      },
+      {
+        "Field": "GICC processor UID",
+        "Value": "0x000000000000000A"
+      },
+      {
+        "Field": "GICC flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "GICC MPIDR (firmware declaration)",
+        "Value": "0x0000000000020200"
+      },
+      {
+        "Field": "GICC interface base",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "GICC GICR base",
+        "Value": "0x0000000017300000"
+      },
+      {
+        "Field": "MADT entry type",
+        "Value": "0x000000000000000B"
+      },
+      {
+        "Field": "GICC processor UID",
+        "Value": "0x000000000000000B"
+      },
+      {
+        "Field": "GICC flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "GICC MPIDR (firmware declaration)",
+        "Value": "0x0000000000020300"
+      },
+      {
+        "Field": "GICC interface base",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "GICC GICR base",
+        "Value": "0x0000000017340000"
+      },
+      {
+        "Field": "MADT entry type",
+        "Value": "0x000000000000000C"
+      },
+      {
+        "Field": "GICD base",
+        "Value": "0x0000000017000000"
+      },
+      {
+        "Field": "GIC version (MADT)",
+        "Value": "0x0000000000000004"
+      },
+      {
+        "Field": "MADT entry type",
+        "Value": "0x000000000000000F"
+      },
+      {
+        "Field": "ITS ID",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "ITS base",
+        "Value": "0x0000000017040000"
+      }
+    ],
+    "Scope": "Offline structure only; no load, execution or device access"
+  },
+  {
+    "Source": "FACP.bin",
+    "Kind": "Acpi",
+    "SHA256": "456CB8757317E8D3A3CF8715C6E3A15F880F3440F6E179D603BEE4538E790848",
+    "Status": "0x0000000000000000",
+    "Accepted": true,
+    "Fields": [
+      {
+        "Field": "ACPI signature",
+        "Value": "FACP"
+      },
+      {
+        "Field": "FADT ARM boot flags",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "PSCI compliant (declared)",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "PSCI uses HVC (declared)",
+        "Value": "0x0000000000000000"
+      }
+    ],
+    "Scope": "Offline structure only; no load, execution or device access"
+  },
+  {
+    "Source": "GTDT.bin",
+    "Kind": "Acpi",
+    "SHA256": "7BF7A5C8DD423A5239B1D02BC8A7D75BD64FD6E9BF27E82A0261E15D5D51A24F",
+    "Status": "0x0000000000000000",
+    "Accepted": true,
+    "Fields": [
+      {
+        "Field": "ACPI signature",
+        "Value": "GTDT"
+      },
+      {
+        "Field": "Timer secure EL1 GSIV",
+        "Value": "0x000000000000001D"
+      },
+      {
+        "Field": "Timer secure EL1 flags",
+        "Value": "0x0000000000000004"
+      },
+      {
+        "Field": "Timer nonsecure EL1 GSIV",
+        "Value": "0x000000000000001E"
+      },
+      {
+        "Field": "Timer nonsecure EL1 flags",
+        "Value": "0x0000000000000004"
+      },
+      {
+        "Field": "Timer virtual GSIV",
+        "Value": "0x000000000000001B"
+      },
+      {
+        "Field": "Timer virtual flags",
+        "Value": "0x0000000000000004"
+      },
+      {
+        "Field": "Timer nonsecure EL2 GSIV",
+        "Value": "0x000000000000001A"
+      },
+      {
+        "Field": "Timer nonsecure EL2 flags",
+        "Value": "0x0000000000000004"
+      },
+      {
+        "Field": "GTDT platform timer count (not traversed)",
+        "Value": "0x0000000000000000"
+      }
+    ],
+    "Scope": "Offline structure only; no load, execution or device access"
+  },
+  {
+    "Source": "IORT.bin",
+    "Kind": "Acpi",
+    "SHA256": "D69F09B589825B5F237B97ED95C9EDB0C9BB8D3DF6768987DBD7C451D19A865B",
+    "Status": "0x0000000000000000",
+    "Accepted": true,
+    "Fields": [
+      {
+        "Field": "ACPI signature",
+        "Value": "IORT"
+      },
+      {
+        "Field": "IORT node table offset",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "IORT type",
+        "Value": "0x0000000000000003"
+      },
+      {
+        "Field": "IORT revision",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT mapping count",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "SMMU declared base (not accessed)",
+        "Value": "0x0000000015000000"
+      },
+      {
+        "Field": "SMMU model",
+        "Value": "0x0000000000000003"
+      },
+      {
+        "Field": "IORT node table offset",
+        "Value": "0x000000000000037C"
+      },
+      {
+        "Field": "IORT type",
+        "Value": "0x0000000000000003"
+      },
+      {
+        "Field": "IORT revision",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT mapping count",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "SMMU declared base (not accessed)",
+        "Value": "0x0000000003DA0000"
+      },
+      {
+        "Field": "SMMU model",
+        "Value": "0x0000000000000003"
+      },
+      {
+        "Field": "IORT node table offset",
+        "Value": "0x0000000000000490"
+      },
+      {
+        "Field": "IORT type",
+        "Value": "0x0000000000000002"
+      },
+      {
+        "Field": "IORT revision",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT mapping count",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT PCI segment",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x000000000000FFFF"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000001486"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT node table offset",
+        "Value": "0x00000000000004C8"
+      },
+      {
+        "Field": "IORT type",
+        "Value": "0x0000000000000002"
+      },
+      {
+        "Field": "IORT revision",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT mapping count",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT PCI segment",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x000000000000FFFF"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000010000"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000001486"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT node table offset",
+        "Value": "0x0000000000000500"
+      },
+      {
+        "Field": "IORT type",
+        "Value": "0x0000000000000002"
+      },
+      {
+        "Field": "IORT revision",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT mapping count",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT PCI segment",
+        "Value": "0x0000000000000002"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x000000000000FFFF"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000020000"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000001486"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT node table offset",
+        "Value": "0x0000000000000538"
+      },
+      {
+        "Field": "IORT type",
+        "Value": "0x0000000000000002"
+      },
+      {
+        "Field": "IORT revision",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT mapping count",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT PCI segment",
+        "Value": "0x0000000000000003"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x000000000000FFFF"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000030000"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000001486"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT node table offset",
+        "Value": "0x0000000000000570"
+      },
+      {
+        "Field": "IORT type",
+        "Value": "0x0000000000000002"
+      },
+      {
+        "Field": "IORT revision",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT mapping count",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT PCI segment",
+        "Value": "0x0000000000000004"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x000000000000FFFF"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000040000"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000001486"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT node table offset",
+        "Value": "0x00000000000005A8"
+      },
+      {
+        "Field": "IORT type",
+        "Value": "0x0000000000000002"
+      },
+      {
+        "Field": "IORT revision",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT mapping count",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT PCI segment",
+        "Value": "0x0000000000000005"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x000000000000FFFF"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000050000"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000001486"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT node table offset",
+        "Value": "0x00000000000005E0"
+      },
+      {
+        "Field": "IORT type",
+        "Value": "0x0000000000000002"
+      },
+      {
+        "Field": "IORT revision",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT mapping count",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT PCI segment",
+        "Value": "0x0000000000000006"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x000000000000FFFF"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000060000"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000001486"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT node table offset",
+        "Value": "0x0000000000000618"
+      },
+      {
+        "Field": "IORT type",
+        "Value": "0x0000000000000002"
+      },
+      {
+        "Field": "IORT revision",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT mapping count",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT PCI segment",
+        "Value": "0x0000000000000007"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x000000000000FFFF"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000070000"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000001486"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT node table offset",
+        "Value": "0x0000000000000650"
+      },
+      {
+        "Field": "IORT type",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT revision",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT mapping count",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT ACPI object path",
+        "Value": "\\_SB.SISP"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000A0030000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT node table offset",
+        "Value": "0x00000000000006A1"
+      },
+      {
+        "Field": "IORT type",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT revision",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT mapping count",
+        "Value": "0x0000000000000016"
+      },
+      {
+        "Field": "IORT ACPI object path",
+        "Value": "\\_SB.GPU0"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000003030000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x000000000000037C"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000003030020"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x000000000000037C"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000003030040"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000004"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x000000000000037C"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000003030060"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000005"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x000000000000037C"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000003030080"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000007"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x000000000000037C"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000030A0000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000002"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x000000000000037C"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000000030000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001C00"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000000030001"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001C02"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000000A0000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001C01"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x000000000C030000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000480"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x000000000C030020"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000481"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x000000000C090000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000483"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000004030000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001940"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000004030020"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001947"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000004090000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001941"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000004090001"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001945"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000040A0000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001943"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000040B0000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001944"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x000000001B030000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001880"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x000000001B090000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001885"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x000000001B0A0000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001883"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x000000001B0B0000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001884"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT node table offset",
+        "Value": "0x0000000000000896"
+      },
+      {
+        "Field": "IORT type",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT revision",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT mapping count",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT ACPI object path",
+        "Value": "\\_SB.JPGE"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000002030000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x00000000000018E0"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT node table offset",
+        "Value": "0x00000000000008E7"
+      },
+      {
+        "Field": "IORT type",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT revision",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT mapping count",
+        "Value": "0x000000000000002C"
+      },
+      {
+        "Field": "IORT ACPI object path",
+        "Value": "\\_SB.ARPC"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000017030000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C01"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000017030001"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C21"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000017030020"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C02"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000017030021"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C22"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000017030040"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C03"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000017030041"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C23"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000017030060"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C04"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000017030061"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C24"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000017030080"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C05"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000017030081"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C25"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000170300A0"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C06"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000170300A1"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C26"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000170300C0"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C27"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000170300C1"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C07"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000170300E0"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C28"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000170300E1"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C08"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000017030100"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C2C"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000017030101"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C0C"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000017030120"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C2D"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000017030121"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C0D"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000017030140"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C2E"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000017030141"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C0E"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000017030160"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C2F"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000017030161"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C0F"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000017030180"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001063"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000017030181"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001003"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000017030182"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001083"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000170301A0"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001064"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000170301A1"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001004"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000170301A2"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001084"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000170301C0"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001065"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000170301C1"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001005"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000170301C2"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001085"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000170301E0"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001066"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000170301E1"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001006"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000170301E2"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001086"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000017030200"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001067"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000017030201"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001007"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000017030202"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001087"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000017030220"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C0B"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000170A0000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C29"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000170A0001"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C09"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000016030000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x00000000000010C3"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000016030020"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x00000000000010D6"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT node table offset",
+        "Value": "0x0000000000000C94"
+      },
+      {
+        "Field": "IORT type",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT revision",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT mapping count",
+        "Value": "0x000000000000001B"
+      },
+      {
+        "Field": "IORT ACPI object path",
+        "Value": "\\_SB.NSPM"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000018030000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C01"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000018030001"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C21"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000018030020"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C02"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000018030021"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C22"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000018030040"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C03"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000018030041"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C23"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000018030060"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C04"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000018030061"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C24"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000018030080"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C05"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000018030081"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C25"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000180300A0"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C06"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000180300A1"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C26"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000180300C0"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C27"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000180300C1"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C07"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000180300E0"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C28"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000180300E1"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C08"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000018030100"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C2C"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000018030101"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C0C"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000018030120"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C2D"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000018030121"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C0D"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000018030140"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C2E"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000018030141"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C0E"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000018030160"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C2F"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000018030161"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C0F"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000018030220"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C0B"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000180A0000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C29"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000180A0001"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000C09"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT node table offset",
+        "Value": "0x0000000000000EED"
+      },
+      {
+        "Field": "IORT type",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT revision",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT mapping count",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT ACPI object path",
+        "Value": "\\_SB.USBA"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000007030000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x000000000000100B"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT node table offset",
+        "Value": "0x0000000000000F3E"
+      },
+      {
+        "Field": "IORT type",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT revision",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT mapping count",
+        "Value": "0x0000000000000002"
+      },
+      {
+        "Field": "IORT ACPI object path",
+        "Value": "\\_SB.QDSS"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000019030000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x00000000000004E0"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000019030020"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000500"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT node table offset",
+        "Value": "0x0000000000000FA3"
+      },
+      {
+        "Field": "IORT type",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT revision",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT mapping count",
+        "Value": "0x0000000000000003"
+      },
+      {
+        "Field": "IORT ACPI object path",
+        "Value": "\\_SB.ADSP.ADCM"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000007030020"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001061"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000007030021"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001001"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000007030022"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001081"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT node table offset",
+        "Value": "0x000000000000101C"
+      },
+      {
+        "Field": "IORT type",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT revision",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT mapping count",
+        "Value": "0x0000000000000002"
+      },
+      {
+        "Field": "IORT ACPI object path",
+        "Value": "\\_SB.SDC2"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000086030000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000520"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000086030020"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000160"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT node table offset",
+        "Value": "0x0000000000001081"
+      },
+      {
+        "Field": "IORT type",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT revision",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT mapping count",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT ACPI object path",
+        "Value": "\\_SB.UFS0"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000081030000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x00000000000001A0"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT node table offset",
+        "Value": "0x00000000000010D2"
+      },
+      {
+        "Field": "IORT type",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT revision",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT mapping count",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT ACPI object path",
+        "Value": "\\_SB.URS0"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000080030000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001420"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT node table offset",
+        "Value": "0x0000000000001123"
+      },
+      {
+        "Field": "IORT type",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT revision",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT mapping count",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT ACPI object path",
+        "Value": "\\_SB.URS1"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000080030020"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001460"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT node table offset",
+        "Value": "0x0000000000001174"
+      },
+      {
+        "Field": "IORT type",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT revision",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT mapping count",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT ACPI object path",
+        "Value": "\\_SB.URS2"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000080030040"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x00000000000014A0"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT node table offset",
+        "Value": "0x00000000000011C5"
+      },
+      {
+        "Field": "IORT type",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT revision",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT mapping count",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT ACPI object path",
+        "Value": "\\_SB.USB3"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000080030060"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001400"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT node table offset",
+        "Value": "0x0000000000001216"
+      },
+      {
+        "Field": "IORT type",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT revision",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT mapping count",
+        "Value": "0x0000000000000003"
+      },
+      {
+        "Field": "IORT ACPI object path",
+        "Value": "\\_SB.UBF0"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000080030080"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001440"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000800300A0"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001480"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000800300C0"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x00000000000014C0"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT node table offset",
+        "Value": "0x000000000000128F"
+      },
+      {
+        "Field": "IORT type",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT revision",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT mapping count",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT ACPI object path",
+        "Value": "\\_SB.USB4"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x00000000800300E0"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x00000000000014E0"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT node table offset",
+        "Value": "0x00000000000012E0"
+      },
+      {
+        "Field": "IORT type",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT revision",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT mapping count",
+        "Value": "0x000000000000000C"
+      },
+      {
+        "Field": "IORT ACPI object path",
+        "Value": "\\_SB.GPU0.AVS0"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000001030000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x00000000000018A0"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000001030001"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000800"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000001030002"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000860"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000001030003"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000840"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000001030004"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000000820"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000001030020"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001900"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000001030021"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001980"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000001030022"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x00000000000019A0"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000001030023"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001840"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000001030024"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001860"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000001030025"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001820"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000001030026"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001800"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT node table offset",
+        "Value": "0x000000000000140D"
+      },
+      {
+        "Field": "IORT type",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "IORT revision",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT mapping count",
+        "Value": "0x0000000000000003"
+      },
+      {
+        "Field": "IORT ACPI object path",
+        "Value": "\\_SB.EVA0"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x000000001A030000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001920"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x000000001A0A0000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001923"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x000000001A0B0000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000001924"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x0000000000000030"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT node table offset",
+        "Value": "0x0000000000001486"
+      },
+      {
+        "Field": "IORT type",
+        "Value": "0x0000000000000004"
+      },
+      {
+        "Field": "IORT revision",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT mapping count",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "SMMU declared base (not accessed)",
+        "Value": "0x0000000015400000"
+      },
+      {
+        "Field": "SMMU model",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping input base",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Mapping NumIds (count minus one)",
+        "Value": "0x000000000007FFFF"
+      },
+      {
+        "Field": "Mapping output base",
+        "Value": "0x0000000000080000"
+      },
+      {
+        "Field": "Mapping reference (unresolved)",
+        "Value": "0x00000000000014DE"
+      },
+      {
+        "Field": "Mapping flags",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT node table offset",
+        "Value": "0x00000000000014DE"
+      },
+      {
+        "Field": "IORT type",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT revision",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT mapping count",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "IORT ITS ID",
+        "Value": "0x0000000000000000"
+      }
+    ],
+    "Scope": "Offline structure only; no load, execution or device access"
+  },
+  {
+    "Source": "MCFG.bin",
+    "Kind": "Acpi",
+    "SHA256": "8F290FC00811834B383215A2310AFD73CC17A902B967EFC8CBDE88676457FA5C",
+    "Status": "0x0000000000000000",
+    "Accepted": true,
+    "Fields": [
+      {
+        "Field": "ACPI signature",
+        "Value": "MCFG"
+      },
+      {
+        "Field": "PCI ECAM base (not accessed)",
+        "Value": "0x0000000400000000"
+      },
+      {
+        "Field": "PCI segment",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "PCI start bus",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "PCI end bus",
+        "Value": "0x00000000000000FF"
+      },
+      {
+        "Field": "PCI ECAM base (not accessed)",
+        "Value": "0x0000000500000000"
+      },
+      {
+        "Field": "PCI segment",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "PCI start bus",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "PCI end bus",
+        "Value": "0x00000000000000FF"
+      },
+      {
+        "Field": "PCI ECAM base (not accessed)",
+        "Value": "0x0000006000000000"
+      },
+      {
+        "Field": "PCI segment",
+        "Value": "0x0000000000000002"
+      },
+      {
+        "Field": "PCI start bus",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "PCI end bus",
+        "Value": "0x00000000000000FF"
+      },
+      {
+        "Field": "PCI ECAM base (not accessed)",
+        "Value": "0x0000000740000000"
+      },
+      {
+        "Field": "PCI segment",
+        "Value": "0x0000000000000003"
+      },
+      {
+        "Field": "PCI start bus",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "PCI end bus",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "PCI ECAM base (not accessed)",
+        "Value": "0x000000007C000000"
+      },
+      {
+        "Field": "PCI segment",
+        "Value": "0x0000000000000004"
+      },
+      {
+        "Field": "PCI start bus",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "PCI end bus",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "PCI ECAM base (not accessed)",
+        "Value": "0x000000007E000000"
+      },
+      {
+        "Field": "PCI segment",
+        "Value": "0x0000000000000005"
+      },
+      {
+        "Field": "PCI start bus",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "PCI end bus",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "PCI ECAM base (not accessed)",
+        "Value": "0x0000000070000000"
+      },
+      {
+        "Field": "PCI segment",
+        "Value": "0x0000000000000006"
+      },
+      {
+        "Field": "PCI start bus",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "PCI end bus",
+        "Value": "0x0000000000000001"
+      },
+      {
+        "Field": "PCI ECAM base (not accessed)",
+        "Value": "0x0000000074000000"
+      },
+      {
+        "Field": "PCI segment",
+        "Value": "0x0000000000000007"
+      },
+      {
+        "Field": "PCI start bus",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "PCI end bus",
+        "Value": "0x0000000000000001"
+      }
+    ],
+    "Scope": "Offline structure only; no load, execution or device access"
+  },
+  {
+    "Source": "SPCR.bin",
+    "Kind": "Acpi",
+    "SHA256": "D35E233C95B84E461A1DF54516EF56D1B203DD995051A2FC141CCB82A2A1877A",
+    "Status": "0x0000000000000000",
+    "Accepted": true,
+    "Fields": [
+      {
+        "Field": "ACPI signature",
+        "Value": "SPCR"
+      },
+      {
+        "Field": "Serial interface type (raw)",
+        "Value": "0x0000000000000013"
+      },
+      {
+        "Field": "Serial address space ID",
+        "Value": "0x0000000000000000"
+      },
+      {
+        "Field": "Serial register bit width",
+        "Value": "0x0000000000000020"
+      },
+      {
+        "Field": "Serial register access size",
+        "Value": "0x0000000000000020"
+      },
+      {
+        "Field": "Serial base (not accessed)",
+        "Value": "0x0000000000894000"
+      },
+      {
+        "Field": "Serial interrupt type",
+        "Value": "0x0000000000000008"
+      },
+      {
+        "Field": "Serial GSIV",
+        "Value": "0x0000000000000182"
+      },
+      {
+        "Field": "Serial baud code (raw)",
+        "Value": "0x0000000000000007"
+      }
+    ],
+    "Scope": "Offline structure only; no load, execution or device access"
+  }
+]

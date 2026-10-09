@@ -1,0 +1,23 @@
+# DebOnDragon: drivers needed before the root filesystem is mounted.
+# Missing names (built into the kernel) are skipped by mkinitramfs.
+
+# NVMe on pcie6a
+pcie_qcom
+phy_qcom_qmp_pcie
+nvme
+
+# USB sticks (live medium) and USB keyboards
+phy_qcom_qmp_combo
+phy_qcom_qmp_usb
+phy_qcom_snps_eusb2
+phy_qcom_eusb2_repeater
+phy_nxp_ptn3222
+dwc3
+dwc3_qcom
+xhci_plat_hcd
+usb_storage
+uas
+
+# Built-in keyboard (I2C HID), e.g. for an encrypted-disk passphrase
+i2c_qcom_geni
+i2c_hid_of

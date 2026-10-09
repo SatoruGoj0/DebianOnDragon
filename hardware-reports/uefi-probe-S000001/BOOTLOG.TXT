@@ -1,0 +1,13 @@
+SnapdragonMac v0.3-E9E0408DDFC06143
+Schema 1. Clock unverified. CPU register gates disabled. No kernel execution.
+Loaded boot USB revalidated; marker checked; user confirmed.
+All eight JSON files flushed, read-back verified and closed before this log.
+File index 0..7: SYSTEM CPU UEFI ACPI MEMORY GRAPHICS IORT PROTOCOLS
+0 0x000000000000004A records; within cap
+1 0x000000000000000D records; within cap
+2 0x0000000000000033 records; within cap
+3 0x0000000000000332 records; truncated
+4 0x0000000000000166 records; within cap
+5 0x0000000000000017 records; within cap
+6 0x00000000000002F3 records; within cap
+7 0x0000000000000321 records; truncated

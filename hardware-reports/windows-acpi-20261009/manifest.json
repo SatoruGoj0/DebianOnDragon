@@ -1,0 +1,67 @@
+{
+  "Source": "Windows GetSystemFirmwareTable ACPI provider",
+  "CapturedUtc": "2026-10-09T20:37:25.1048549Z",
+  "Manufacturer": "LENOVO",
+  "Model": "83N3",
+  "Bios": "RVCN18WW",
+  "Tables": [
+    {
+      "Signature": "MCFG",
+      "File": "MCFG.bin",
+      "Bytes": 172,
+      "HeaderValid": true,
+      "ChecksumValid": true,
+      "SHA256": "8F290FC00811834B383215A2310AFD73CC17A902B967EFC8CBDE88676457FA5C",
+      "Error": null
+    },
+    {
+      "Signature": "FACP",
+      "File": "FACP.bin",
+      "Bytes": 276,
+      "HeaderValid": true,
+      "ChecksumValid": true,
+      "SHA256": "456CB8757317E8D3A3CF8715C6E3A15F880F3440F6E179D603BEE4538E790848",
+      "Error": null
+    },
+    {
+      "Signature": "APIC",
+      "File": "APIC.bin",
+      "Bytes": 1049,
+      "HeaderValid": true,
+      "ChecksumValid": true,
+      "SHA256": "5E91437BC7EB968310F2A3A04FF8F312EC1088E0E617A8E9F021D81D4A6AFA52",
+      "Error": null
+    },
+    {
+      "Signature": "GTDT",
+      "File": "GTDT.bin",
+      "Bytes": 156,
+      "HeaderValid": true,
+      "ChecksumValid": true,
+      "SHA256": "7BF7A5C8DD423A5239B1D02BC8A7D75BD64FD6E9BF27E82A0261E15D5D51A24F",
+      "Error": null
+    },
+    {
+      "Signature": "IORT",
+      "File": "IORT.bin",
+      "Bytes": 5366,
+      "HeaderValid": true,
+      "ChecksumValid": true,
+      "SHA256": "D69F09B589825B5F237B97ED95C9EDB0C9BB8D3DF6768987DBD7C451D19A865B",
+      "Error": null
+    },
+    {
+      "Signature": "SPCR",
+      "File": "SPCR.bin",
+      "Bytes": 80,
+      "HeaderValid": true,
+      "ChecksumValid": true,
+      "SHA256": "D35E233C95B84E461A1DF54516EF56D1B203DD995051A2FC141CCB82A2A1877A",
+      "Error": null
+    }
+  ],
+  "DuplicateSignatures": [
+    "0x54445046: 2 instances; API returns first only"
+  ],
+  "Limitations": "OS-provided copies; no RSDP, physical addresses or preboot state proven. Only first instance per signature is retrievable. No AML executed. No raw SMBIOS/serial identifiers collected."
+}

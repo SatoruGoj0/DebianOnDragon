@@ -1,0 +1,8 @@
+/work/
+/out/
+*.iso
+*.deb
+# Device-signed firmware must never be committed (not redistributable).
+*.mbn
+*.elf
+*.jsn

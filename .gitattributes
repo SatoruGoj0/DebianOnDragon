@@ -1,0 +1,6 @@
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.aml binary
+*.bin binary
+*.dtb binary
+*.iso binary

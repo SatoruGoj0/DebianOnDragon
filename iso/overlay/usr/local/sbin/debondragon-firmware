@@ -1,0 +1,97 @@
+#!/bin/bash
+# Install the device-signed Qualcomm firmware for the Lenovo 83N3 from the
+# owner's own Windows installation. These files are signed for this
+# machine and cannot be redistributed, so they are not on the ISO.
+#
+# Without them: no battery status, no USB-C, no GPU acceleration, no audio
+# DSP. Keyboard, touchpad, display, NVMe, USB-A and Wi-Fi do not need them.
+#
+# Usage:
+#   debondragon-firmware                 search unlocked NTFS partitions
+#   debondragon-firmware <dir>           use a folder, e.g. one made by
+#                                        windows/Export-Firmware.ps1
+set -euo pipefail
+
+dest=/lib/firmware/qcom/x1p42100/LENOVO/83N3
+files=(qcadsp8380.mbn adsp_dtbs.elf qccdsp8380.mbn cdsp_dtbs.elf qcdxkmsucpurwa.mbn
+       battmgr.jsn adspr.jsn adspua.jsn cdspr.jsn)
+required=(qcadsp8380.mbn adsp_dtbs.elf qccdsp8380.mbn cdsp_dtbs.elf qcdxkmsucpurwa.mbn)
+
+[ "$(id -u)" = 0 ] || exec sudo "$0" "$@"
+
+mounted=()
+cleanup() {
+	for m in "${mounted[@]}"; do umount "$m" 2>/dev/null || true; rmdir "$m" 2>/dev/null || true; done
+}
+trap cleanup EXIT
+
+# Newest copy of a file under a directory tree (DriverStore keeps old
+# driver versions side by side).
+newest() {
+	find "$1" -type f -iname "$2" -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-
+}
+
+sources=()
+if [ $# -ge 1 ]; then
+	sources=("$1")
+else
+	while read -r dev fstype; do
+		case $fstype in
+		ntfs)
+			m=$(mktemp -d /tmp/debondragon-win.XXXX)
+			if mount -o ro -t ntfs3 "$dev" "$m" 2>/dev/null || mount -o ro -t ntfs-3g "$dev" "$m" 2>/dev/null; then
+				mounted+=("$m")
+				store=$m/Windows/System32/DriverStore/FileRepository
+				[ -d "$store" ] && sources+=("$store")
+			else
+				rmdir "$m"
+			fi
+			;;
+		BitLocker)
+			echo "note: $dev is BitLocker-encrypted. Either unlock it with your recovery key:"
+			echo "        sudo cryptsetup bitlkOpen $dev windows   (then run this script again)"
+			echo "      or run windows/Export-Firmware.ps1 in Windows and pass that folder."
+			;;
+		esac
+	done < <(lsblk -rpno NAME,FSTYPE | awk 'NF == 2')
+	# Partitions unlocked with cryptsetup appear under /dev/mapper.
+	for dev in /dev/mapper/*; do
+		[ "$(lsblk -no FSTYPE "$dev" 2>/dev/null)" = ntfs ] || continue
+		m=$(mktemp -d /tmp/debondragon-win.XXXX)
+		if mount -o ro -t ntfs3 "$dev" "$m" 2>/dev/null; then
+			mounted+=("$m")
+			store=$m/Windows/System32/DriverStore/FileRepository
+			[ -d "$store" ] && sources+=("$store")
+		else
+			rmdir "$m"
+		fi
+	done
+fi
+
+if [ ${#sources[@]} -eq 0 ]; then
+	echo "No Windows DriverStore or firmware folder found." >&2
+	exit 1
+fi
+
+mkdir -p "$dest"
+missing=0
+for f in "${files[@]}"; do
+	found=""
+	for s in "${sources[@]}"; do
+		found=$(newest "$s" "$f")
+		[ -n "$found" ] && break
+	done
+	if [ -n "$found" ]; then
+		install -m 0644 "$found" "$dest/$f"
+		echo "installed $f"
+	elif printf '%s\n' "${required[@]}" | grep -qx "$f"; then
+		echo "MISSING   $f" >&2
+		missing=1
+	fi
+done
+
+if [ $missing = 1 ]; then
+	echo "Some required files were not found; the matching hardware will stay off." >&2
+	exit 1
+fi
+echo "Done. Reboot to start the audio/compute DSPs and the GPU with this firmware."

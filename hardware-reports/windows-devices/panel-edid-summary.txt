@@ -1,0 +1,6 @@
+Panel EDID identifiers read from the Windows registry (Enum\DISPLAY).
+Only the vendor/product codes are recorded; the EDID serial number is not.
+
+LEN9197 mfg=LEN product=0x9197   internal eDP panel (Lenovo-coded LCD)
+SNY8200 mfg=SNY product=0x8200   external display seen by Windows, not part of the laptop
+SNYE903 mfg=SNY product=0xE903   external display seen by Windows, not part of the laptop

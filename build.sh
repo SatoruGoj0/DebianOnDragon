@@ -1,0 +1,34 @@
+#!/bin/bash
+# Build the DebOnDragon ISO end to end. Runs as root on arm64 Debian 13:
+# natively, in WSL, or in the debian:trixie container that CI uses:
+#
+#   docker run --rm --privileged -v "$PWD:/src" -w /src debian:trixie ./build.sh
+#
+# Output: out/<name>.iso and out/SHA256SUMS. Set REBUILD_KERNEL=1 to rebuild
+# a kernel that is already in work/kernel-debs.
+set -euo pipefail
+here=$(cd "$(dirname "$0")" && pwd)
+work=${WORK:-$here/work}
+out=${OUT:-$here/out}
+
+if [ "$(dpkg --print-architecture)" != arm64 ]; then
+	echo "build.sh must run on arm64 (the rootfs is assembled with chroot)" >&2
+	exit 1
+fi
+
+export DEBIAN_FRONTEND=noninteractive
+apt-get update
+apt-get install -y --no-install-recommends \
+	git ca-certificates build-essential bc bison flex libssl-dev libelf-dev \
+	dpkg-dev debhelper rsync kmod cpio python3 xz-utils zstd \
+	debootstrap squashfs-tools xorriso mtools dosfstools \
+	grub-common grub-efi-arm64-bin
+
+mkdir -p "$work" "$out"
+if [ "${REBUILD_KERNEL:-0}" = 1 ] || [ ! -f "$work/kernel-debs/RELEASE" ]; then
+	rm -rf "$work/kernel-debs"
+	"$here/kernel/build-kernel.sh" "$work"
+fi
+"$here/iso/build-rootfs.sh" "$work"
+"$here/iso/build-image.sh" "$work" "$out"
+cp "$work"/kernel-debs/linux-image-*.deb "$out/"
