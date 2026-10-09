@@ -33,7 +33,7 @@ done < "$here/kernel/debondragon.config"
 
 kver=$(make -s kernelrelease)
 make -j"$(nproc)" ARCH=arm64 INSTALL_MOD_STRIP=1 \
-  KDEB_PKGVERSION="${kver%%-*}-1~debondragon" bindeb-pkg
+  KDEB_PKGVERSION="${kver%%-*}-1~debondragon" KDEB_CHANGELOG_DIST="$DEBIAN_SUITE" bindeb-pkg
 
 mv "$work"/linux-image-*.deb "$work"/linux-headers-*.deb "$work/kernel-debs/"
 rm -f "$work"/linux-libc-dev_*.deb "$work"/linux-upstream_* "$work"/*.buildinfo "$work"/*.changes

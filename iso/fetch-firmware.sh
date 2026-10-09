@@ -11,20 +11,20 @@ work=$1
 dest=$2
 fw=$work/linux-firmware
 
+# qcom/x1e80100 also holds other laptops' signed DSP firmware; only the
+# QUP serial-engine firmware there is generic.
 patterns=(
-  'qcom/x1e80100/*'
-  'qcom/x1p42100/*'
-  'qcom/gen70500_*'
-  'qcom/gen71500_*'
-  'qcom/a740_*'
-  'qcom/gmu_gen70500.bin'
-  'ath12k/WCN7850/**'
-  'qca/hmt*'
-  'qca/htbtfw*'
-  'qca/htnv*'
-  'WHENCE'
-  'LICENSE.*'
-  'LICENCE.*'
+  '/qcom/x1e80100/qupv3fw.elf'
+  '/qcom/x1p42100/*'
+  '/qcom/gen70500_*'
+  '/qcom/gen71500_*'
+  '/ath12k/WCN7850/**'
+  '/qca/hmt*'
+  '/qca/htbtfw*'
+  '/qca/htnv*'
+  '/WHENCE'
+  '/LICENSE.*'
+  '/LICENCE.*'
 )
 
 if [ ! -d "$fw/.git" ]; then

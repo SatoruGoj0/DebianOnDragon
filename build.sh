@@ -20,7 +20,7 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get install -y --no-install-recommends \
 	git ca-certificates build-essential bc bison flex libssl-dev libelf-dev \
-	dpkg-dev debhelper rsync kmod cpio python3 xz-utils zstd \
+	dpkg-dev debhelper rsync kmod cpio python3 xz-utils zstd libdw-dev \
 	debootstrap squashfs-tools xorriso mtools dosfstools \
 	grub-common grub-efi-arm64-bin
 
