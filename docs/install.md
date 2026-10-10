@@ -73,6 +73,8 @@ sudo debondragon-firmware
 ```
 
 Reboot. This enables battery status, USB-C, GPU acceleration and the DSPs.
+Sound stays off even with this firmware: the devicetree keeps the speakers
+disabled until their amplifiers are identified (see docs/board-notes.md).
 
 ## If something doesn't work
 
@@ -84,8 +86,9 @@ desktop), open a terminal and run:
 sudo debondragon-report
 ```
 
-It saves a text file to the stick with the kernel log and the display,
-backlight and PMIC state. Open an issue with that file and say which boot
+It saves a text file to the stick with the kernel log, the display,
+backlight and PMIC state, Wi-Fi link state, and the audio DSP state plus the
+Windows audio driver names. Open an issue with that file and say which boot
 entry you used.
 
 ## Going back to Windows only

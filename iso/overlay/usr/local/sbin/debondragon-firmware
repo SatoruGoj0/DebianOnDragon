@@ -95,3 +95,4 @@ if [ $missing = 1 ]; then
 	exit 1
 fi
 echo "Done. Reboot to start the audio/compute DSPs and the GPU with this firmware."
+echo "Note: speakers stay off in this release; the DSP firmware alone does not enable sound."

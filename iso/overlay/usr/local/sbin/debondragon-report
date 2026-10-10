@@ -1,7 +1,8 @@
 #!/bin/bash
 # Collect what's needed to debug DebOnDragon on real hardware and save it as
 # one text file: kernel log, boot args, loaded modules, display/backlight
-# state, and the PMIC GPIO/PWM configuration the firmware left behind.
+# state, the PMIC GPIO/PWM configuration the firmware left behind, Wi-Fi link
+# state, and the audio DSP and speaker amplifier hints.
 #
 # Usage: sudo debondragon-report            (saves to a USB stick if one is
 #                                            mounted, otherwise to /root)
@@ -46,6 +47,37 @@ report() {
 	done
 	run cat /sys/kernel/debug/pwm
 	run cat /sys/kernel/debug/gpio
+	section "wifi"
+	run iw reg get
+	for w in /sys/class/net/*/wireless; do
+		[ -e "$w" ] || continue
+		dev=$(basename "$(dirname "$w")")
+		run iw dev "$dev" info
+		run iw dev "$dev" link
+		run iw dev "$dev" get power_save
+	done
+	run lspci -vv -d 17cb:1107
+	section "audio"
+	for r in /sys/class/remoteproc/remoteproc*; do
+		[ -e "$r" ] && echo "$r: $(cat "$r/name") $(cat "$r/state") $(cat "$r/firmware" 2>/dev/null)"
+	done
+	ls -l /lib/firmware/qcom/x1p42100/LENOVO/83N3/ 2>&1
+	run cat /proc/asound/cards
+	run ls /sys/bus/soundwire/devices
+	# The Windows audio driver packages name the speaker amplifiers
+	# (e.g. WSA884x), which the devicetree needs before audio can be enabled.
+	section "Windows audio driver packages"
+	while read -r dev; do
+		m=$(mktemp -d /tmp/debondragon-win.XXXX)
+		if mount -o ro -t ntfs3 "$dev" "$m" 2>/dev/null; then
+			ls "$m/Windows/System32/DriverStore/FileRepository" 2>/dev/null |
+				grep -i -E 'aud|wsa|wcd|spk|speak|amp|acdb|cirrus|cs35|aw88|tas2|max98|sndw|soundwire'
+			find "$m/Windows/System32/DriverStore/FileRepository" -iname '*.acdb' -o -iname '*wsa*' 2>/dev/null |
+				sed "s|^$m/||" | head -50
+			umount "$m"
+		fi
+		rmdir "$m"
+	done < <(lsblk -rpno NAME,FSTYPE | awk '$2 == "ntfs" {print $1}')
 	section "dmesg"
 	dmesg
 }
