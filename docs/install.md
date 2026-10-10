@@ -76,7 +76,16 @@ Reboot. This enables battery status, USB-C, GPU acceleration and the DSPs.
 
 ## If something doesn't work
 
-Collect `sudo dmesg > dmesg.txt` and open an issue with it. Include which boot
+If the screen goes black after the boot messages, reboot and pick **safe
+graphics**. Plug in a FAT/exFAT USB stick (it mounts automatically in the
+desktop), open a terminal and run:
+
+```bash
+sudo debondragon-report
+```
+
+It saves a text file to the stick with the kernel log and the display,
+backlight and PMIC state. Open an issue with that file and say which boot
 entry you used.
 
 ## Going back to Windows only

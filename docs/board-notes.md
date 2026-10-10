@@ -46,8 +46,24 @@ The DSDT picks one of four touchpads (ELAN 0x15, Synaptics 0x2c, FocalTech
 - Audio: ADSP subsystem ID `380317AA`. The speaker amplifiers aren't identified
   yet, so audio is disabled.
 
+## Display and backlight
+
+The DSDT embeds Qualcomm panel-config XML for the panels Lenovo ships
+(`scripts/acpi-panels.sh` lists them). The entry for this unit's panel
+(EDID `30 AE 97 91`, "LEN153WUXGA") carries a Lenovo change marked "Modify
+for LCD Backlight PWM": `BacklightType` 1 (PMIC PWM), control type 4, bank 0,
+14-bit, 2000 Hz.
+
+The first hardware boot (v0.1.0, which had no backlight node) went black
+when `msm` loaded from the initramfs at about 7 s. v0.1.1 describes the
+backlight like the Lenovo ThinkBook 16 Gen 7: pm8550 LPG channel 3 at 2 kHz,
+VBL9 switched by PMC8380 GPIO 10, enable on PMC8380 GPIO 4. The ASUS
+Zenbook A14 LCD instead uses pmk8550 PWM channel 0 on PMK8550 GPIO 5; if
+the ThinkBook wiring is wrong, `debondragon-report` (PMIC pin functions)
+shows which one the firmware set up.
+
 ## Open questions
 
-- Backlight control (PWM vs eDP AUX). No backlight node yet; firmware leaves it on.
+- Confirm the backlight PWM channel on hardware (see above).
 - Exact USB-C/USB-A port mapping and whether every CRD retimer is populated.
 - Speaker amplifier type and count.

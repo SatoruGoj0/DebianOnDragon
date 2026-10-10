@@ -28,6 +28,39 @@
 	};
 
 	/*
+	 * The DSDT panel config for this LCD (EDID LEN 0x9197) says, in a
+	 * Lenovo change "Modify for LCD Backlight PWM": BacklightType 1 (PMIC
+	 * PWM), 14-bit, 2000 Hz. That matches the Lenovo ThinkBook 16 Gen 7
+	 * upstream: pm8550 LPG channel 3 at 500000 ns, VBL9 switched by PMC8380
+	 * GPIO 10, backlight enable on PMC8380 GPIO 4.
+	 */
+	backlight: backlight {
+		compatible = "pwm-backlight";
+		pwms = <&pm8550_pwm 3 500000>;
+		enable-gpios = <&pmc8380_3_gpios 4 GPIO_ACTIVE_HIGH>;
+		power-supply = <&vreg_edp_bl>;
+
+		pinctrl-0 = <&edp_bl_en>;
+		pinctrl-names = "default";
+	};
+
+	vreg_edp_bl: regulator-edp-bl {
+		compatible = "regulator-fixed";
+
+		regulator-name = "VBL9";
+		regulator-min-microvolt = <3600000>;
+		regulator-max-microvolt = <3600000>;
+
+		gpio = <&pmc8380_3_gpios 10 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		pinctrl-0 = <&edp_bl_reg_en>;
+		pinctrl-names = "default";
+
+		regulator-boot-on;
+	};
+
+	/*
 	 * WCN7850 power sequencing, as on the other Lenovo Purwa laptop
 	 * upstream (ThinkBook 16 Gen 7). DSDT: Wi-Fi at \_SB.PCI4.RP1.WLN,
 	 * Bluetooth on UR15 (uart14).
@@ -262,12 +295,31 @@
  * GpioInt 0x33, which is what x1-crd.dtsi already describes on i2c8.
  */
 
-/* The panel is an LCD (EDID LEN9197), not the CRD's Samsung OLED. */
+/*
+ * The panel is an LCD (EDID LEN9197, "LEN153WUXGA"), not the CRD's Samsung
+ * OLED. On LCD boards PMC8380 GPIO 4 enables the backlight, so it moves
+ * from the panel to the backlight node, as on the other X1 LCD laptops.
+ */
 &mdss_dp3 {
 	aux-bus {
 		panel {
 			compatible = "edp-panel";
+			backlight = <&backlight>;
+			/delete-property/ enable-gpios;
+			/delete-property/ pinctrl-0;
+			/delete-property/ pinctrl-names;
 		};
+	};
+};
+
+&pm8550_pwm {
+	status = "okay";
+};
+
+&pmc8380_3_gpios {
+	edp_bl_reg_en: edp-bl-reg-en-state {
+		pins = "gpio10";
+		function = "normal";
 	};
 };
 

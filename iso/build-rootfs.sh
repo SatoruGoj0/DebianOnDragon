@@ -52,7 +52,8 @@ printf '127.0.0.1\tlocalhost\n127.0.1.1\tdebondragon\n::1\tlocalhost ip6-localho
 cp -a "$here/iso/overlay/." "$root/"
 chmod 755 "$root/etc/kernel/postinst.d/dtb-debondragon" \
           "$root/etc/grub.d/01_debondragon" \
-          "$root/usr/local/sbin/debondragon-firmware"
+          "$root/usr/local/sbin/debondragon-firmware" \
+          "$root/usr/local/sbin/debondragon-report"
 
 in_root apt-get update
 # confold: keep our overlay versions of conffiles (e.g. initramfs modules).

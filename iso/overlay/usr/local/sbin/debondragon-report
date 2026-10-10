@@ -1,0 +1,64 @@
+#!/bin/bash
+# Collect what's needed to debug DebOnDragon on real hardware and save it as
+# one text file: kernel log, boot args, loaded modules, display/backlight
+# state, and the PMIC GPIO/PWM configuration the firmware left behind.
+#
+# Usage: sudo debondragon-report            (saves to a USB stick if one is
+#                                            mounted, otherwise to /root)
+# No serial numbers are collected (dmesg can contain some device names).
+set -uo pipefail
+
+[ "$(id -u)" = 0 ] || exec sudo "$0" "$@"
+mountpoint -q /sys/kernel/debug || mount -t debugfs none /sys/kernel/debug 2>/dev/null
+
+section() { printf '\n===== %s =====\n' "$1"; }
+run() { section "$*"; "$@" 2>&1; }
+
+report() {
+	echo "DebOnDragon report, $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+	run uname -a
+	run cat /proc/cmdline
+	run cat /proc/device-tree/model
+	echo
+	run lsmod
+	section "backlight"
+	for b in /sys/class/backlight/*; do
+		[ -e "$b" ] || { echo none; continue; }
+		echo "$b: brightness=$(cat "$b/brightness") max=$(cat "$b/max_brightness") bl_power=$(cat "$b/bl_power" 2>/dev/null)"
+	done
+	section "drm connectors"
+	for c in /sys/class/drm/card*-*; do
+		[ -e "$c" ] && echo "$c: status=$(cat "$c/status") enabled=$(cat "$c/enabled" 2>/dev/null)"
+	done
+	section "framebuffers"
+	cat /proc/fb
+	section "regulators (name state)"
+	for r in /sys/class/regulator/regulator.*; do
+		echo "$(cat "$r/name" 2>/dev/null) $(cat "$r/state" 2>/dev/null)"
+	done
+	# PMIC GPIO mode/function and PWM channel state show how the firmware
+	# drives the backlight.
+	section "PMIC pinctrl (SPMI GPIO blocks)"
+	for d in /sys/kernel/debug/pinctrl/*spmi*; do
+		[ -d "$d" ] || continue
+		echo "--- $d"
+		cat "$d/pins" 2>/dev/null
+	done
+	run cat /sys/kernel/debug/pwm
+	run cat /sys/kernel/debug/gpio
+	section "dmesg"
+	dmesg
+}
+
+dest=""
+while read -r mnt fstype; do
+	case $fstype in vfat|exfat|ntfs|ntfs3|fuseblk)
+		case $mnt in /media/*|/mnt/*|/run/media/*) [ -w "$mnt" ] && dest=$mnt && break ;; esac ;;
+	esac
+done < <(awk '{print $2, $3}' /proc/mounts)
+dest=${dest:-/root}
+
+out=$dest/debondragon-report-$(date +%Y%m%d-%H%M%S).txt
+report > "$out" 2>&1
+sync
+echo "Saved: $out"
