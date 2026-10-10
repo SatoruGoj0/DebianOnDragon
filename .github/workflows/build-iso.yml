@@ -27,10 +27,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # build.sh reuses work/kernel-debs; rebuild only when the kernel inputs change.
+      - name: Cache kernel packages
+        uses: actions/cache@v4
+        with:
+          path: work/kernel-debs
+          key: kernel-${{ hashFiles('kernel/**', 'dts/**', 'build.conf') }}
+
       - name: Build in Debian 13 container
         run: |
           docker run --rm --privileged -v "$PWD:/src" -w /src debian:trixie ./build.sh
-          sudo chown -R "$(id -u):$(id -g)" out
+          sudo chown -R "$(id -u):$(id -g)" out work/kernel-debs
 
       - name: Upload ISO artifact
         uses: actions/upload-artifact@v4

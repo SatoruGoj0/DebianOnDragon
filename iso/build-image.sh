@@ -17,6 +17,11 @@ mkdir -p "$tree/live" "$tree/boot/grub" "$tree/EFI/BOOT" "$tree/dtb/qcom" "$out"
 touch "$tree/.debondragon"
 
 cp "$root/boot/vmlinuz-$kver" "$tree/live/vmlinuz"
+# GRUB on arm64 only boots PE images (CONFIG_EFI_ZBOOT); fail early otherwise.
+if [ "$(head -c 2 "$tree/live/vmlinuz")" != MZ ]; then
+	echo "vmlinuz is not an EFI (PE) image; GRUB cannot boot it" >&2
+	exit 1
+fi
 cp "$root/boot/initrd.img-$kver" "$tree/live/initrd.img"
 cp "$dtbs"/x1p42100-*.dtb "$tree/dtb/qcom/"
 test -f "$tree/dtb/$BOARD_DTB"
