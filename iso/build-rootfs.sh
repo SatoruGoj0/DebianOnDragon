@@ -57,6 +57,11 @@ chmod 755 "$root/etc/kernel/postinst.d/dtb-debondragon" \
           "$root/usr/local/sbin/debondragon-bootlog"
 
 in_root apt-get update
+# Linux can't write UEFI variables on the 83N3 (QSEECOM isn't enabled for
+# it: "qseecom: untested machine, skipping"), so GRUB package upgrades must
+# not try to update NVRAM. The boot entry is created once from Windows
+# (windows/Add-DebianBootEntry.ps1).
+echo 'grub-efi-arm64 grub2/update_nvram boolean false' | chroot "$root" debconf-set-selections
 # confold: keep our overlay versions of conffiles (e.g. initramfs modules).
 grep -vE '^[[:space:]]*(#|$)' "$here/iso/packages.list" | xargs \
 	chroot "$root" /usr/bin/env DEBIAN_FRONTEND=noninteractive \
