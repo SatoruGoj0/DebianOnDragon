@@ -53,13 +53,17 @@ cp -a "$here/iso/overlay/." "$root/"
 chmod 755 "$root/etc/kernel/postinst.d/dtb-debondragon" \
           "$root/etc/grub.d/01_debondragon" \
           "$root/usr/local/sbin/debondragon-firmware" \
-          "$root/usr/local/sbin/debondragon-report"
+          "$root/usr/local/sbin/debondragon-report" \
+          "$root/usr/local/sbin/debondragon-bootlog"
 
 in_root apt-get update
 # confold: keep our overlay versions of conffiles (e.g. initramfs modules).
 grep -vE '^[[:space:]]*(#|$)' "$here/iso/packages.list" | xargs \
 	chroot "$root" /usr/bin/env DEBIAN_FRONTEND=noninteractive \
 	apt-get install -y -o Dpkg::Options::=--force-confold
+
+# Only acts when the kernel command line has "debondragon.log".
+in_root systemctl enable debondragon-bootlog.service
 
 sed -i 's/^# *en_US.UTF-8/en_US.UTF-8/' "$root/etc/locale.gen"
 in_root locale-gen

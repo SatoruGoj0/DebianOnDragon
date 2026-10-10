@@ -44,11 +44,20 @@ mkfs.vfat -n EFIBOOT "$work/efiboot.img" >/dev/null
 mmd -i "$work/efiboot.img" ::/EFI ::/EFI/BOOT
 mcopy -i "$work/efiboot.img" "$work/BOOTAA64.EFI" ::/EFI/BOOT/BOOTAA64.EFI
 
+# Writable FAT partition for boot logs (debondragon-bootlog). Windows gives
+# it a drive letter automatically, unlike the EFI partition.
+rm -f "$work/dodlog.img"
+truncate -s 64M "$work/dodlog.img"
+mkfs.vfat -n DODLOG "$work/dodlog.img" >/dev/null
+printf 'DebOnDragon boot logs are written here when booting with debondragon.log.\r\n' > "$work/README.TXT"
+mcopy -i "$work/dodlog.img" "$work/README.TXT" ::/README.TXT
+
 iso=$out/$ISO_NAME.iso
 rm -f "$iso"
 xorriso -as mkisofs -r -V "$ISO_LABEL" -J -joliet-long -iso-level 3 \
 	-partition_offset 16 \
-	-append_partition 2 0xef "$work/efiboot.img" -appended_part_as_gpt \
+	-append_partition 2 0xef "$work/efiboot.img" \
+	-append_partition 3 0x0c "$work/dodlog.img" -appended_part_as_gpt \
 	-c boot.catalog -e --interval:appended_partition_2:all:: -no-emul-boot \
 	-o "$iso" "$tree"
 

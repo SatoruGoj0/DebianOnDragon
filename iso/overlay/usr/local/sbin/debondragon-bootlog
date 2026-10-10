@@ -1,0 +1,42 @@
+#!/bin/bash
+# Write the kernel log and journal to the DODLOG partition of the boot USB
+# stick while the system boots, so boot problems can be read afterwards in
+# Windows even when the screen stays black. Started by
+# debondragon-bootlog.service when the kernel command line has
+# "debondragon.log".
+set -uo pipefail
+
+dir=/run/debondragon-log
+for _ in $(seq 120); do
+	[ -e /dev/disk/by-label/DODLOG ] && break
+	sleep 1
+done
+[ -e /dev/disk/by-label/DODLOG ] || { echo "no DODLOG partition found"; exit 0; }
+
+mkdir -p "$dir"
+mountpoint -q "$dir" || mount -t vfat -o rw,flush /dev/disk/by-label/DODLOG "$dir" || exit 0
+out=$dir/LOG-$(cat /proc/sys/kernel/random/boot_id | cut -c1-8)
+mkdir -p "$out"
+
+snapshot() {
+	dmesg > "$out/DMESG.TXT" 2>&1
+	journalctl -b -o short-monotonic --no-pager 2>&1 | tail -n 40000 > "$out/JOURNAL.TXT"
+	cat /proc/cmdline > "$out/CMDLINE.TXT"
+	sync -f "$out/DMESG.TXT"
+}
+
+if [ "${1:-}" = final ]; then
+	snapshot
+	exit 0
+fi
+
+# Every 5 s for 5 minutes, plus a full hardware report after 90 s.
+for i in $(seq 60); do
+	snapshot
+	if [ "$i" = 18 ] && command -v debondragon-report >/dev/null; then
+		debondragon-report > /dev/null 2>&1
+		latest=$(ls -t /root/debondragon-report-*.txt 2>/dev/null | head -1)
+		[ -n "$latest" ] && cp "$latest" "$out/REPORT.TXT" && sync -f "$out/REPORT.TXT"
+	fi
+	sleep 5
+done

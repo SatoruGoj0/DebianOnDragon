@@ -1,0 +1,17 @@
+[Unit]
+Description=DebOnDragon boot log to the USB stick (DODLOG partition)
+ConditionKernelCommandLine=debondragon.log
+DefaultDependencies=no
+After=systemd-udevd.service systemd-journald.service
+Before=shutdown.target
+Conflicts=shutdown.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/debondragon-bootlog
+# A last snapshot on shutdown (e.g. after Ctrl+Alt+Delete).
+ExecStop=/usr/local/sbin/debondragon-bootlog final
+TimeoutStopSec=20
+
+[Install]
+WantedBy=sysinit.target

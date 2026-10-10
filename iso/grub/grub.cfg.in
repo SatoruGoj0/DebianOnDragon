@@ -5,35 +5,35 @@ set default=0
 
 menuentry "DebOnDragon live + installer (IdeaPad Slim 3 15Q8X10)" {
 	devicetree /dtb/@BOARD_DTB@
-	linux /live/vmlinuz boot=live components quiet splash @BOOT_ARGS@
+	linux /live/vmlinuz boot=live components debondragon.log quiet splash @BOOT_ARGS@
 	initrd /live/initrd.img
 }
 
 menuentry "DebOnDragon - safe graphics (firmware framebuffer, no msm driver)" {
 	devicetree /dtb/@BOARD_DTB@
-	linux /live/vmlinuz boot=live components @BOOT_ARGS@ modprobe.blacklist=msm
+	linux /live/vmlinuz boot=live components debondragon.log @BOOT_ARGS@ modprobe.blacklist=msm
 	initrd /live/initrd.img
 }
 
 menuentry "DebOnDragon - verbose boot log" {
 	devicetree /dtb/@BOARD_DTB@
-	linux /live/vmlinuz boot=live components @BOOT_ARGS@ ignore_loglevel
+	linux /live/vmlinuz boot=live components debondragon.log @BOOT_ARGS@ ignore_loglevel
 	initrd /live/initrd.img
 }
 
 submenu "Fallback devicetrees (other Snapdragon X1P laptops)" {
 	menuentry "Qualcomm X1P42100 CRD (reference design)" {
 		devicetree /dtb/qcom/x1p42100-crd.dtb
-		linux /live/vmlinuz boot=live components @BOOT_ARGS@ ignore_loglevel
+		linux /live/vmlinuz boot=live components debondragon.log @BOOT_ARGS@ ignore_loglevel
 		initrd /live/initrd.img
 	}
 	menuentry "Lenovo ThinkBook 16 Gen 7 QOY" {
 		devicetree /dtb/qcom/x1p42100-lenovo-thinkbook-16.dtb
-		linux /live/vmlinuz boot=live components @BOOT_ARGS@ ignore_loglevel
+		linux /live/vmlinuz boot=live components debondragon.log @BOOT_ARGS@ ignore_loglevel
 		initrd /live/initrd.img
 	}
 	menuentry "No devicetree (ACPI only, framebuffer, very limited)" {
-		linux /live/vmlinuz boot=live components @BOOT_ARGS@ ignore_loglevel
+		linux /live/vmlinuz boot=live components debondragon.log @BOOT_ARGS@ ignore_loglevel
 		initrd /live/initrd.img
 	}
 }
