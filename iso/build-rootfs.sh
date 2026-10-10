@@ -78,6 +78,10 @@ rm -rf "$root/tmp/kernel"
 
 kver=$(cat "$work/kernel-debs/RELEASE")
 test -f "$root/boot/dtb/debondragon.dtb" || { echo "board dtb was not installed" >&2; exit 1; }
+# Our Calamares packages.conf must survive calamares-settings-debian's
+# conffile; Debian's version aborts the install (apt-get error 100).
+grep -q try_remove "$root/etc/calamares/modules/packages.conf" ||
+	{ echo "Calamares packages.conf override was replaced" >&2; exit 1; }
 in_root update-initramfs -u -k "$kver"
 
 in_root apt-get clean
