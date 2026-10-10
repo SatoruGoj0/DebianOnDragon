@@ -62,6 +62,22 @@ Zenbook A14 LCD instead uses pmk8550 PWM channel 0 on PMK8550 GPIO 5; if
 the ThinkBook wiring is wrong, `debondragon-report` (PMIC pin functions)
 shows which one the firmware set up.
 
+### Hardware boot logs (v0.1.2, DODLOG partition)
+
+- The panel reports EDID **CMN 0x1567** (Innolux) over AUX, not the LEN
+  0x9197 Windows shows; panel-edp doesn't know it and uses conservative
+  timings (a WARN, not fatal).
+- msm never bound: the USB-C DP controllers (dp0-2) wait on aux bridges
+  that need pmic_glink, i.e. the ADSP firmware, which the live system
+  lacks. Without msm, panel-edp powers the panel down after probe.
+- In safe graphics, regulator cleanup at ~38 s switched off VREG_EDP_3P3
+  and VBL9, blanking the firmware framebuffer.
+- Working: systemd boot, Bluetooth (WCN7850 over UART, firmware loads),
+  keyboard (Ctrl+Alt+Delete reboots cleanly).
+
+v0.1.3: dp0-2 disabled, `regulator_ignore_unused` on all entries, and safe
+graphics also blocks panel_edp, pwm_bl and leds_qcom_lpg.
+
 ## Open questions
 
 - Confirm the backlight PWM channel on hardware (see above).

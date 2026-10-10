@@ -312,6 +312,25 @@
 	};
 };
 
+/*
+ * USB-C DisplayPort outputs stay off for now. Their bridge chain ends at
+ * pmic_glink, which needs the ADSP firmware that the live system doesn't
+ * have; while those bridges defer, msm never binds, nothing drives the
+ * eDP panel and it powers down (seen on hardware: "aux_bridge ... failed
+ * to acquire drm_bridge", ADSP firmware load error -2).
+ */
+&mdss_dp0 {
+	status = "disabled";
+};
+
+&mdss_dp1 {
+	status = "disabled";
+};
+
+&mdss_dp2 {
+	status = "disabled";
+};
+
 &pm8550_pwm {
 	status = "okay";
 };

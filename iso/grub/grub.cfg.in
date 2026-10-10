@@ -9,9 +9,11 @@ menuentry "DebOnDragon live + installer (IdeaPad Slim 3 15Q8X10)" {
 	initrd /live/initrd.img
 }
 
+# Leaves the panel exactly as the firmware set it up: no display, panel or
+# backlight drivers touch it, so the EFI framebuffer stays lit.
 menuentry "DebOnDragon - safe graphics (firmware framebuffer, no msm driver)" {
 	devicetree /dtb/@BOARD_DTB@
-	linux /live/vmlinuz boot=live components debondragon.log @BOOT_ARGS@ modprobe.blacklist=msm
+	linux /live/vmlinuz boot=live components debondragon.log @BOOT_ARGS@ modprobe.blacklist=msm,panel_edp,pwm_bl,leds_qcom_lpg
 	initrd /live/initrd.img
 }
 

@@ -6,3 +6,5 @@
 *.mbn
 *.elf
 *.jsn
+# Raw hardware boot logs can contain MAC addresses: keep them local.
+/boot-logs/
