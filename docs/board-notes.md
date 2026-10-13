@@ -185,6 +185,13 @@ PS176 entry and treats all HDMI converters alike (connector type only), so
 it doesn't affect training. DPCD can't show board wiring (lane order,
 polarity); only training results can.
 
+**Verified on hardware (kernel -4, 2026-10-14).** With `<3 2 1 0>`:
+`msm_dp_ctrl_on_link: rate=540000, num_lanes=4, pixel_rate=148500`, link
+training #1 and #2 successful on the first attempt (then again for the
+stream), no retries, no `v_level`/timeout messages; Samsung LS27D300G shows
+1920x1080@60, extended desktop under Hyprland. The orientation was the
+cause. `check-dtb.sh` asserts `<3 2 1 0>` in every build.
+
 **Reset on unplug/disable (unexplained):** happened only after failed
 training, with the encoder running without a link. No panic, no pstore, no
 journal entry. Series 3+ have lockup/hung-task detectors (report only).

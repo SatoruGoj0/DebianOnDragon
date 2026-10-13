@@ -45,27 +45,58 @@ expect "minimum 0 disables the raise" "$(bri)" 50
 echo DEBONDRAGON_MIN_BRIGHTNESS=abc > "$tmp/default"; bl restore
 expect "invalid minimum is rejected" "$?" 1
 
-# --- GRUB snippet ------------------------------------------------------------
-sed "s|/etc/default/debondragon|$tmp/default|g" "$root/etc/default/grub.d/debondragon.cfg" > "$tmp/grub.cfg"
+# --- GRUB snippet and kernel submenu ----------------------------------------
+# Fake /boot with DebOnDragon kernels; the scripts read /boot/dtb and /boot.
+fakeboot() { # releases...: (re)create $tmp/boot with these kernels
+	rm -rf "$tmp/boot"; mkdir -p "$tmp/boot/dtb"
+	for r in "$@"; do
+		: > "$tmp/boot/dtb/debondragon-$r.dtb"
+		: > "$tmp/boot/vmlinuz-$r"; : > "$tmp/boot/initrd.img-$r"
+	done
+}
+sed -e "s|/etc/default/debondragon|$tmp/default|g" -e "s|/boot/|$tmp/boot/|g" \
+    "$root/etc/default/grub.d/debondragon.cfg" > "$tmp/grub.cfg"
 grubvars() { # prints default|cmdline|os-prober for the current $tmp/default
 	(GRUB_DEFAULT=0; GRUB_CMDLINE_LINUX=""; . "$tmp/grub.cfg"
 	 echo "$GRUB_DEFAULT|${GRUB_CMDLINE_LINUX# }|$GRUB_DISABLE_OS_PROBER")
 }
 base="clk_ignore_unused pd_ignore_unused regulator_ignore_unused"
+off="video=HDMI-A-1:d"
 cp "$root/etc/default/debondragon" "$tmp/default"
-expect "shipped defaults: HDMI off, Debian default entry, Windows kept" \
-	"$(grubvars)" "0|$base video=HDMI-A-1:d|false"
-echo DEBONDRAGON_HDMI=on >> "$tmp/default"
-expect "DEBONDRAGON_HDMI=on drops video=HDMI-A-1:d" "$(grubvars)" "0|$base|false"
-printf 'DEBONDRAGON_DEFAULT_KERNEL=7.2.0-debondragon-2\n' > "$tmp/default"
+expect "shipped defaults are DEBONDRAGON_HDMI=auto" "$(grep -c '^DEBONDRAGON_HDMI=auto$' "$tmp/default")" 1
+fakeboot 7.2.0-debondragon-3 7.2.0-debondragon-4
+expect "auto, newest kernel -4: HDMI on, Debian default entry, Windows kept" "$(grubvars)" "0|$base|false"
+fakeboot 7.2.0-debondragon 7.2.0-debondragon-2 7.2.0-debondragon-3
+expect "auto, newest kernel -3 (old lane mapping): HDMI off" "$(grubvars)" "0|$base $off|false"
+fakeboot 7.2.0-debondragon-4 7.2.0-debondragon-10
+expect "auto, series 10 counts as newer than 4" "$(grubvars)" "0|$base|false"
+echo DEBONDRAGON_HDMI=off >> "$tmp/default"; fakeboot 7.2.0-debondragon-4
+expect "DEBONDRAGON_HDMI=off: HDMI off even with -4" "$(grubvars)" "0|$base $off|false"
+echo DEBONDRAGON_HDMI=on >> "$tmp/default"; fakeboot 7.2.0-debondragon-3
+expect "DEBONDRAGON_HDMI=on: no video= even with -3" "$(grubvars)" "0|$base|false"
+printf 'DEBONDRAGON_DEFAULT_KERNEL=7.2.0-debondragon-3\n' > "$tmp/default"; fakeboot 7.2.0-debondragon-3 7.2.0-debondragon-4
 expect "DEBONDRAGON_DEFAULT_KERNEL pins the submenu entry" "$(grubvars)" \
-	"debondragon-kernels>debondragon-7.2.0-debondragon-2|$base video=HDMI-A-1:d|false"
+	"debondragon-kernels>debondragon-7.2.0-debondragon-3|$base|false"
 rm "$tmp/default"
-expect "no defaults file: HDMI still off" "$(grubvars)" "0|$base video=HDMI-A-1:d|false"
+expect "no defaults file: auto" "$(grubvars)" "0|$base|false"
+
+# Kernel submenu, with grub-mkconfig_lib stubbed out.
+sed -e "s|/etc/default/debondragon|$tmp/default|g" -e "s|/boot/|$tmp/boot/|g" \
+    -e 's|^\. /usr/share/grub/grub-mkconfig_lib$|prepare_grub_to_access_device() { :; }; make_system_path_relative_to_its_root() { echo "$1"; }|' \
+    "$root/etc/grub.d/42_debondragon_kernels" > "$tmp/42"
+submenu() { # DEBONDRAGON_HDMI value -> "id: args" per entry
+	printf 'DEBONDRAGON_DTB=x.dtb\nDEBONDRAGON_HDMI=%s\n' "$1" > "$tmp/default"
+	GRUB_DEVICE_UUID=u GRUB_CMDLINE_LINUX="$base $off" grub_probe="echo x #" sh "$tmp/42" 2>/dev/null |
+		awk '/menuentry/ { for (i=1;i<=NF;i++) if ($i=="--id") id=$(i+1) }
+		     /linux / { v = ($0 ~ /video=HDMI-A-1:d/) ? "off" : "on"; print id ": " v }'
+}
+fakeboot 7.2.0-debondragon-3 7.2.0-debondragon-4
+expect "submenu auto: -4 on, -4 fallback off, -3 off" "$(submenu auto | tr '\n' ' ')" \
+	"debondragon-7.2.0-debondragon-4: on debondragon-7.2.0-debondragon-4-hdmi-off: off debondragon-7.2.0-debondragon-3: off "
+expect "submenu off: every entry off" "$(submenu off | tr '\n' ' ')" \
+	"debondragon-7.2.0-debondragon-4: off debondragon-7.2.0-debondragon-3: off "
 expect "submenu has the id GRUB_DEFAULT uses" \
 	"$(grep -c -- "--id debondragon-kernels" "$root/etc/grub.d/42_debondragon_kernels")" 1
-expect "entries have the id GRUB_DEFAULT uses" \
-	"$(grep -c -- '--id debondragon-$release' "$root/etc/grub.d/42_debondragon_kernels")" 1
 
 # --- UCM -------------------------------------------------------------------
 ucm=$root/usr/share/alsa/ucm2/conf.d/x1e80100/LENOVO-83N3-IdeaPadSlim315Q8X10-LNVNB161216.conf

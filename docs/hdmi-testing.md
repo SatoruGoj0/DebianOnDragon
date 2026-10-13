@@ -1,156 +1,108 @@
-# HDMI test for kernel 7.2.0-debondragon-4
+# HDMI on kernel 7.2.0-debondragon-4: status and stability tests
 
-Kernel series 4 changes one thing for HDMI: the lane orientation of the DP
-PHY that feeds the HDMI converter (`data-lanes` `<0 1 2 3>` → `<3 2 1 0>`,
-see `docs/board-notes.md`, "HDMI link training"). HDMI stays off by
-default (`video=HDMI-A-1:d`). This test lifts that for **one running
-session**; it changes nothing in GRUB or `/etc/default/debondragon`, and
-the next boot is the pinned default kernel with HDMI off again.
+## Status
 
-Done on hardware so far (kernel -4, HDMI forced off): plugging and
-unplugging the cable is safe, and the converter answers on
-`/dev/drm_dp_aux1`: DPCD 1.2, HBR2, 4 lanes, TPS3, one HDMI downstream
-port, branch OUI 00-1C-F8 (Parade) with device ID `176GB0` (PS176).
+| What | State | Evidence |
+|---|---|---|
+| HDMI video output, 1920x1080@60 | **Verified** | 83N3 + Samsung LS27D300G, kernel -4: `rate=540000, num_lanes=4` (HBR2 x4), link training #1 and #2 succeeded on the first attempt, no timeouts |
+| Extended desktop under Hyprland | **Verified** | HDMI-A-1 at 0x0, eDP-1 at 1920x0; pointer and windows move between them |
+| HDMI on at boot without sysfs commands | To test (T1, T2) | support 0.3.0, `DEBONDRAGON_HDMI=auto` |
+| Long-running output | To test (T3) | |
+| Reboot/shutdown with HDMI active | To test (T4): **reset before** | |
+| Unplug/replug with active video | To test (T5): **reset before** | |
 
-## How HDMI is enabled for one session
+Converter: Parade PS176 (DPCD branch OUI 00-1C-F8, device ID `176GB0`),
+DPCD 1.2, HBR2, 4 lanes. The fix is the DP lane orientation
+(`data-lanes = <3 2 1 0>`), see `docs/board-notes.md`.
 
-`video=HDMI-A-1:d` is applied once, when the connector is created
-(`drm_connector.c`: `connector->force = mode->force`). Writing `detect` to
-`/sys/class/drm/card0-HDMI-A-1/status` sets `connector->force` back to 0
-and re-probes (`drm_sysfs.c`, `status_store`). If the status changes, the
-probe helper queues a hot-plug event (msm enables the poll helper), and
-Hyprland enables the monitor according to its monitor rules. That starts
-DisplayPort link training. The force stays cleared until the next boot.
+## How HDMI is switched on (support 0.3.0)
 
-## What survives a hard reset
+`DEBONDRAGON_HDMI` in `/etc/default/debondragon`:
+- `auto` (default): HDMI on for kernels whose devicetree has the verified
+  mapping (series 4 and later); `video=HDMI-A-1:d` for older kernels, whose
+  mapping fails link training. Each series-4+ kernel also gets a
+  "..., HDMI off" entry in GRUB's "DebOnDragon kernels" submenu.
+- `off`: HDMI off everywhere. `on`: on everywhere (unsafe with -2/-3).
 
-- `~/hdmi-test/dmesg-live.log`, written by `dmesg -w` and flushed to disk
-  every second: everything up to about one second before a reset.
-- The systemd journal is persistent, but it flushes debug-level kernel
-  messages only every 5 minutes (`SyncIntervalSec`), so the DRM debug
-  lines of the last minutes would be missing there.
-- The kernel ring buffer itself is lost; there is no pstore backend.
+Hyprland needs nothing from DebOnDragon: monitor rules in your own
+`~/.config/hypr/hyprland.lua` apply whenever HDMI-A-1 appears. Without a
+rule for HDMI-A-1, the catch-all rule (`output = ""`, `preferred`, `auto`)
+extends the desktop with the monitor's preferred mode.
 
-## Steps
+## Logs that survive a reset
 
-Run them in order; stop at the first one that doesn't match.
-
-### 0. Starting point
-
-Kernel -4 booted once (`grub-reboot`), default still pinned to -3, HDMI
-cable **unplugged**, monitor on and set to its HDMI input. Save your work
-and close other programs.
-
+The persistent journal flushes ordinary kernel messages only every few
+minutes, so for any step marked **reset before**, run this in a separate
+terminal first; it writes the kernel log to disk every second:
 ```bash
-uname -r                                          # 7.2.0-debondragon-4
-grep -o 'video=HDMI-A-1:d' /proc/cmdline
-od -An -tu4 --endian=big /proc/device-tree/soc@0/phy@fdf000/ports/port@0/endpoint@0/data-lanes   # 3 2 1 0
-cat /sys/class/drm/card0-HDMI-A-1/status          # disconnected
-grep DEBONDRAGON_DEFAULT_KERNEL /etc/default/debondragon   # 7.2.0-debondragon-3
+mkdir -p ~/hdmi-test && dmesg -w > ~/hdmi-test/live-$(date +%H%M%S).log & while sleep 1; do sync ~/hdmi-test/live-*.log; done
+```
+After any boot, the previous boot's kernel log is also in the journal:
+`sudo journalctl -k -b -1 > ~/hdmi-test/prev-boot.log`.
+
+## Tests
+
+Run them in order, one per boot where stated. Before each: save your work.
+Stop at the first failure and send the logs; the next boot is the pinned
+default kernel (-3), with HDMI off.
+
+The test kernel is booted once with
+```bash
+sudo grub-reboot 'debondragon-kernels>debondragon-7.2.0-debondragon-4'
+sudo reboot
+```
+which leaves the GRUB default unchanged.
+
+### T1. Monitor connected before boot (one boot)
+
+Cable plugged in and monitor on, then the one-time boot above.
+```bash
+uname -r; grep -c 'video=HDMI-A-1:d' /proc/cmdline     # -4, 0
+cat /sys/class/drm/card0-HDMI-A-1/status                 # connected
+hyprctl monitors | grep -E '^Monitor|@'                  # HDMI-A-1 1920x1080@60 at 0x0
+journalctl -k -b | grep -E 'link training|Failed|timeout' | tail
 ```
 
-### 1. Hyprland rule for the external monitor
+### T2. Monitor connected after boot (one boot)
 
-Extended desktop, HDMI to the right of the internal 1920x1200 panel,
-1920x1080 at 60 Hz. The rule only applies when HDMI-A-1 appears; delete the
-marked lines to remove it.
+Cable unplugged, one-time boot, log in, then plug the cable in. Same
+checks as T1.
+
+### T3. Long run (same boot as T2)
+
+Use both screens for 30 minutes: move windows and the pointer across,
+play a video on the external one. Then:
 ```bash
-cat >> ~/.config/hypr/hyprland.lua <<'EOF'
-
--- DebOnDragon HDMI test (kernel -4): extended desktop right of eDP-1
-hl.monitor({
-    output   = "HDMI-A-1",
-    mode     = "1920x1080@60",
-    position = "1920x0",
-    scale    = 1,
-})
--- end DebOnDragon HDMI test
-EOF
-hyprctl reload
-hyprctl monitors | grep -E '^Monitor|@'           # eDP-1 unchanged
+journalctl -k -b | grep -cE 'vblank timeout|frame done timeout|Failed link training|BUG|lockup|hung'   # 0
 ```
 
-### 2. Start the log (second terminal, leave it running)
+### T4. Reboot with HDMI active (**reset before**: needs your go-ahead)
 
+Start the live log above, `sync`, then a normal `sudo reboot` with the
+monitor still showing the desktop. The reboot switches the output off
+(teardown). Expected: a normal reboot into -3. Afterwards:
 ```bash
-mkdir -p ~/hdmi-test
-dmesg -w > ~/hdmi-test/dmesg-live.log & while sleep 1; do sync ~/hdmi-test/dmesg-live.log; done
+sudo journalctl -k -b -1 | tail -40 > ~/hdmi-test/t4-prev-boot.log
 ```
 
-### 3. DP debug logging, then plug in
+### T5. Unplug and replug with active video (**reset before**: needs your go-ahead)
 
-In the first terminal:
+Own boot of -4 (one-time boot), HDMI active. Start the live log, `sync`,
+then unplug the cable **once**, wait 10 seconds, check the laptop still
+responds, plug it in again **once**, wait 10 seconds:
 ```bash
-echo 0x100 | sudo tee /sys/module/drm/parameters/debug
+cat /sys/class/drm/card0-HDMI-A-1/status; hyprctl monitors | grep -E '^Monitor|@'
+grep -E 'link training|Failed|timeout|BUG|lockup' ~/hdmi-test/live-*.log | tail
 ```
-`0x100` is DRM's DisplayPort category: AUX transfers, link rate, lane
-count and per-lane training status. Plug in the HDMI cable, wait 5 seconds:
+No repeated plug cycles. If the laptop resets, the live log has
+everything up to about a second before.
+
+## Making -4 the default
+
+Only after T1-T5 pass:
 ```bash
-cat /sys/class/drm/card0-HDMI-A-1/status          # still "disconnected" (forced)
+sudo sed -i 's/^DEBONDRAGON_DEFAULT_KERNEL=.*/DEBONDRAGON_DEFAULT_KERNEL=7.2.0-debondragon-4/' /etc/default/debondragon
+sudo update-grub
 ```
-
-### 4. Enable HDMI for this session
-
-This is the active test: link training happens now.
-```bash
-sync
-echo detect | sudo tee /sys/class/drm/card0-HDMI-A-1/status
-```
-Wait 15 seconds, then:
-```bash
-cat /sys/class/drm/card0-HDMI-A-1/status          # connected
-cp /sys/class/drm/card0-HDMI-A-1/edid ~/hdmi-test/edid.bin
-hyprctl monitors | grep -A2 HDMI-A-1              # 1920x1080@60 at 1920x0
-grep -E 'link training|rate=|num_lanes|Failed|v_level|timeout' ~/hdmi-test/dmesg-live.log | tail -20
-```
-
-If `HDMI-A-1` doesn't appear in `hyprctl monitors` within 15 seconds,
-nothing has been enabled: stop here, don't replug, and send the log.
-
-### 5a. Picture on the monitor
-
-- The desktop extends to the right; move the mouse across and drag a
-  window onto the external monitor.
-- `hyprctl monitors` shows `1920x1080@60` for HDMI-A-1.
-- Leave it running for 5 minutes.
-
-Then switch debug logging off and save the log:
-```bash
-echo 0 | sudo tee /sys/module/drm/parameters/debug
-cp ~/hdmi-test/dmesg-live.log ~/hdmi-test/dmesg-success.log; sync
-```
-**Don't unplug or disable HDMI in this session.** Unplugging and disabling
-an active output are the next, separate test. End this one with `sync`
-and holding the power button for 10 seconds; the next boot is -3.
-
-### 5b. Black screen, "Failed link training", or timeouts in the log
-
-Stop activation attempts. **Don't unplug the cable and don't disable the
-output** (that path reset the laptop before). Wait 5 seconds for the log to
-reach the disk, then:
-```bash
-sync
-```
-and hold the power button for 10 seconds. The next boot is -3 with HDMI
-forced off; with the laptop off, the cable can be removed safely. Send
-`~/hdmi-test/dmesg-live.log`.
-
-## Reading the log
-
-- `link training #1 on phy 0 successful`, `#2 ... successful`,
-  `num_lanes=4`: the orientation was the fault.
-- 4-lane EQ fails, but a 2-lane retry passes clock recovery: orientation
-  fixed, the rate is the problem (msm already falls back to lower rates and
-  lanes by itself; a capped `link-frequencies` would be the next step).
-- 2-lane retries fail with `max v_level reached` as before: orientation was
-  not the cause; the `0x00202 AUX -> ...` lines show which lanes lock.
-
-## Rollback
-
-Every boot after the test boot is -3 (`DEBONDRAGON_DEFAULT_KERNEL`) with
-HDMI forced off. To remove the Hyprland rule, delete the lines between the
-two `DebOnDragon HDMI test` comments. To remove kernel -4 (while running
--3):
-```bash
-sudo apt remove linux-image-7.2.0-debondragon-4
-```
+-3 stays in the "DebOnDragon kernels" submenu (with HDMI off) for rollback,
+and -4 has a "..., HDMI off" entry there too.

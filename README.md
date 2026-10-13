@@ -43,7 +43,9 @@ Working.
 | Bluetooth (WCN7850) | **Partial** | v0.1.0 | Firmware loads and the controller initialises (boot log); pairing not yet tested |
 | Touchpad (ELAN 04F3:327E) | **Working** | v0.3.0 | Verified on hardware with kernel 7.2.0-debondragon-3: interrupts on TLMM 19 (decoded from the DSDT; the CRD's TLMM 3 never fired), continuous pointer motion in libinput, normal use. `check-dtb.sh` keeps TLMM 19 / level-low / pull-up in every future build |
 | Display brightness | **Partial** | v0.2.0 | Adjusting works on hardware. Started at minimum after every boot: systemd-backlight restored a stale 204/4095 (its 5% floor) because hard resets skip the save. support 0.2.1 saves the level once a minute when it changed and restores it exactly; without a saved level it starts at `DEBONDRAGON_MIN_BRIGHTNESS` (default 30%) |
-| HDMI | **Not working, off by default** | — | Hot-plug and EDID work, but link training failed (series 2/3: 4-lane EQ failed, 2-lane retries failed clock recovery) and unplugging after the failure reset the laptop. Kernel series 4 corrects the DP lane orientation (`data-lanes = <3 2 1 0>`, as on the other X1 HDMI laptops); **not yet tested**. Off via `video=HDMI-A-1:d`; one-boot test in docs/hdmi-testing.md |
+| HDMI video output (1920x1080@60) | **Working** | v0.4.0 | Verified on hardware with kernel 7.2.0-debondragon-4 and a Samsung LS27D300G: DP link HBR2 x4, link training succeeds first time. Fix: DP lane orientation `data-lanes = <3 2 1 0>`. Converter: Parade PS176 |
+| HDMI extended desktop (Hyprland) | **Working** | v0.4.0 | Verified: two monitors, pointer and windows move between them. Layout comes from your own Hyprland monitor rules |
+| HDMI on at boot, hotplug, unplug/replug with active video, long runs | **Not yet verified** | v0.4.0 | support 0.3.0 switches HDMI on automatically for series-4 kernels (`DEBONDRAGON_HDMI=auto`); older kernels keep it off. Earlier kernels reset the laptop on unplug after failed training; tests in docs/hdmi-testing.md |
 | Internal camera (USB 13d3:54bf) | **Working** | v0.2.0 | Reported working on hardware (UVC on usb_2 behind the PTN3222 repeater) |
 | Fan / EC thermal control | **Unsupported, off** | — | `debondragon-ec-check` on hardware: version reads, but fan count and thermal capabilities return 0. Those commands (0x0E, 0x42) aren't in this EC's ACPI command map, so the `qcom-hamoa-ec` protocol doesn't match. Driver stays blacklisted; the EC controls the fan by itself |
 | SoC temperature sensors | **Working** | v0.1.0 | CPU/GPU/PMIC zones read 37–40 °C on hardware |
@@ -57,6 +59,20 @@ Working.
 | SD card reader (BayHub, pcie5) | **Untested** | v0.1.0 | |
 | Suspend / resume | **Untested** | — | |
 | Fingerprint reader | **Unsupported** | — | |
+
+## Remaining hardware (after v0.4.0)
+
+- **Internal speakers**: off by default (no speaker protection on Linux);
+  opt-in `-speakers` devicetree untested on hardware.
+- **Headphones / microphones**: the UCM profile loads and PulseAudio has a
+  Headphones sink; sound output not yet confirmed.
+- **USB-C, second port**: its USB 2.0 repeater sits in an smb2360 at SPMI
+  SID 0xa that this laptop doesn't have (probably SID 0xb instead,
+  unverified); the CRD retimers don't answer, so role switching and DP alt
+  mode don't work on either port.
+- **EC fan reporting/control**: the EC doesn't speak the protocol of the
+  upstream driver; driver stays off, the EC runs the fan itself.
+- **Suspend/resume**: untested.
 
 Device-signed firmware (audio/compute DSP, GPU zap shader) is signed for this
 machine and can't be redistributed. `debondragon-firmware` copies it from your

@@ -1,18 +1,31 @@
-# DebOnDragon v0.4.0 (in testing; not released)
+# DebOnDragon v0.4.0
 
-Kernel series `7.2.0-debondragon-4`: `7.2.0-debondragon-3` plus one
-devicetree change for HDMI. Kernel configuration and all other devicetree
-nodes are identical to -3.
+Kernel `7.2.0-debondragon-4` (Linux v7.2) and `debondragon-support` 0.3.0.
+Installs beside earlier kernels; don't reinstall Debian
+(docs/kernel-upgrade.md, "Upgrade from v0.3.0").
 
-- **HDMI lane orientation**: `data-lanes = <3 2 1 0>` on the DP PHY that
-  feeds the HDMI converter (was the ThinkBook 16's `<0 1 2 3>`). The
-  series 2 failure (4-lane EQ failed, then 2-lane clock recovery failed at
-  max swing, `rc=-104`) matches a mirrored lane order; four of five
-  upstream X1 HDMI boards use `<3 2 1 0>`. **Not tested on hardware**;
-  HDMI stays off by default. One-boot test: docs/hdmi-testing.md.
-- Regression checks for the whole HDMI graph (dp2 → PHY → bridge →
-  connector, both directions), the lane mapping, the PHY's fixed DP-only
-  mode and the HDMI driver options.
+## HDMI works
+
+Verified on the 83N3 with a Samsung LS27D300G: 1920x1080@60 over a
+4-lane HBR2 DisplayPort link to the HDMI converter (Parade PS176), extended
+desktop under Hyprland with pointer and windows moving between screens.
+
+The fix is one devicetree line: the DP lane orientation of the PHY that
+feeds the converter (`data-lanes = <3 2 1 0>`; the earlier `<0 1 2 3>`
+made link training fail). Kernel -4 is otherwise identical to -3.
+
+`debondragon-support` 0.3.0 turns HDMI on automatically
+(`DEBONDRAGON_HDMI=auto`) for kernels with this fix and keeps it off for
+older ones; GRUB's "DebOnDragon kernels" submenu has a "HDMI off" entry
+for -4 as a fallback. No sysfs commands needed.
+
+**Not yet verified:** HDMI at boot and hotplug with the new automatic
+setting, long runs, reboot and unplug/replug with active video (earlier
+kernels reset the laptop on unplug after failed training). Tests:
+docs/hdmi-testing.md.
+
+Unchanged and still working: touchpad (TLMM 19), internal display, GPU,
+brightness, camera, Wi-Fi, keyboard, touchscreen, USB-A.
 
 ---
 

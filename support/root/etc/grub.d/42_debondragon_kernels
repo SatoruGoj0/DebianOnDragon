@@ -4,6 +4,11 @@
 # Debian entries above all use the newest kernel's devicetree
 # (01_debondragon); these entries are for rolling back a kernel *and* its
 # devicetree together.
+#
+# HDMI (DEBONDRAGON_HDMI, default auto): kernels from series 4 on, whose
+# devicetree has the HDMI lane mapping verified on hardware, boot with HDMI
+# on and get an extra "HDMI off" entry as a fallback; older kernels always
+# boot with video=HDMI-A-1:d (their mapping fails link training).
 set -e
 . /usr/share/grub/grub-mkconfig_lib
 [ -r /etc/default/debondragon ] && . /etc/default/debondragon
@@ -30,19 +35,46 @@ if [ -n "$pin" ]; then
 	fi
 fi
 
+hdmi_off=video=HDMI-A-1:d
+# The global command line may carry the HDMI switch for the normal entries
+# (default/grub.d/debondragon.cfg); decide again here for each kernel.
+cmdline=$(echo " $GRUB_CMDLINE_LINUX " | sed "s| $hdmi_off | |g; s|^ *||; s| *$||")
+
+hdmi_dtb_ok() { # release -> true if its devicetree drives HDMI
+	case $1 in
+	*-debondragon-[0-9]*) [ "${1##*-debondragon-}" -ge 4 ] 2>/dev/null ;;
+	*) return 1 ;;
+	esac
+}
+
+entry() { # title id release extra-args
+	kernel=/boot/vmlinuz-$3
+	initrd=/boot/initrd.img-$3
+	echo "	menuentry '$1' --id $2 {"
+	prepare_grub_to_access_device "$boot_device" | sed 's/^/		/'
+	echo "		devicetree $(make_system_path_relative_to_its_root "/boot/dtb/debondragon-$3.dtb")"
+	echo "		linux $(make_system_path_relative_to_its_root "$kernel") root=$root ro $cmdline${4:+ $4} $GRUB_CMDLINE_LINUX_DEFAULT"
+	echo "		initrd $(make_system_path_relative_to_its_root "$initrd")"
+	echo "	}"
+}
+
 # The ids are stable, for GRUB_DEFAULT and grub-reboot:
 #   debondragon-kernels>debondragon-<release>
+#   debondragon-kernels>debondragon-<release>-hdmi-off
 echo "Adding DebOnDragon kernel entries" >&2
 echo "submenu 'DebOnDragon kernels (each with its own devicetree)' --id debondragon-kernels {"
 for release in $releases; do
-	kernel=/boot/vmlinuz-$release
-	initrd=/boot/initrd.img-$release
-	[ -f "$kernel" ] && [ -f "$initrd" ] || continue
-	echo "	menuentry 'Debian, Linux $release + its devicetree' --id debondragon-$release {"
-	prepare_grub_to_access_device "$boot_device" | sed 's/^/		/'
-	echo "		devicetree $(make_system_path_relative_to_its_root "/boot/dtb/debondragon-$release.dtb")"
-	echo "		linux $(make_system_path_relative_to_its_root "$kernel") root=$root ro $GRUB_CMDLINE_LINUX $GRUB_CMDLINE_LINUX_DEFAULT"
-	echo "		initrd $(make_system_path_relative_to_its_root "$initrd")"
-	echo "	}"
+	[ -f "/boot/vmlinuz-$release" ] && [ -f "/boot/initrd.img-$release" ] || continue
+	case ${DEBONDRAGON_HDMI:-auto} in
+	on) hdmi=on ;;
+	off) hdmi=off ;;
+	*) if hdmi_dtb_ok "$release"; then hdmi=on; else hdmi=off; fi ;;
+	esac
+	if [ "$hdmi" = on ]; then
+		entry "Debian, Linux $release + its devicetree" "debondragon-$release" "$release" ""
+		entry "Debian, Linux $release + its devicetree, HDMI off" "debondragon-$release-hdmi-off" "$release" "$hdmi_off"
+	else
+		entry "Debian, Linux $release + its devicetree (HDMI off)" "debondragon-$release" "$release" "$hdmi_off"
+	fi
 done
 echo "}"

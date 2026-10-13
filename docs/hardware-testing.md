@@ -56,20 +56,12 @@ support 0.2.0 it started near minimum after every boot (systemd-backlight's
 
 ## HDMI
 
-**v0.2.0 on hardware:** hot-plug and EDID work (`HDMI-A-1 connected`,
-1920x1080), but DisplayPort link training to the HDMI converter fails
-(`max v_level reached`, `Failed link training`), the screen stays black with
-endless `vblank timeout`, and **unplugging the cable or disabling the output
-resets the laptop** (no log, no pstore record).
-
-Since support 0.2.1 HDMI is **off** (`video=HDMI-A-1:d` on the kernel
-command line, `DEBONDRAGON_HDMI=off`). Leave it off. Kernel series 3 only
-adds a read-only diagnostic, `/dev/drm_dp_auxN`, and lockup detectors; it
-does **not** fix link training.
-
-Do not set `DEBONDRAGON_HDMI=on`. Kernel series 4 corrects the lane
-orientation; test it for one boot only with **docs/hdmi-testing.md**, which
-never changes GRUB or `/etc/default/debondragon`.
+**Working since v0.4.0 (verified):** video at 1920x1080@60 and the
+extended desktop, on kernel `7.2.0-debondragon-4`. With support 0.3.0
+(`DEBONDRAGON_HDMI=auto`) HDMI is on for -4 and off for older kernels.
+Still to verify: HDMI at boot and hotplug with the automatic setting, long
+runs, reboot and unplug/replug with active video. Those tests, with
+crash-safe logging, are in **docs/hdmi-testing.md**.
 
 ## Camera
 

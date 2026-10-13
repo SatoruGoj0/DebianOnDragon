@@ -25,6 +25,33 @@ GRUB uses them like this:
 - **DebOnDragon kernels (each with its own devicetree)**: one entry per
   installed kernel, each with *its own* devicetree. Use this to roll back.
 
+## Upgrade from v0.3.0 (HDMI)
+
+You have kernel -3 (maybe also -4 from testing) and support 0.2.1, with
+`DEBONDRAGON_DEFAULT_KERNEL` pinned. Keep -3 as the default until the HDMI
+tests in `docs/hdmi-testing.md` pass.
+
+1. Install support 0.3.0 and kernel -4 (skip the kernel if it's already
+   installed). `--force-confold` keeps your edited
+   `/etc/default/debondragon` instead of asking:
+   ```bash
+   sudo apt install -o Dpkg::Options::=--force-confold ./debondragon-support_0.3.0_all.deb ./linux-image-7.2.0-debondragon-4_*_arm64.deb
+   ```
+2. Your file still says `DEBONDRAGON_HDMI=off` from 0.2.1. Switch it to
+   `auto` (HDMI on only for kernels with the verified fix; -3 stays off):
+   ```bash
+   sudo sed -i 's/^DEBONDRAGON_HDMI=.*/DEBONDRAGON_HDMI=auto/' /etc/default/debondragon
+   sudo update-grub
+   ```
+3. Check the entries:
+   ```bash
+   sudo grep -m1 'set default=' /boot/grub/grub.cfg       # ...debondragon-7.2.0-debondragon-3
+   for id in 7.2.0-debondragon-4 7.2.0-debondragon-4-hdmi-off 7.2.0-debondragon-3; do printf '%s: ' $id; sudo awk -v id="--id debondragon-$id {" 'index($0,id){f=1} f&&/^[[:space:]]*linux /{print (/video=HDMI-A-1:d/ ? "HDMI off" : "HDMI on"); exit}' /boot/grub/grub.cfg; done
+   ```
+   Expected: `-4: HDMI on`, `-4-hdmi-off: HDMI off`, `-3: HDMI off`.
+4. Run the tests in `docs/hdmi-testing.md`, then make -4 the default as
+   described there.
+
 ## Test a new kernel once, keeping the current one as default (recommended)
 
 Use this for any kernel that hasn't been confirmed on hardware yet. The
