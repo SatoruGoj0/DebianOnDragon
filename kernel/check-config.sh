@@ -40,6 +40,8 @@ need CONFIG_LEDS_QCOM_LPG        m "pmk8550 PWM (backlight)"
 need CONFIG_DRM_SIMPLE_BRIDGE    m "DP-to-HDMI bridge"
 need CONFIG_DRM_DISPLAY_CONNECTOR m "HDMI connector"
 need CONFIG_PHY_QCOM_QMP_COMBO   m "DP PHY for HDMI"
+need CONFIG_DRM_MSM_DP           y "msm DisplayPort controllers (eDP, HDMI)"
+need CONFIG_DRM_AUX_BRIDGE       m "PHY -> HDMI bridge link (aux_bridge)"
 # Input
 need CONFIG_I2C_HID_OF           m "keyboard, touchpad, touchscreen"
 need CONFIG_HID_MULTITOUCH       m "touchpad, touchscreen"

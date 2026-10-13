@@ -67,7 +67,9 @@ command line, `DEBONDRAGON_HDMI=off`). Leave it off. Kernel series 3 only
 adds a read-only diagnostic, `/dev/drm_dp_auxN`, and lockup detectors; it
 does **not** fix link training.
 
-Do not set `DEBONDRAGON_HDMI=on` until a release says HDMI is ready to test.
+Do not set `DEBONDRAGON_HDMI=on`. Kernel series 4 corrects the lane
+orientation; test it for one boot only with **docs/hdmi-testing.md**, which
+never changes GRUB or `/etc/default/debondragon`.
 
 ## Camera
 

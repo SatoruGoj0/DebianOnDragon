@@ -635,10 +635,25 @@
 
 			/delete-node/ endpoint;
 
+			/*
+			 * Lane orientation (kernel series 4). phy-qcom-qmp-combo
+			 * reads this as a Type-C orientation: <3 2 1 0> is
+			 * NORMAL, <0 1 2 3> REVERSE. Series 2/3 used the
+			 * ThinkBook 16's <0 1 2 3>; on hardware 4-lane clock
+			 * recovery passed but channel EQ failed, and every
+			 * 2-lane retry failed clock recovery at max swing
+			 * ("max v_level reached"), which is what a mirrored
+			 * lane order does: 4 lanes break the DP inter-lane
+			 * skew order, 2 lanes power the unconnected pair.
+			 * The Zenbook A14, Vivobook S15, ThinkPad T14s and
+			 * Medion boards drive the same usb_1_ss2 PHY into an
+			 * HDMI converter with <3 2 1 0>. To be verified on
+			 * hardware.
+			 */
 			usb_1_ss2_qmpphy_out_dp: endpoint@0 {
 				reg = <0>;
 
-				data-lanes = <0 1 2 3>;
+				data-lanes = <3 2 1 0>;
 				remote-endpoint = <&hdmi_bridge_dp_in>;
 			};
 		};

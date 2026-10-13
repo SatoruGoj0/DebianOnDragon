@@ -1,3 +1,21 @@
+# DebOnDragon v0.4.0 (in testing; not released)
+
+Kernel series `7.2.0-debondragon-4`: `7.2.0-debondragon-3` plus one
+devicetree change for HDMI. Kernel configuration and all other devicetree
+nodes are identical to -3.
+
+- **HDMI lane orientation**: `data-lanes = <3 2 1 0>` on the DP PHY that
+  feeds the HDMI converter (was the ThinkBook 16's `<0 1 2 3>`). The
+  series 2 failure (4-lane EQ failed, then 2-lane clock recovery failed at
+  max swing, `rc=-104`) matches a mirrored lane order; four of five
+  upstream X1 HDMI boards use `<3 2 1 0>`. **Not tested on hardware**;
+  HDMI stays off by default. One-boot test: docs/hdmi-testing.md.
+- Regression checks for the whole HDMI graph (dp2 → PHY → bridge →
+  connector, both directions), the lane mapping, the PHY's fixed DP-only
+  mode and the HDMI driver options.
+
+---
+
 # DebOnDragon v0.3.0
 
 For the Lenovo IdeaPad Slim 3 15Q8X10 (83N3, Snapdragon X X1-26-100).

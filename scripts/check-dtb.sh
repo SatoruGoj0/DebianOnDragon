@@ -50,6 +50,30 @@ expect "keyboard IRQ on TLMM 67" "$(fdtget -t x "$dtb" /soc@0/geniqup@ac0000/i2c
 expect "touchscreen IRQ on TLMM 51" "$(fdtget -t x "$dtb" /soc@0/geniqup@ac0000/i2c@a80000/touchscreen@10 interrupts-extended 2>/dev/null)" "$tlmm 33 8"
 expect "no CRD retimer-2 supplies (TLMM 126)" "$(echo "$dts" | grep -c 'VREG_RTMR2')" "0"
 expect "HDMI bridge present" "$(prop /hdmi-bridge compatible)" "realtek,rtd2171"
+# HDMI graph: dp2 -> usb_1_ss2 QMP PHY (DP output) -> bridge -> connector.
+# Each link is checked in both directions (remote-endpoint phandles).
+dp2=/soc@0/display-subsystem@ae00000/displayport-controller@ae9a000
+phy=/soc@0/phy@fdf000
+ph() { fdtget -t x "$dtb" "$1" phandle 2>/dev/null; }
+rem() { fdtget -t x "$dtb" "$1" remote-endpoint 2>/dev/null; }
+linked() { # description, endpoint A, endpoint B
+	if [ -n "$(ph "$2")" ] && [ "$(rem "$2")" = "$(ph "$3")" ] && [ "$(rem "$3")" = "$(ph "$2")" ]; then
+		echo "ok   $1"
+	else
+		echo "FAIL $1: $2 <-> $3 not linked"; fail=1
+	fi
+}
+expect "dp2 uses the usb_1_ss2 PHY's DP output (QMP_USB43DP_DP_PHY)" "$(fdtget -t x "$dtb" $dp2 phys 2>/dev/null)" "$(ph $phy) 1"
+linked "dp2 output <-> PHY DP input (port@2)" $dp2/ports/port@1/endpoint $phy/ports/port@2/endpoint
+linked "PHY DP output (port@0/endpoint@0) <-> HDMI bridge input" $phy/ports/port@0/endpoint@0 /hdmi-bridge/ports/port@0/endpoint
+linked "HDMI bridge output <-> HDMI connector" /hdmi-bridge/ports/port@1/endpoint /hdmi-connector/port/endpoint
+expect "HDMI connector is type A" "$(prop /hdmi-connector type)" "a"
+# NORMAL orientation (series 4); <0 1 2 3> (REVERSE) failed link training.
+expect "HDMI lane mapping data-lanes = <3 2 1 0>" "$(fdtget -t u "$dtb" $phy/ports/port@0/endpoint@0 data-lanes 2>/dev/null)" "3 2 1 0"
+expect "PHY lane mode fixed by DT (no Type-C mode/orientation switch)" \
+	"$(fdtget -p "$dtb" $phy 2>/dev/null | grep -cE '^(mode|orientation)-switch$')" "0"
+expect "no USB3 endpoint on the HDMI PHY (DP-only mode)" "$(fdtget -l "$dtb" $phy/ports/port@0 2>/dev/null | grep -c 'endpoint@1')" "0"
+expect "dp2 link rates RBR..HBR3" "$(fdtget -t u "$dtb" $dp2/ports/port@1/endpoint link-frequencies 2>/dev/null | wc -w)" "8"
 expect "HDMI hot-plug pin uses usb2_dp" "$(echo "$dts" | grep -A3 'hdmi-hpd-default-state' | grep -c 'usb2_dp')" "1"
 expect "dp2 (HDMI) enabled" "$(node_status /soc@0/display-subsystem@ae00000/displayport-controller@ae9a000)" "okay"
 expect "dp0 disabled" "$(node_status /soc@0/display-subsystem@ae00000/displayport-controller@ae90000)" "disabled"

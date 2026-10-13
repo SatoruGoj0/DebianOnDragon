@@ -137,6 +137,58 @@ The CRD's third USB-C port (retimer on i2c1, pmic-glink connector@2, and the
 removed. Lane order `<0 1 2 3>` is the default with no swap described;
 unverified.
 
+### HDMI link training (kernel series 4)
+
+**Path (confirmed, DTB + sysfs on hardware):** MDSS `dp2`
+(`displayport-controller@ae9a000`) → `phys = <&usb_1_ss2_qmpphy
+QMP_USB43DP_DP_PHY>` (`phy@fdf000`) → PHY `port@0/endpoint@0` →
+`/hdmi-bridge` (simple-bridge) → `/hdmi-connector`. `/dev/drm_dp_aux1` is
+dp2's AUX channel (`/sys/class/drm_dp_aux_dev/drm_dp_aux1` → `ae9a000`);
+`aux0` is the eDP panel (`aea0000`). The PHY's DRM aux bridge
+(`aux_bridge.aux_bridge.2`, parent `fdf000.phy`) binds. The deferred
+`aux_bridge.0`/`.1` belong to `fd5000.phy`/`fda000.phy` (USB-C ports 1 and
+2) and wait on the CRD retimers that don't answer: not part of HDMI.
+
+**Failure on series 2 (hardware log, msm `dp_ctrl.c`):** first attempt:
+clock recovery passed, channel EQ failed (`link training #2 ... -110`).
+Since CR still held, the driver dropped lanes; every retry then failed CR
+at maximum swing (`max v_level reached` → -EAGAIN), and the fallback ended
+in `-ECONNRESET` (`Failed link training (rc=-104)`). The DPU encoder was
+enabled anyway; with no DP link there is no pixel clock, hence the endless
+`vblank timeout` / `frame done timeout`. EDID and hot-plug only use AUX and
+HPD, which is why the connector looked fine while the screen stayed black.
+
+**Cause (hypothesis, strongly supported):** mirrored lane order.
+`phy-qcom-qmp-combo` without `mode-switch` takes its mode and orientation
+from `data-lanes` on `port@0/endpoint@0`: `<3 2 1 0>` = DP-only NORMAL,
+`<0 1 2 3>` = DP-only REVERSE (`dp_data_lanes[]`). Orientation sets the
+lane mux (`SW_PORTSELECT_VAL`) and, below 4 lanes, which lane pair is
+powered (`qmp_combo_configure_dp_mode`). Series 2/3 used the ThinkBook 16's
+`<0 1 2 3>`. A mirrored order explains both phases: with 4 lanes every lane
+carries TPS1, so CR locks, but the receiver de-skews lanes in order and EQ
+fails; with 2 lanes the wrong pair is powered, so the converter's lanes 0/1
+see nothing and CR fails at any swing. Four of the five upstream X1 boards
+with HDMI on `usb_1_ss2` (Zenbook A14, Vivobook S15, ThinkPad T14s, Medion)
+use `<3 2 1 0>`; their nodes are otherwise identical to ours. Series 4
+changes only this.
+
+**Converter: unidentified.** The DSDT names no DP-to-HDMI chip, and a
+search of the Windows DriverStore folder names for HDMI/converter vendors
+(Realtek, Parade, Lontium, "hdmi", "bridge") found none; such converters
+usually need no Windows driver. `realtek,rtd2171` is a
+placeholder: simple-bridge treats every HDMI converter compatible the same
+(connector type HDMI-A only), so it doesn't affect training. DPCD
+0x500–0x50B (branch IEEE OUI, device ID string, HW/FW revision) identifies
+vendor and model; 0x000–0x00F gives DPCD revision, max link rate, max lane
+count and TPS3/TPS4 support; 0x080+ the downstream port (HDMI) caps. DPCD
+can't show board wiring (lane order, polarity) or which connector a lane
+reaches; only training results can.
+
+**Reset on unplug/disable (unexplained):** happened only after failed
+training, with the encoder running without a link. No panic, no pstore, no
+journal entry. Series 3+ have lockup/hung-task detectors (report only).
+HDMI stays off by default until a test shows training works.
+
 **Camera.** `\_SB.USB4` (MMIO 0xa200000 = `usb_2`) contains
 `RHUB.PRT0.CAM0` (Windows: USB 13d3:54bf), drives TLMM 7 (GpioIo, pulled up)
 and its PEP entry votes LDO4_B and LDO13_B (eUSB2 repeater supplies) plus
