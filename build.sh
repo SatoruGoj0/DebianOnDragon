@@ -36,6 +36,12 @@ rm -rf "$work/support-deb" "$work/fw-staging"
 # Packages for upgrading an installed system (docs/kernel-upgrade.md).
 cp "$work"/kernel-debs/linux-image-*.deb "$work"/kernel-debs/linux-headers-*.deb \
    "$work"/support-deb/debondragon-support_*_all.deb "$out/"
+# GitHub release assets can't contain "~" (it publishes 7.2.0-3~debondragon
+# as 7.2.0-3.debondragon). Name the files as they will be published, so
+# SHA256SUMS matches the downloads; the package version inside is unchanged.
+for f in "$out"/*~*.deb; do
+	[ -e "$f" ] && mv -f "$f" "${f//\~/.}"
+done
 [ "${PACKAGES_ONLY:-0}" = 1 ] && exit 0
 
 "$here/iso/build-rootfs.sh" "$work"

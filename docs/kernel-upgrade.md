@@ -50,7 +50,7 @@ default. Needs `debondragon-support` 0.2.1 or later.
    It shows `debondragon-kernels>debondragon-7.2.0-debondragon-2`.
 3. **Install the new kernel** (it installs beside the old one):
    ```bash
-   sudo apt install ./linux-image-7.2.0-debondragon-3_7.2.0-3~debondragon_arm64.deb
+   sudo apt install ./linux-image-7.2.0-debondragon-3_*_arm64.deb
    ls /boot/vmlinuz-* /boot/dtb/
    ```
    Both kernels and `debondragon-7.2.0-debondragon-2.dtb` /
@@ -85,6 +85,9 @@ default. Needs `debondragon-support` 0.2.1 or later.
    ```bash
    sha256sum -c --ignore-missing SHA256SUMS
    ```
+   Every `.deb` you downloaded must be listed with `OK`. A file that isn't
+   listed at all was **not** checked (`--ignore-missing` skips names it
+   can't find); don't install it.
 3. Install both in one command (order doesn't matter; the support package
    refreshes the devicetrees and GRUB itself):
    ```bash
