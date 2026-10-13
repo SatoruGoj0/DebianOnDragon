@@ -48,7 +48,7 @@ expect "invalid minimum is rejected" "$?" 1
 # --- GRUB snippet and kernel submenu ----------------------------------------
 # Fake /boot with DebOnDragon kernels; the scripts read /boot/dtb and /boot.
 fakeboot() { # releases...: (re)create $tmp/boot with these kernels
-	rm -rf "$tmp/boot"; mkdir -p "$tmp/boot/dtb"
+	rm -rf "${tmp:?}/boot"; mkdir -p "$tmp/boot/dtb"
 	for r in "$@"; do
 		: > "$tmp/boot/dtb/debondragon-$r.dtb"
 		: > "$tmp/boot/vmlinuz-$r"; : > "$tmp/boot/initrd.img-$r"
