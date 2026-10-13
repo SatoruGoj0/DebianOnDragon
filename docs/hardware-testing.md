@@ -18,12 +18,12 @@ results.
 
 ## Touchpad
 
-**v0.2.0 on hardware:** the touchpad enumerates but gives no input. Its
-interrupt pin, TLMM 3 (copied from the CRD), counted 0 interrupts and
-i2c-hid logged `device did not ack reset within 1000 ms`. Decoding the DSDT
-(`docs/board-notes.md`) puts the touchpad interrupt on **TLMM 19**; kernel
-series 3 (`7.2.0-debondragon-3`) uses it, with the pull-up the DSDT asks for.
-This is the first test on hardware.
+**Working since v0.3.0 (verified on hardware).** Up to v0.2.0 the
+interrupt was on the CRD's TLMM 3, which never fired (`device did not ack
+reset within 1000 ms`, no input). Decoding the DSDT (`docs/board-notes.md`)
+put it on **TLMM 19**; on `7.2.0-debondragon-3` that line counts interrupts
+and libinput reports continuous pointer motion. Use these checks if the
+touchpad stops working after an upgrade.
 
 On `7.2.0-debondragon-3`:
 1. Check the boot log and the interrupt line:
@@ -36,7 +36,7 @@ On `7.2.0-debondragon-3`:
    `msmgpio 19` count must have gone up.
 3. Move the pointer, tap, two-finger scroll, click.
 
-If the count stays at 0, TLMM 19 is wrong as well; send the report.
+If the count stays at 0, send the report.
 
 ## Display brightness
 

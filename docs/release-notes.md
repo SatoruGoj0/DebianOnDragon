@@ -8,15 +8,23 @@ Kernel series `7.2.0-debondragon-3` (Linux v7.2) and `debondragon-support` 0.2.1
 https://github.com/SatoruGoj0/DebianOnDragon/blob/main/docs/kernel-upgrade.md
 ("Test a new kernel once, keeping the current one as default").
 
-## What was confirmed on hardware (v0.2.0 reports)
+## Verified on hardware
 
-Working: boot, internal display and GPU acceleration, brightness control,
-camera, Wi-Fi, keyboard, touchscreen, USB-A, temperature sensors.
-Broken: touchpad (no input), HDMI (black screen; unplugging resets the
-laptop), audio (no UCM profile loaded), brightness at boot (near minimum).
-The EC/fan driver's protocol doesn't match this EC.
+- **Touchpad works** (kernel `7.2.0-debondragon-3`): its interrupt is on
+  TLMM 19, decoded from the DSDT, not the CRD's TLMM 3. Interrupts arrive,
+  libinput reports continuous pointer motion, normal use is fine.
+- Kernel -3 boots; HDMI stays off (`video=HDMI-A-1:d`).
+- Audio: the UCM profile now loads and PulseAudio offers a Headphones sink
+  (was `auto_null`). Sound output itself is **not tested yet**.
+- Confirmed on v0.2.0 and unchanged here: internal display and GPU
+  acceleration, brightness control, camera, Wi-Fi, keyboard, touchscreen,
+  USB-A, temperature sensors (on -3: display up, camera enumerates).
 
-## Changes. Built and checked; **not yet tested on hardware**
+Still broken: HDMI (link training fails; unplugging used to reset the
+laptop, hence off by default). The EC/fan driver's protocol doesn't match
+this EC (driver stays off; the EC runs the fan itself).
+
+## Changes
 
 `debondragon-support` 0.2.1 (works with kernel -2 as well):
 - **HDMI off by default** (`video=HDMI-A-1:d`), so the failing link is
@@ -24,17 +32,16 @@ The EC/fan driver's protocol doesn't match this EC.
   `DEBONDRAGON_HDMI=on` in `/etc/default/debondragon`, only to test a fix.
 - **Brightness**: saved once a minute when it changed and restored exactly
   at boot; without a saved level, at least `DEBONDRAGON_MIN_BRIGHTNESS`
-  (30%).
-- **Audio profile**: installed under the card's long name, which is what
-  ALSA looks up (the short name is cut to 31 characters). Loads on the real
-  card: HiFi with Headphones, Headset mic, internal Mic. Speakers stay off.
+  (30%). Restore across a reboot not yet confirmed.
+- **Audio profile** under the card's long name, which is what ALSA looks up
+  (the short name is cut to 31 characters). Speakers stay off.
 - **`DEBONDRAGON_DEFAULT_KERNEL`** pins GRUB's default to one kernel with
   its own devicetree, so a new kernel can be tried once with `grub-reboot`.
 
 Kernel `7.2.0-debondragon-3`:
 - **Touchpad interrupt on TLMM 19** (was the CRD's TLMM 3, which never
   fired), level-low with pull-up, decoded from the DSDT
-  (`docs/board-notes.md`).
+  (`docs/board-notes.md`). **Verified on hardware.**
 - **Absent PMIC (SPMI SID 0xa) disabled**: stops a failing probe and its
   boot WARNING. No working device used it.
 - **`/dev/drm_dp_auxN`** (read-only HDMI diagnostics) and **lockup / hung
