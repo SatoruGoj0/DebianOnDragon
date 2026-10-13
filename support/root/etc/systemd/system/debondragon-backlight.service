@@ -1,0 +1,9 @@
+[Unit]
+Description=DebOnDragon restore panel brightness
+Documentation=file:///etc/default/debondragon
+After=systemd-backlight@backlight:backlight.service
+ConditionPathExists=/sys/class/backlight/backlight
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/debondragon-backlight restore

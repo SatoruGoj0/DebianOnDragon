@@ -20,13 +20,25 @@ else
 fi
 boot_device=$(${grub_probe} --target=device /boot)
 
+pin=${DEBONDRAGON_DEFAULT_KERNEL:-}
+if [ -n "$pin" ]; then
+	if [ -f "/boot/vmlinuz-$pin" ] && [ -f "/boot/initrd.img-$pin" ] &&
+	   [ -f "/boot/dtb/debondragon-$pin.dtb" ]; then
+		echo "DebOnDragon default kernel: $pin" >&2
+	else
+		echo "WARNING: DEBONDRAGON_DEFAULT_KERNEL=$pin is not fully installed; GRUB falls back to the first entry" >&2
+	fi
+fi
+
+# The ids are stable, for GRUB_DEFAULT and grub-reboot:
+#   debondragon-kernels>debondragon-<release>
 echo "Adding DebOnDragon kernel entries" >&2
-echo "submenu 'DebOnDragon kernels (each with its own devicetree)' {"
+echo "submenu 'DebOnDragon kernels (each with its own devicetree)' --id debondragon-kernels {"
 for release in $releases; do
 	kernel=/boot/vmlinuz-$release
 	initrd=/boot/initrd.img-$release
 	[ -f "$kernel" ] && [ -f "$initrd" ] || continue
-	echo "	menuentry 'Debian, Linux $release + its devicetree' {"
+	echo "	menuentry 'Debian, Linux $release + its devicetree' --id debondragon-$release {"
 	prepare_grub_to_access_device "$boot_device" | sed 's/^/		/'
 	echo "		devicetree $(make_system_path_relative_to_its_root "/boot/dtb/debondragon-$release.dtb")"
 	echo "		linux $(make_system_path_relative_to_its_root "$kernel") root=$root ro $GRUB_CMDLINE_LINUX $GRUB_CMDLINE_LINUX_DEFAULT"

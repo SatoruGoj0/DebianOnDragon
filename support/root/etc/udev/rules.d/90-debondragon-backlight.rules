@@ -1,0 +1,3 @@
+# Restore the DebOnDragon brightness once the panel backlight exists,
+# after systemd-backlight has restored the saved level.
+ACTION=="add", SUBSYSTEM=="backlight", KERNEL=="backlight", TAG+="systemd", ENV{SYSTEMD_WANTS}+="debondragon-backlight.service"

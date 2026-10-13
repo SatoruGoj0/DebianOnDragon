@@ -20,7 +20,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  checks:
+    # Fast checks in the same Debian release the packages target: shellcheck,
+    # UCM include paths against Debian's alsa-ucm-conf, support package tests.
+    runs-on: ubuntu-24.04-arm
+    container: debian:trixie
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends shellcheck alsa-ucm-conf
+      - name: Shell syntax and shellcheck
+        run: scripts/lint.sh
+      - name: UCM include paths
+        run: scripts/check-ucm.sh /usr/share/alsa/ucm2
+      - name: debondragon-support behaviour tests
+        run: scripts/test-support.sh
+
   build:
+    needs: checks
     # Native arm64: the root filesystem is assembled with chroot.
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 300

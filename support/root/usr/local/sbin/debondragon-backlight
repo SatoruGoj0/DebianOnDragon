@@ -1,0 +1,58 @@
+#!/bin/sh
+# Keep the panel brightness across boots, including hard resets.
+#
+#   debondragon-backlight restore  at boot, after systemd-backlight: set the
+#                                  level last saved here, exactly; with no
+#                                  saved level yet, raise the level to
+#                                  DEBONDRAGON_MIN_BRIGHTNESS percent if lower
+#   debondragon-backlight save     store the current level (only if changed)
+#
+# systemd-backlight saves only at a clean shutdown, so a session that ends in
+# a hard reset loses its brightness, and systemd clamps what it restores to
+# at least 5% (204/4095 here), which is why the 83N3 kept starting near the
+# minimum. "save" runs every minute from debondragon-backlight-save.timer
+# and writes only when the level changed. A saved level is restored as is,
+# also when it is low on purpose; the minimum applies only without one.
+set -eu
+[ -r /etc/default/debondragon ] && . /etc/default/debondragon
+
+dev=${DEBONDRAGON_BACKLIGHT:-backlight}
+sys=/sys/class/backlight/$dev
+state=/var/lib/debondragon/backlight-$dev
+[ -d "$sys" ] || exit 0
+max=$(cat "$sys/max_brightness")
+cur=$(cat "$sys/brightness")
+
+case ${1:-} in
+restore)
+	saved=$(cat "$state" 2>/dev/null || true)
+	case $saved in ''|*[!0-9]*) saved=0 ;; esac
+	if [ "$saved" -gt 0 ] && [ "$saved" -le "$max" ]; then
+		[ "$saved" = "$cur" ] && exit 0
+		echo "debondragon-backlight: restoring $dev to $saved (saved level)"
+		echo "$saved" > "$sys/brightness"
+		exit 0
+	fi
+	pct=${DEBONDRAGON_MIN_BRIGHTNESS:-30}
+	case $pct in ''|*[!0-9]*) echo "DEBONDRAGON_MIN_BRIGHTNESS must be 0-100" >&2; exit 1 ;; esac
+	[ "$pct" -gt 100 ] && pct=100
+	min=$((max * pct / 100))
+	if [ "$cur" -lt "$min" ]; then
+		echo "debondragon-backlight: no saved level; raising $dev from $cur to $min ($pct%)"
+		echo "$min" > "$sys/brightness"
+	fi
+	;;
+save)
+	# 0 means the panel was switched off on purpose; don't make it the
+	# level the next boot starts with.
+	[ "$cur" -gt 0 ] || exit 0
+	[ "$(cat "$state" 2>/dev/null || true)" = "$cur" ] && exit 0
+	mkdir -p "${state%/*}"
+	echo "$cur" > "$state.new"
+	mv "$state.new" "$state"
+	;;
+*)
+	echo "usage: $0 restore|save" >&2
+	exit 2
+	;;
+esac

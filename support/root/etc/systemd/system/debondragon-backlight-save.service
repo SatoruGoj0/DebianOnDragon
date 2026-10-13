@@ -1,0 +1,8 @@
+[Unit]
+Description=DebOnDragon save panel brightness
+After=debondragon-backlight.service
+ConditionPathExists=/sys/class/backlight/backlight
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/debondragon-backlight save

@@ -28,6 +28,7 @@ Working.
 |---|---|
 | **Working** | Verified on the 83N3 hardware |
 | **Partial** | Works on hardware with known gaps |
+| **Not working** | Tested on hardware and broken |
 | **Experimental** | Implemented and compiled from hardware evidence, **not yet tested on hardware** |
 | **Unsupported** | Not implemented (or deliberately disabled) |
 
@@ -40,13 +41,13 @@ Working.
 | Touchscreen (ELAN 04F3:43B8) | **Working** | v0.1.0 | Reported working |
 | Wi-Fi (WCN7850, ath12k) | **Working** | v0.1.0 | Reported working |
 | Bluetooth (WCN7850) | **Partial** | v0.1.0 | Firmware loads and the controller initialises (boot log); pairing not yet tested |
-| Touchpad (ELAN 04F3:327E) | **Experimental** | v0.2.0 | Malfunctioned up to v0.1.4: IRQ line had no pull-up and floated low (`incomplete report` floods). v0.2.0 adds the pull-up the DSDT declares |
-| Display brightness | **Experimental** | v0.2.0 | v0.1.1–v0.1.4 drove an unconnected PWM. v0.2.0 uses pmk8550 PWM on PMK8550 GPIO 5, the pin the display owns in the DSDT and firmware leaves in PWM mode |
-| HDMI | **Experimental** | v0.2.0 | DSDT: GPIO 126 is the display's hot-plug event, DP2 is a fixed-lane link, third USB-C controller disabled → DP2 → DP-to-HDMI bridge |
-| Internal camera (USB 13d3:54bf) | **Experimental** | v0.2.0 | DSDT: camera on usb_2 behind an eUSB2 repeater (reset GPIO 7), same design as the Lenovo ThinkBook 16 |
-| Fan / EC thermal control | **Experimental, off by default** | v0.2.0 | EC at i2c5 0x76 matches the upstream `qcom-hamoa-ec` write protocol; interrupt pin inferred. Driver blacklisted until `debondragon-ec-check` confirms it (see testing doc). The EC's own fan control works without it |
-| SoC temperature sensors | **Experimental** | v0.1.0 | tsens built in; not yet checked on hardware |
-| Headphones, headset mic, internal mics | **Experimental** | v0.2.0 | WCD9385 headset codec (reset TLMM 191 held by firmware, as on the CRD) + VA DMICs; own card name with packaged DSP topology and UCM profile. Needs the ADSP firmware (`debondragon-firmware`) |
+| Touchpad (ELAN 04F3:327E) | **Not working** | — | v0.2.0 on hardware: enumerates, but no input. Its interrupt never fires on TLMM 3 (`did not ack reset`). DSDT decoding points to TLMM 19; fix planned for kernel series 3 (see board notes) |
+| Display brightness | **Partial** | v0.2.0 | Adjusting works on hardware. Started at minimum after every boot: systemd-backlight restored a stale 204/4095 (its 5% floor) because hard resets skip the save. support 0.2.1 saves the level once a minute when it changed and restores it exactly; without a saved level it starts at `DEBONDRAGON_MIN_BRIGHTNESS` (default 30%) |
+| HDMI | **Not working, off by default** | — | v0.2.0 on hardware: hot-plug and EDID work, but DisplayPort link training to the HDMI converter fails (black screen, endless vblank timeouts), and unplugging or disabling the output resets the laptop. support 0.2.1 disables the connector (`video=HDMI-A-1:d`, `DEBONDRAGON_HDMI`) until this is fixed |
+| Internal camera (USB 13d3:54bf) | **Working** | v0.2.0 | Reported working on hardware (UVC on usb_2 behind the PTN3222 repeater) |
+| Fan / EC thermal control | **Unsupported, off** | — | `debondragon-ec-check` on hardware: version reads, but fan count and thermal capabilities return 0. Those commands (0x0E, 0x42) aren't in this EC's ACPI command map, so the `qcom-hamoa-ec` protocol doesn't match. Driver stays blacklisted; the EC controls the fan by itself |
+| SoC temperature sensors | **Working** | v0.1.0 | CPU/GPU/PMIC zones read 37–40 °C on hardware |
+| Headphones, headset mic, internal mics | **Experimental** | v0.2.1 | Card and codecs come up on hardware, but v0.2.0's UCM profile never loaded: ALSA cuts the card name to 31 characters, so it matched no file (`alsaucm`: empty configuration). support 0.2.1 installs it under the card's long name; the profile now loads (HiFi: Headphones, Headset, Mic). Sound output not yet tested |
 | Internal speakers | **Experimental, opt-in** | v0.2.0 | Windows config: one amp group on SoundWire 0. Separate `-speakers` devicetree with 2× WSA884x (ThinkBook/T14s layout) and the upstream two-speaker UCM. Off by default: no speaker protection on Linux |
 | USB-A ports (2, multiport controller) | **Working** | v0.1.0 | Both ports used on hardware (mouse, install stick); USB 3 lanes enabled, speed not yet measured |
 | USB-C ports (2, `usb_1_ss0/ss1`) | **Untested** | v0.1.0 | Host controllers come up with SuperSpeed (boot log); orientation/role switching needs the ADSP firmware |

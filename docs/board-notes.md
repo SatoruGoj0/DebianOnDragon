@@ -18,13 +18,30 @@ ACPI names QUP instances 1-based, Linux 0-based. The MMIO base pins it down.
 | ACPI device | Bus (ACPI → base → Linux) | Addr | Device | IRQ GPIO |
 |---|---|---|---|---|
 | ECKB `QTEC0001` | IC10 → 0xa84000 → `i2c9` | 0x3a | keyboard (HID) | 0x180 → TLMM 67 |
-| TCPD `ELAN06FA` | IC20 → 0x88c000 → `i2c19` | 0x15 | touchpad (HID) | 0x3c0 → TLMM 3 |
+| TCPD `ELAN06FA` | IC20 → 0x88c000 → `i2c19` | 0x15 | touchpad (HID) | 0x3c0 → **TLMM 19** (not 3, see below) |
 | TSC1 `ELAN901C` | I2C9 → 0xa80000 → `i2c8` | 0x10 | touchscreen (HID) | 0x33 → TLMM 51 |
 | UCS0 | I2C2/I2C4/I2C8 → `i2c1`/`i2c3`/`i2c7` | 0x08 | USB-C retimers (CRD layout) | |
 
-The keyboard/touchpad interrupt values above 0xff are Windows' wake-capable
-GPIO encoding. Every upstream X1 laptop uses TLMM 67 and TLMM 3 for these same
-devices, and the touchscreen's 0x33 = 51 matches directly. The CRD puts
+GpioInt pin values of 0x100 and up are not TLMM numbers. They are
+`0x40 × n`, where n indexes the `Interrupt` list in `\_SB.GIO0._CRS`; that
+interrupt's GIC SPI maps to a TLMM pin through `GIO0.CIPR` (returned by the
+PDC `_DSM`, entries `{PDC index, TLMM pin, SPI}`, identical to the kernel's
+`x1e80100_pdc_map`). Decoded:
+
+| Pin value | `_CRS` # | SPI | TLMM | User |
+|---|---|---|---|---|
+| 0x100 | 4 | 0x256 | 71 | |
+| 0x140 | 5 | 0x2f8 | 66 | EC (`_AEI`) |
+| 0x180 | 6 | 0x253 | 67 | keyboard ✓ (interrupts seen on hardware) |
+| 0x1c0 | 7 | 0x293 | 193 | |
+| 0x200–0x300 | 8–12 | | 145, 148, 151, 154, 157 | |
+| 0x340 | 13 | 0x2f4 | 92 | lid (`_AEI`) |
+| 0x380 | 14 | 0x252 | 59 | |
+| 0x3c0 | 15 | 0x240 | **19** | touchpad |
+
+Keyboard (67), lid (92) and EC (66) agree with what the upstream X1 laptops
+use, which confirms the decoding; the touchpad does **not** use TLMM 3 here.
+The touchscreen's 0x33 = 51 is a plain TLMM number. The CRD puts
 keyboard and touchpad on `i2c0`; the 83N3 does not use `i2c0` at all.
 
 The DSDT picks one of four touchpads (ELAN 0x15, Synaptics 0x2c, FocalTech
@@ -89,6 +106,19 @@ floods. TLMM 3 read `in low, no pull`: the active-low IRQ line was asserted
 permanently. The DSDT declares the IRQ `GpioInt(Level, ActiveLow, ..., PullUp)`
 and the ThinkBook 16 (same ELAN06FA) uses `bias-pull-up`; the CRD state I
 inherited has `bias-disable`. Fix: pull-up on `tpad_default`.
+
+v0.2.0 on hardware: no `incomplete report` any more, but no input either.
+TLMM 3 (now pulled up) counted **0** interrupts while the keyboard and
+touchscreen counted theirs, i2c-hid logged `device did not ack reset within
+1000 ms` (the reset ack is an interrupt), and sampling every TLMM input
+while touching showed no pin changing. The ≤ v0.1.4 floods were TLMM 3
+floating, not the touchpad. Decoding 0x3c0 (above) gives TLMM 19, which
+firmware leaves `in, no pull`. TLMM 19 did not change during the sampling
+either; it differed only between two snapshots taken in different boots
+(low, then high). That fits a line nobody pulls up, and a touchpad that
+never finished its reset handshake, but it is not proof. Fix to test
+(kernel series 3): interrupt on TLMM 19 with `bias-pull-up`, as the DSDT's
+`PullUp` says.
 
 **Backlight.** The PEP table of the display device `\_SB.GPU0` configures
 PMC8380 GPIO 4 (backlight enable) and PMK8550 GPIO 5. Firmware leaves PMK8550

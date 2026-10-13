@@ -14,6 +14,10 @@ pkg=$(mktemp -d)
 trap 'rm -rf "$pkg"' EXIT
 
 cp -a "$here/support/root/." "$pkg/"
+# Set modes explicitly: a checkout on NTFS (e.g. built from WSL or a dual
+# boot) shows every file as executable, and systemd warns about that.
+find "$pkg" -type d -exec chmod 755 {} +
+find "$pkg" -type f -exec chmod 644 {} +
 chmod 755 "$pkg"/usr/local/sbin/* "$pkg"/etc/grub.d/* \
           "$pkg"/etc/kernel/postinst.d/* "$pkg"/etc/kernel/postrm.d/*
 
@@ -41,8 +45,10 @@ Description: Lenovo IdeaPad Slim 3 15Q8X10 (83N3) boot integration and tools
  Keeps one devicetree per DebOnDragon kernel in /boot/dtb, loads it from
  GRUB (default entries use the newest kernel's devicetree; a "DebOnDragon
  kernels" submenu boots any installed kernel with its own), sets the kernel
- command line the 83N3 needs, and installs debondragon-firmware,
- debondragon-report, debondragon-ec-check and debondragon-bootlog.
+ command line the 83N3 needs (HDMI off until it works), keeps the panel
+ brightness across boots and hard resets, selects the 83N3 audio profile,
+ and installs debondragon-firmware, debondragon-report,
+ debondragon-ec-check and debondragon-bootlog.
 EOF
 
 # Files users are expected to edit keep their changes across upgrades.
@@ -60,9 +66,23 @@ if [ "$1" = configure ]; then
 		update-grub
 	fi
 	systemctl daemon-reload 2>/dev/null || true
+	systemctl enable debondragon-backlight-save.timer 2>/dev/null || true
+	if [ -d /run/systemd/system ]; then
+		udevadm control --reload 2>/dev/null || true
+		systemctl start debondragon-backlight-save.timer 2>/dev/null || true
+	fi
 fi
 EOF
 chmod 755 "$pkg/DEBIAN/postinst"
+
+cat > "$pkg/DEBIAN/prerm" <<'EOF'
+#!/bin/sh
+set -e
+if [ "$1" = remove ]; then
+	systemctl disable --now debondragon-backlight-save.timer 2>/dev/null || true
+fi
+EOF
+chmod 755 "$pkg/DEBIAN/prerm"
 
 mkdir -p "$out"
 dpkg-deb --root-owner-group -b "$pkg" "$out/debondragon-support_${SUPPORT_VERSION}_all.deb"
