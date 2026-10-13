@@ -176,8 +176,28 @@ speaker sequences. The opt-in `-speakers` board adds two WSA884x on swr0
 `scripts/check-ucm.sh` checks every UCM include against Debian's
 alsa-ucm-conf.
 
+**smb2360 PMICs (v0.2.0 boot log).** The CRD has three smb2360 at SPMI
+SIDs 0x7, 0xa and 0xb, each with the eUSB2 repeater of one USB-C port. On
+the 83N3, SIDs 0x7 and 0xb answer and their repeaters bind; SID 0xa fails
+(`0xa 0x104: transaction failed`, `pmic-spmi 1-0a` error -5, with a
+WARNING). The CRD gives SID 0xa's repeater to `usb_1_ss1_hsphy` (second
+USB-C port, USB 2.0), so `fd9000.phy` and `a800000.usb` have never probed
+here. Kernel series 3 disables the SID 0xa node; that only stops the failing
+probe (the phy core returns -EPROBE_DEFER for an unregistered provider, so
+the port keeps deferring as before). Windows' PEP table for `\_SB.USB1`
+votes LDO14_B and LDO3_D, the CRD's supplies for the SID 0xa repeater, so it
+doesn't say which PMIC the repeater is on. Two answering smb2360 for two
+USB-C ports suggests SID 0xb; unverified.
+
+The CRD's USB-C retimers for ports 0 and 1 (`ps883x` at 0x08) don't answer
+either (-6; the ss2 one is already removed), which keeps
+`pmic_glink_altmode` waiting ("failed to acquire retimer-switch for port:
+0"); USB-C alt mode stays unsupported.
+
 ## Open questions
 
 - Confirm the backlight PWM channel on hardware (see above).
-- Exact USB-C/USB-A port mapping and whether every CRD retimer is populated.
+- Second USB-C port: is its eUSB2 repeater the smb2360 at SID 0xb?
+- Exact USB-C/USB-A port mapping and whether every CRD retimer is populated
+  (none of the three answered on hardware).
 - Speaker amplifier type and count.

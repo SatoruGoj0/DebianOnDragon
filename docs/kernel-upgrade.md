@@ -25,6 +25,58 @@ GRUB uses them like this:
 - **DebOnDragon kernels (each with its own devicetree)**: one entry per
   installed kernel, each with *its own* devicetree. Use this to roll back.
 
+## Test a new kernel once, keeping the current one as default (recommended)
+
+Use this for any kernel that hasn't been confirmed on hardware yet. The
+example installs `7.2.0-debondragon-3` while `7.2.0-debondragon-2` stays the
+default. Needs `debondragon-support` 0.2.1 or later.
+
+1. **Install the support package alone**, reboot once, and check that the
+   current kernel still works as before:
+   ```bash
+   sudo apt install ./debondragon-support_0.2.1_all.deb
+   ```
+2. **Pin the known-good kernel** as the GRUB default:
+   ```bash
+   sudo sed -i '/^DEBONDRAGON_DEFAULT_KERNEL=/d' /etc/default/debondragon
+   echo 'DEBONDRAGON_DEFAULT_KERNEL=7.2.0-debondragon-2' | sudo tee -a /etc/default/debondragon
+   sudo update-grub
+   ```
+   `update-grub` must print `DebOnDragon default kernel: 7.2.0-debondragon-2`.
+   Check:
+   ```bash
+   sudo grep -m1 'set default=' /boot/grub/grub.cfg
+   ```
+   It shows `debondragon-kernels>debondragon-7.2.0-debondragon-2`.
+3. **Install the new kernel** (it installs beside the old one):
+   ```bash
+   sudo apt install ./linux-image-7.2.0-debondragon-3_7.2.0-3~debondragon_arm64.deb
+   ls /boot/vmlinuz-* /boot/dtb/
+   ```
+   Both kernels and `debondragon-7.2.0-debondragon-2.dtb` /
+   `debondragon-7.2.0-debondragon-3.dtb` must be there, and `update-grub` must
+   still print `DebOnDragon default kernel: 7.2.0-debondragon-2`.
+4. **Boot the new kernel once:**
+   ```bash
+   sudo grub-reboot 'debondragon-kernels>debondragon-7.2.0-debondragon-3'
+   sudo reboot
+   ```
+   GRUB clears this request as it boots, so the boot after it is the pinned
+   kernel again. If the new kernel hangs or the screen stays dark, hold the
+   power button for 10 seconds and switch on again: you're back on -2.
+5. **After the test boot**, check `uname -r` (`7.2.0-debondragon-3`) and that
+   the one-time request was used up:
+   ```bash
+   sudo grub-editenv list
+   ```
+   `next_entry` must be empty or absent.
+6. **Make it the default** only once it has proved itself:
+   ```bash
+   sudo sed -i 's/^DEBONDRAGON_DEFAULT_KERNEL=.*/DEBONDRAGON_DEFAULT_KERNEL=7.2.0-debondragon-3/' /etc/default/debondragon
+   sudo update-grub
+   ```
+   Keep -2 installed as the rollback.
+
 ## Upgrade
 
 1. Download from the [Releases page](https://github.com/SatoruGoj0/DebianOnDragon/releases)

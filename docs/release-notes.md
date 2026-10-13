@@ -1,29 +1,52 @@
-## debondragon-support 0.2.1 (installed systems; no new kernel)
+# DebOnDragon v0.3.0
 
-Fixes from hardware testing of v0.2.0. Install with
-`sudo apt install ./debondragon-support_0.2.1_all.deb` (it runs
-`update-grub` itself), then reboot once. Both installed kernels
-stay as they are.
+For the Lenovo IdeaPad Slim 3 15Q8X10 (83N3, Snapdragon X X1-26-100).
+Kernel series `7.2.0-debondragon-3` (Linux v7.2) and `debondragon-support` 0.2.1.
 
-- **HDMI off by default** (`video=HDMI-A-1:d` on the kernel command line).
-  On v0.2.0, DisplayPort link training to the HDMI converter fails, the
-  screen stays black, and unplugging the cable or disabling the output
-  resets the laptop. Set `DEBONDRAGON_HDMI=on` in `/etc/default/debondragon`
-  only to test a fix.
-- **Brightness kept across boots**: saved once a minute when it changed
-  (hard resets used to lose it, and systemd then restored its 5% floor,
-  204/4095) and restored exactly at boot, so a deliberately low level stays
-  low. Only without a saved level is it raised to at least
-  `DEBONDRAGON_MIN_BRIGHTNESS` percent (default 30).
-- **Default kernel can be pinned** (`DEBONDRAGON_DEFAULT_KERNEL`): GRUB then
-  boots that kernel with its own devicetree by default, so a newer test
-  kernel can be tried once with `grub-reboot` without becoming the default.
-- **Audio profile loads**: ALSA cuts the card name to 31 characters, so
-  v0.2.0's UCM file matched nothing. 0.2.1 adds it under the card's long
-  name. Headphones, headset mic and internal mics; speakers stay off.
+**Installed system: don't reinstall.** The new kernel installs **beside**
+7.2.0-debondragon-2. Test it once without changing the default:
+https://github.com/SatoruGoj0/DebianOnDragon/blob/main/docs/kernel-upgrade.md
+("Test a new kernel once, keeping the current one as default").
 
-Still open: touchpad (interrupt pin, kernel series 3), HDMI link training,
-EC/fan driver (protocol mismatch, stays off).
+## What was confirmed on hardware (v0.2.0 reports)
+
+Working: boot, internal display and GPU acceleration, brightness control,
+camera, Wi-Fi, keyboard, touchscreen, USB-A, temperature sensors.
+Broken: touchpad (no input), HDMI (black screen; unplugging resets the
+laptop), audio (no UCM profile loaded), brightness at boot (near minimum).
+The EC/fan driver's protocol doesn't match this EC.
+
+## Changes. Built and checked; **not yet tested on hardware**
+
+`debondragon-support` 0.2.1 (works with kernel -2 as well):
+- **HDMI off by default** (`video=HDMI-A-1:d`), so the failing link is
+  never enabled and there is nothing to tear down. Reversible:
+  `DEBONDRAGON_HDMI=on` in `/etc/default/debondragon`, only to test a fix.
+- **Brightness**: saved once a minute when it changed and restored exactly
+  at boot; without a saved level, at least `DEBONDRAGON_MIN_BRIGHTNESS`
+  (30%).
+- **Audio profile**: installed under the card's long name, which is what
+  ALSA looks up (the short name is cut to 31 characters). Loads on the real
+  card: HiFi with Headphones, Headset mic, internal Mic. Speakers stay off.
+- **`DEBONDRAGON_DEFAULT_KERNEL`** pins GRUB's default to one kernel with
+  its own devicetree, so a new kernel can be tried once with `grub-reboot`.
+
+Kernel `7.2.0-debondragon-3`:
+- **Touchpad interrupt on TLMM 19** (was the CRD's TLMM 3, which never
+  fired), level-low with pull-up, decoded from the DSDT
+  (`docs/board-notes.md`).
+- **Absent PMIC (SPMI SID 0xa) disabled**: stops a failing probe and its
+  boot WARNING. No working device used it.
+- **`/dev/drm_dp_auxN`** (read-only HDMI diagnostics) and **lockup / hung
+  task detectors** (report only, never reboot). HDMI link training is
+  **not** fixed yet.
+- USB tethering drivers (RNDIS, ipheth).
+
+EC/fan driver: still blacklisted.
+
+---
+
+Previous release (v0.2.0):
 
 DebOnDragon for the Lenovo IdeaPad Slim 3 15Q8X10 (83N3, Snapdragon X X1-26-100).
 Linux v7.2 kernel series `7.2.0-debondragon-2`.

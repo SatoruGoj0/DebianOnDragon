@@ -16,6 +16,15 @@ need() { # option, y|m, reason
 	esac
 }
 
+forbid() { # option, reason: must be unset, "n" or 0
+	local v
+	v=$(grep -E "^$1=" "$cfg" | cut -d= -f2)
+	case "$v" in
+	''|n|0) printf 'ok   %-28s %-2s %s\n' "$1" "${v:-unset}" "$2" ;;
+	*) printf 'FAIL %-28s %-2s %s (must be off)\n' "$1" "$v" "$2"; fail=1 ;;
+	esac
+}
+
 # Boot path
 need CONFIG_EFI_ZBOOT            y "GRUB 2.12 only boots PE kernel images"
 need CONFIG_PCIE_QCOM            y "NVMe root on pcie6a"
@@ -54,6 +63,18 @@ need CONFIG_SND_SOC_WSA884X      m "speaker amps (-speakers)"
 # Thermal and fan
 need CONFIG_QCOM_TSENS           y "SoC temperature sensors"
 need CONFIG_EC_QCOM_HAMOA        m "EC at i2c5 0x76 (fan)"
+# Phone USB tethering
+need CONFIG_USB_NET_RNDIS_HOST   m "Android USB tethering"
+need CONFIG_USB_IPHETH           m "iPhone USB tethering"
+# HDMI and crash diagnostics (series 3): report, never reboot by themselves
+need CONFIG_DRM_DISPLAY_DP_AUX_CHARDEV y "read the HDMI converter's DPCD"
+need CONFIG_SOFTLOCKUP_DETECTOR  y "report stuck CPUs"
+need CONFIG_HARDLOCKUP_DETECTOR  y "report CPUs stuck with IRQs off"
+need CONFIG_DETECT_HUNG_TASK     y "report hung tasks"
+forbid CONFIG_BOOTPARAM_SOFTLOCKUP_PANIC "no panic on soft lockup"
+forbid CONFIG_BOOTPARAM_HARDLOCKUP_PANIC "no panic on hard lockup"
+forbid CONFIG_BOOTPARAM_HUNG_TASK_PANIC  "no panic on hung task"
+forbid CONFIG_PANIC_ON_OOPS              "an oops must not reboot"
 # Wi-Fi, Bluetooth
 need CONFIG_ATH12K               m "WCN7850 Wi-Fi"
 need CONFIG_BT_QCA               m "WCN7850 Bluetooth"

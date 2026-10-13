@@ -322,6 +322,10 @@
 /*
  * DSDT: TCPD on \_SB.IC20 (0x88c000), GpioInt 0x3c0. The DSDT selects one
  * of four touchpad vendors at runtime; this unit has ELAN06FA at 0x15.
+ * GpioInt 0x3c0 is GIO0 interrupt #15 (0x3c0 / 0x40), SPI 0x240, which
+ * GIO0.CIPR maps to TLMM 19 (decoding in docs/board-notes.md; it gives the
+ * known pins for the keyboard, lid and EC). Up to kernel series 2 this used
+ * the CRD's TLMM 3, which never saw an interrupt on hardware.
  */
 &i2c19 {
 	clock-frequency = <400000>;
@@ -337,7 +341,7 @@
 		reg = <0x15>;
 
 		hid-descr-addr = <0x1>;
-		interrupts-extended = <&tlmm 3 IRQ_TYPE_LEVEL_LOW>;
+		interrupts-extended = <&tlmm 19 IRQ_TYPE_LEVEL_LOW>;
 
 		vdd-supply = <&vreg_misc_3p3>;
 		vddl-supply = <&vreg_l12b_1p2>;
@@ -351,7 +355,7 @@
 		reg = <0x2c>;
 
 		hid-descr-addr = <0x20>;
-		interrupts-extended = <&tlmm 3 IRQ_TYPE_LEVEL_LOW>;
+		interrupts-extended = <&tlmm 19 IRQ_TYPE_LEVEL_LOW>;
 
 		vdd-supply = <&vreg_misc_3p3>;
 		vddl-supply = <&vreg_l12b_1p2>;
@@ -365,7 +369,7 @@
 		reg = <0x38>;
 
 		hid-descr-addr = <0x1>;
-		interrupts-extended = <&tlmm 3 IRQ_TYPE_LEVEL_LOW>;
+		interrupts-extended = <&tlmm 19 IRQ_TYPE_LEVEL_LOW>;
 
 		vdd-supply = <&vreg_misc_3p3>;
 		vddl-supply = <&vreg_l12b_1p2>;
@@ -379,7 +383,7 @@
 		reg = <0x5d>;
 
 		hid-descr-addr = <0x1>;
-		interrupts-extended = <&tlmm 3 IRQ_TYPE_LEVEL_LOW>;
+		interrupts-extended = <&tlmm 19 IRQ_TYPE_LEVEL_LOW>;
 
 		vdd-supply = <&vreg_misc_3p3>;
 		vddl-supply = <&vreg_l12b_1p2>;
@@ -513,13 +517,14 @@
 };
 
 /*
- * Touchpad interrupt: the DSDT declares it GpioInt(Level, ActiveLow, ...,
- * PullUp), and the ThinkBook 16 (same ELAN06FA) uses bias-pull-up. The CRD
- * state has bias-disable; on this board the line then floats low ("gpio3:
- * in low no pull" in the v0.1.4 report), the IRQ stays asserted and
- * i2c-hid reads empty reports ("incomplete report (31/255)").
+ * Touchpad interrupt on TLMM 19, as the DSDT declares it:
+ * GpioInt(Level, ActiveLow, ..., PullUp). Firmware leaves TLMM 19 as an
+ * input without pull, so the pull-up has to come from here. (TLMM 3, the
+ * CRD's pin, is not connected to the touchpad: without a pull it floated
+ * and produced "incomplete report" floods, with one it never fired.)
  */
 &tpad_default {
+	pins = "gpio19";
 	/delete-property/ bias-disable;
 	bias-pull-up;
 };
@@ -533,6 +538,21 @@
 };
 
 &usb_1_ss2_hsphy {
+	status = "disabled";
+};
+
+/*
+ * No PMIC answers at SPMI SID 0xa: its probe fails at boot ("0xa 0x104:
+ * transaction failed", pmic-spmi 1-0a error -5) with a WARNING. SIDs 0x7
+ * and 0xb (the other two smb2360) answer and bind. The CRD wires
+ * usb_1_ss1_hsphy (second USB-C port, USB 2.0 side) to the eUSB2 repeater
+ * in this absent PMIC, so that PHY and a800000.usb have never probed on
+ * this laptop. Disabling the node changes nothing for them (the repeater
+ * PHY still never registers, so they keep deferring); it only stops the
+ * failing probe. The port's real repeater is probably the smb2360 at
+ * SID 0xb (two smb2360 for two USB-C ports), but that is unverified.
+ */
+&smb2360_1 {
 	status = "disabled";
 };
 

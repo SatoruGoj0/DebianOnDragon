@@ -4,8 +4,8 @@ The README's support matrix only marks a component **Working** once it has
 been seen working on the laptop. This page lists the tests for each
 **Experimental** item and what to send back.
 
-Run every test on the **new** kernel (`uname -r` shows `7.2.0-debondragon-2`
-or later). When done, collect everything with:
+Run every test on the **new** kernel (`uname -r` shows `7.2.0-debondragon-3`
+for the touchpad; the brightness and audio tests work on -2 with support 0.2.1). When done, collect everything with:
 
 ```bash
 sudo debondragon-report
@@ -18,46 +18,56 @@ results.
 
 ## Touchpad
 
-**Bug in ≤ v0.1.4:** the touchpad interrupt line had no pull-up, so it floated
-low and the driver read empty reports nonstop (`incomplete report (31/255)` in
-`dmesg`). v0.2.0 enables the pull-up that the DSDT declares.
+**v0.2.0 on hardware:** the touchpad enumerates but gives no input. Its
+interrupt pin, TLMM 3 (copied from the CRD), counted 0 interrupts and
+i2c-hid logged `device did not ack reset within 1000 ms`. Decoding the DSDT
+(`docs/board-notes.md`) puts the touchpad interrupt on **TLMM 19**; kernel
+series 3 (`7.2.0-debondragon-3`) uses it, with the pull-up the DSDT asks for.
+This is the first test on hardware.
 
-1. Move the pointer, tap, two-finger scroll, click.
-2. Check:
+On `7.2.0-debondragon-3`:
+1. Check the boot log and the interrupt line:
    ```bash
-   sudo dmesg | grep -c 'incomplete report'      # expect 0
-   sudo cat /sys/kernel/debug/gpio | grep ' gpio3 '   # expect "in high ... pull up"
+   sudo dmesg | grep -E '0-0015|04F3:327E'      # no "did not ack reset"
+   grep hid-over-i2c /proc/interrupts            # touchpad line: "msmgpio 19"
+   sudo cat /sys/kernel/debug/gpio | grep ' gpio19 '   # "in high ... pull up"
    ```
+2. Move a finger on the touchpad, then read `/proc/interrupts` again: the
+   `msmgpio 19` count must have gone up.
+3. Move the pointer, tap, two-finger scroll, click.
+
+If the count stays at 0, TLMM 19 is wrong as well; send the report.
 
 ## Display brightness
 
-v0.2.0 drives the backlight from pmk8550 PWM channel 0 (PMK8550 GPIO 5).
+Adjusting brightness works on hardware (pmk8550 PWM channel 0). Up to
+support 0.2.0 it started near minimum after every boot (systemd-backlight's
+5% floor after hard resets). With support 0.2.1:
 
-1. Press the brightness keys, or:
+1. Set a brightness you like, wait 1 minute, reboot normally. It must come
+   back at the same level.
+2. Check the saved level and the timer:
    ```bash
-   ls /sys/class/backlight/
-   cat /sys/class/backlight/backlight/max_brightness
-   echo 1000 | sudo tee /sys/class/backlight/backlight/brightness   # dimmer
-   echo 4000 | sudo tee /sys/class/backlight/backlight/brightness   # brighter
+   cat /var/lib/debondragon/backlight-backlight
+   systemctl list-timers debondragon-backlight-save.timer
+   journalctl -b -u debondragon-backlight.service
    ```
-2. Report whether the screen actually changes, and whether very low values
-   switch the backlight fully off.
-
-If nothing changes, the PWM is still the wrong one. The report's PWM and PMIC
-pin sections show what to try next.
+3. A very low level set on purpose must also come back as is.
 
 ## HDMI
 
-1. Plug a monitor into the HDMI port, then check:
-   ```bash
-   for c in /sys/class/drm/card*-*; do echo "$c $(cat $c/status)"; done
-   hyprctl monitors        # under Hyprland
-   ```
-   Expect an `HDMI-A-1` connector: `connected` with a monitor plugged in,
-   `disconnected` without.
-2. Report: whether the connector exists, whether it detects plugging, and
-   whether a picture appears. If the connector shows up but there's no picture,
-   the DP lane order may need swapping; say so.
+**v0.2.0 on hardware:** hot-plug and EDID work (`HDMI-A-1 connected`,
+1920x1080), but DisplayPort link training to the HDMI converter fails
+(`max v_level reached`, `Failed link training`), the screen stays black with
+endless `vblank timeout`, and **unplugging the cable or disabling the output
+resets the laptop** (no log, no pstore record).
+
+Since support 0.2.1 HDMI is **off** (`video=HDMI-A-1:d` on the kernel
+command line, `DEBONDRAGON_HDMI=off`). Leave it off. Kernel series 3 only
+adds a read-only diagnostic, `/dev/drm_dp_auxN`, and lockup detectors; it
+does **not** fix link training.
+
+Do not set `DEBONDRAGON_HDMI=on` until a release says HDMI is ready to test.
 
 ## Camera
 
@@ -74,6 +84,11 @@ pin sections show what to try next.
    show whether the eUSB2 repeater at i2c5 0x4b answered.
 
 ## Fan and EC (opt-in)
+
+**Result on the 83N3 (v0.2.0):** firmware version `0x03 0x00 0x18 0x01`,
+thermal caps `0x00 0x00 0x00`, fan count 0. Commands 0x0E/0x42 aren't in
+this EC's ACPI command map, so the protocol doesn't match and the check
+refuses to enable the driver. **Keep it off**; the EC runs the fan itself.
 
 The EC driver writes to the embedded controller when it loads, so it stays
 blacklisted until the EC passes a **read-only** check:
@@ -125,24 +140,28 @@ These are compiled but nobody has tested them yet. Any results help:
 ## Audio: headphones, headset mic, internal mics
 
 The default devicetree enables the headset codec and the internal
-microphones. The speaker amplifiers stay off. It needs the ADSP firmware, so
-run `sudo debondragon-firmware` first if you haven't.
+microphones. The speaker amplifiers stay off. The card, codecs and DSP come
+up on hardware. Up to support 0.2.0 the UCM profile never loaded (ALSA cuts
+the card name to 31 characters); support 0.2.1 installs it under the card's
+long name.
 
-1. Check that the card and the DSP came up:
+1. Check that the profile loads:
    ```bash
-   cat /proc/asound/cards          # expect X1E80100-LENOVO-IdeaPad-Slim3-15Q8X10
-   ls /sys/bus/soundwire/devices/  # SoundWire devices found on the buses
-   sudo dmesg | grep -iE 'q6apm|tplg|wcd938x|soundwire|remoteproc' | tail -20
+   alsaucm -c hw:0 list _verbs     # expect "HiFi"
    ```
-2. Headphones: plug in headphones, select "Headphones" (pavucontrol or the
-   Hyprland audio applet), play something at **low volume first**.
-3. Headset microphone (4-pole headset) and internal microphones:
+2. Restart the sound server so it picks up the profile (or reboot):
+   ```bash
+   systemctl --user restart pulseaudio
+   pactl list short sinks          # expect more than auto_null
+   ```
+3. Headphones: plug in headphones, select "Headphones", play something at
+   **low volume first**.
+4. Headset microphone (4-pole headset) and internal microphones:
    ```bash
    arecord -L | head
    arecord -f S16_LE -r 48000 -d 5 /tmp/mic.wav && aplay /tmp/mic.wav
    ```
-4. Report what works, and send `debondragon-report` (sound and SoundWire
-   sections).
+5. Report what works, and send `debondragon-report`.
 
 ## Internal speakers (opt-in)
 

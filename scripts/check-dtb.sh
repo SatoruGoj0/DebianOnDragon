@@ -23,6 +23,31 @@ pmk=$(fdtget -t x "$dtb" /soc@0/arbiter@c400000/spmi@c42d000/pmic@0/pwm phandle 
 pwm=$(fdtget -t x "$dtb" /backlight pwms 2>/dev/null)
 expect "backlight uses pmk8550 PWM channel 0" "${pwm% *}" "$pmk 0"
 expect "touchpad IRQ pull-up" "$(echo "$dts" | grep -A4 'tpad-default-state' | grep -c 'bias-pull-up')" "1"
+# Touchpad interrupt: DSDT GpioInt 0x3c0 = TLMM 19, Level, ActiveLow
+# (IRQ_TYPE_LEVEL_LOW = 8), on every touchpad variant at i2c19.
+tlmm=$(fdtget -t x "$dtb" /soc@0/pinctrl@f100000 phandle 2>/dev/null)
+i2c19=/soc@0/geniqup@8c0000/i2c@88c000
+for tp in touchpad@15 touchpad@2c touchpad@38 touchpad@5d; do
+	expect "$tp IRQ on TLMM 19, level-low" "$(fdtget -t x "$dtb" "$i2c19/$tp" interrupts-extended 2>/dev/null)" "$tlmm 13 8"
+done
+expect "touchpad pinctrl pin is gpio19" "$(echo "$dts" | grep -A4 'tpad-default-state' | grep -c 'pins = "gpio19"')" "1"
+# The CRD's own touchpad (TLMM 3) sits on i2c0, which must stay off.
+expect "CRD touchpad bus i2c0 disabled" "$(node_status /soc@0/geniqup@bc0000/i2c@b80000)" "disabled"
+expect "no enabled touchpad on TLMM 3" \
+	"$(for tp in touchpad@15 touchpad@2c touchpad@38 touchpad@5d; do fdtget -t x "$dtb" "$i2c19/$tp" interrupts-extended 2>/dev/null; done | grep -c "^$tlmm 3 ")" "0"
+# smb2360 PMICs: SID 0xa is absent on this board (probe fails); 0x7 (first
+# USB-C port's repeater) and 0xb answer and must stay enabled.
+spmi=/soc@0/arbiter@c400000/spmi@c432000
+expect "absent smb2360 (SID 0xa) disabled" "$(node_status $spmi/pmic@a)" "disabled"
+expect "smb2360 SID 0x7 enabled (USB-C 1 repeater)" "$(node_status $spmi/pmic@7)" "okay"
+expect "smb2360 SID 0xb enabled" "$(node_status $spmi/pmic@b)" "okay"
+# Working hardware must stay enabled.
+expect "USB-C 1 controller (usb_1_ss0) enabled" "$(node_status /soc@0/usb@a600000)" "okay"
+expect "camera controller (usb_2) enabled" "$(node_status /soc@0/usb@a200000)" "okay"
+expect "USB-A controller (multiport) enabled" "$(node_status /soc@0/usb@a400000)" "okay"
+expect "GPU enabled" "$(node_status /soc@0/gpu@3d00000)" "okay"
+expect "keyboard IRQ on TLMM 67" "$(fdtget -t x "$dtb" /soc@0/geniqup@ac0000/i2c@a84000/keyboard@3a interrupts-extended 2>/dev/null)" "$tlmm 43 8"
+expect "touchscreen IRQ on TLMM 51" "$(fdtget -t x "$dtb" /soc@0/geniqup@ac0000/i2c@a80000/touchscreen@10 interrupts-extended 2>/dev/null)" "$tlmm 33 8"
 expect "no CRD retimer-2 supplies (TLMM 126)" "$(echo "$dts" | grep -c 'VREG_RTMR2')" "0"
 expect "HDMI bridge present" "$(prop /hdmi-bridge compatible)" "realtek,rtd2171"
 expect "HDMI hot-plug pin uses usb2_dp" "$(echo "$dts" | grep -A3 'hdmi-hpd-default-state' | grep -c 'usb2_dp')" "1"
