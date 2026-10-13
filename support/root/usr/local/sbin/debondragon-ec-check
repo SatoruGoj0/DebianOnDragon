@@ -1,0 +1,80 @@
+#!/bin/bash
+# Check whether the embedded controller at i2c5 (0xb94000) address 0x76
+# speaks the protocol of the upstream qcom-hamoa-ec driver, using only the
+# two *read* queries that driver starts with:
+#   0x0e  firmware version     (4 bytes)
+#   0x42  thermal capabilities (3 bytes: fan count/type, thermistor mask)
+# Nothing is written to the EC except the command byte that selects what to
+# read, exactly as the driver's own i2c_smbus_read_i2c_block_data() does.
+#
+#   sudo debondragon-ec-check            query only
+#   sudo debondragon-ec-check --enable   query, then allow the driver to load
+#   sudo debondragon-ec-check --disable  blacklist the driver again
+set -uo pipefail
+[ "$(id -u)" = 0 ] || exec sudo "$0" "$@"
+
+conf=/etc/modprobe.d/debondragon-ec.conf
+mode=${1:-check}
+
+if [ "$mode" = --disable ]; then
+	printf '# DebOnDragon: EC driver disabled by debondragon-ec-check --disable\nblacklist qcom_hamoa_ec\n' > "$conf"
+	modprobe -r qcom_hamoa_ec 2>/dev/null || true
+	echo "EC driver blacklisted and unloaded. Reboot to be sure it stays off."
+	exit 0
+fi
+
+command -v i2ctransfer >/dev/null || { echo "i2ctransfer missing: sudo apt install i2c-tools"; exit 1; }
+modprobe i2c-dev
+
+bus=""
+for adapter in /sys/bus/i2c/devices/i2c-*; do
+	case $(readlink -f "$adapter/of_node" 2>/dev/null) in
+	*i2c@b94000) bus=${adapter##*/i2c-} ;;
+	esac
+done
+[ -n "$bus" ] || { echo "i2c bus for 0xb94000 (i2c5) not found; is this the DebOnDragon kernel?"; exit 1; }
+
+if lsmod | grep -q '^qcom_hamoa_ec'; then
+	echo "qcom_hamoa_ec is already loaded; the driver owns the EC. Cooling devices:"
+	grep -H . /sys/class/thermal/cooling_device*/type 2>/dev/null | grep -i fan
+	exit 0
+fi
+
+echo "Querying EC at i2c-$bus address 0x76 (read-only)..."
+fw=$(i2ctransfer -f -y "$bus" w1@0x76 0x0e r4@0x76 2>&1); fw_rc=$?
+cap=$(i2ctransfer -f -y "$bus" w1@0x76 0x42 r3@0x76 2>&1); cap_rc=$?
+echo "firmware version (0x0e): $fw"
+echo "thermal caps     (0x42): $cap"
+
+if [ $fw_rc -ne 0 ] || [ $cap_rc -ne 0 ]; then
+	echo
+	echo "RESULT: the EC did not answer these queries. Leave the driver disabled"
+	echo "and report this output (docs/hardware-testing.md)."
+	exit 2
+fi
+
+read -r c0 _ <<<"$cap"
+fans=$(( c0 & 0x3 ))
+type=$(( (c0 >> 2) & 0x7 ))
+echo "fan count: $fans, fan type: $type"
+case $fw in
+	"0x00 0x00 0x00 0x00"|"0xff 0xff 0xff 0xff") plausible=no ;;
+	*) plausible=yes ;;
+esac
+if [ $fans -lt 1 ] || [ $fans -gt 2 ] || [ $plausible = no ]; then
+	echo
+	echo "RESULT: answers don't look like the Hamoa EC protocol (expected 1-2 fans"
+	echo "and a non-blank firmware version). Leave the driver disabled and report this."
+	exit 3
+fi
+
+echo
+echo "RESULT: the EC answers like the Hamoa EC the driver supports."
+if [ "$mode" = --enable ]; then
+	printf '# DebOnDragon: EC driver enabled by debondragon-ec-check --enable\n# (EC answered: fw %s, caps %s)\n' "$fw" "$cap" > "$conf"
+	modprobe qcom_hamoa_ec && echo "Driver loaded. Fan cooling devices:"
+	grep -H . /sys/class/thermal/cooling_device*/type 2>/dev/null | grep -i fan
+	dmesg | grep -i 'qcom.*ec\|hamoa' | tail -5
+else
+	echo "To enable the fan driver: sudo debondragon-ec-check --enable"
+fi

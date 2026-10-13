@@ -68,5 +68,5 @@ if [ "$size" -ge $((2 * 1024 * 1024 * 1024)) ]; then
 	echo "ISO is too large for a GitHub release asset" >&2
 	exit 1
 fi
-(cd "$out" && sha256sum "$(basename "$iso")" > SHA256SUMS)
+(cd "$out" && sha256sum ./*.iso ./*.deb | sed "s| ./| |" > SHA256SUMS)
 cat "$out/SHA256SUMS"

@@ -1,0 +1,47 @@
+#!/bin/sh
+# Keep /boot/dtb in step with the installed DebOnDragon kernels:
+#   /boot/dtb/debondragon-<release>.dtb  the board DTB shipped with each kernel
+#   /boot/dtb/debondragon.dtb            copy of the newest kernel's DTB
+# GRUB loads debondragon.dtb for the normal Debian entries (01_debondragon)
+# and each kernel's own DTB in the "DebOnDragon kernels" submenu
+# (42_debondragon_kernels), so rolling back a kernel also rolls back its DTB.
+# Called from /etc/kernel/postinst.d and postrm.d and by debondragon-support.
+set -e
+[ -r /etc/default/debondragon ] && . /etc/default/debondragon
+[ "${DEBONDRAGON_DTB:-none}" = none ] && exit 0
+
+# Kernels older than the selected board variant (e.g. -speakers) don't ship
+# it; they keep the base board so they stay bootable for rollback.
+base=qcom/x1p42100-lenovo-ideapad-slim3-15q8x10.dtb
+
+mkdir -p /boot/dtb
+newest=""
+for dir in /usr/lib/linux-image-*; do
+	release=${dir#/usr/lib/linux-image-}
+	[ -e "/boot/vmlinuz-$release" ] || continue
+	if [ -f "$dir/$DEBONDRAGON_DTB" ]; then
+		src=$dir/$DEBONDRAGON_DTB
+	elif [ -f "$dir/$base" ]; then
+		src=$dir/$base
+		echo "debondragon-dtb-sync: $release has no $DEBONDRAGON_DTB, using $base" >&2
+	else
+		continue
+	fi
+	cp "$src" "/boot/dtb/debondragon-$release.dtb"
+	if [ -z "$newest" ] || dpkg --compare-versions "$release" gt "$newest"; then
+		newest=$release
+	fi
+done
+
+# Drop DTBs of kernels that are no longer installed.
+for f in /boot/dtb/debondragon-*.dtb; do
+	[ -e "$f" ] || continue
+	release=${f#/boot/dtb/debondragon-}
+	release=${release%.dtb}
+	[ -e "/boot/vmlinuz-$release" ] || rm -f "$f"
+done
+
+if [ -n "$newest" ]; then
+	cp "/boot/dtb/debondragon-$newest.dtb" /boot/dtb/debondragon.dtb
+	echo "debondragon-dtb-sync: default devicetree is from $newest" >&2
+fi

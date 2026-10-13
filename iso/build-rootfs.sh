@@ -48,13 +48,9 @@ chmod 755 "$root/usr/sbin/policy-rc.d"
 echo debondragon > "$root/etc/hostname"
 printf '127.0.0.1\tlocalhost\n127.0.1.1\tdebondragon\n::1\tlocalhost ip6-localhost ip6-loopback\n' > "$root/etc/hosts"
 
-# Board integration first, so the kernel's postinst hooks find it.
+# Image-only files (installer and initramfs configuration). Board
+# integration and tools come from the debondragon-support package below.
 cp -a "$here/iso/overlay/." "$root/"
-chmod 755 "$root/etc/kernel/postinst.d/dtb-debondragon" \
-          "$root/etc/grub.d/01_debondragon" \
-          "$root/usr/local/sbin/debondragon-firmware" \
-          "$root/usr/local/sbin/debondragon-report" \
-          "$root/usr/local/sbin/debondragon-bootlog"
 
 in_root apt-get update
 # Linux can't write UEFI variables on the 83N3 (QSEECOM isn't enabled for
@@ -66,6 +62,13 @@ echo 'grub-efi-arm64 grub2/update_nvram boolean false' | chroot "$root" debconf-
 grep -vE '^[[:space:]]*(#|$)' "$here/iso/packages.list" | xargs \
 	chroot "$root" /usr/bin/env DEBIAN_FRONTEND=noninteractive \
 	apt-get install -y -o Dpkg::Options::=--force-confold
+
+# Board integration and tools, installed as a package so installed systems
+# can upgrade them. Before the kernel, so its postinst hooks find them.
+mkdir -p "$root/tmp/support"
+cp "$work"/support-deb/debondragon-support_*_all.deb "$root/tmp/support/"
+in_root sh -c 'dpkg -i /tmp/support/debondragon-support_*_all.deb'
+rm -rf "$root/tmp/support"
 
 # Only acts when the kernel command line has "debondragon.log".
 in_root systemctl enable debondragon-bootlog.service

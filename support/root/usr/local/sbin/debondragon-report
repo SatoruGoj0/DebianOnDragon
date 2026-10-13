@@ -46,6 +46,46 @@ report() {
 	done
 	run cat /sys/kernel/debug/pwm
 	run cat /sys/kernel/debug/gpio
+
+	section "DebOnDragon kernels and devicetrees"
+	ls -l /boot/vmlinuz-* /boot/dtb/ 2>&1
+	dpkg -l 'linux-image-*debondragon*' 'debondragon-support' 2>/dev/null | grep '^ii'
+	cat /etc/modprobe.d/debondragon-ec.conf 2>/dev/null
+
+	# Per-feature evidence (docs/hardware-testing.md).
+	section "input devices"
+	grep -E '^(N|H):' /proc/bus/input/devices
+	section "i2c-hid errors (touchpad: 'incomplete report' before the pull-up fix)"
+	dmesg | grep -c 'incomplete report'
+	dmesg | grep -i 'i2c_hid' | tail -20
+	section "USB devices (camera 13d3:54bf on usb_2)"
+	lsusb 2>&1
+	ls -l /sys/class/video4linux/ 2>&1
+	section "HDMI / DP connectors and modes"
+	for c in /sys/class/drm/card*-*; do
+		[ -e "$c" ] || continue
+		echo "$c: status=$(cat "$c/status") modes=$(head -3 "$c/modes" 2>/dev/null | tr '\n' ' ')"
+	done
+	dmesg | grep -iE 'msm_dp|simple-bridge|hdmi|qmp.*combo|aux_bridge' | tail -20
+	section "sound"
+	cat /proc/asound/cards 2>&1
+	ls /sys/bus/soundwire/devices 2>&1
+	section "thermal zones (name temp)"
+	for z in /sys/class/thermal/thermal_zone*; do
+		echo "$(cat "$z/type") $(cat "$z/temp" 2>/dev/null)"
+	done
+	section "cooling devices (fan)"
+	for c in /sys/class/thermal/cooling_device*; do
+		echo "$(cat "$c/type") cur=$(cat "$c/cur_state" 2>/dev/null) max=$(cat "$c/max_state" 2>/dev/null)"
+	done
+	dmesg | grep -iE 'hamoa|qcom.*-ec|embedded-controller' | tail -10
+	section "power supplies"
+	for p in /sys/class/power_supply/*; do
+		[ -e "$p" ] && echo "$p: $(cat "$p/status" 2>/dev/null) $(cat "$p/capacity" 2>/dev/null)%"
+	done
+	section "deferred probes"
+	cat /sys/kernel/debug/devices_deferred 2>&1
+
 	section "dmesg"
 	dmesg
 }
@@ -56,7 +96,8 @@ while read -r mnt fstype; do
 		case $mnt in /media/*|/mnt/*|/run/media/*) [ -w "$mnt" ] && dest=$mnt && break ;; esac ;;
 	esac
 done < <(awk '{print $2, $3}' /proc/mounts)
-dest=${dest:-/root}
+# No USB stick: save to the invoking user's home rather than /root.
+dest=${dest:-$(getent passwd "${SUDO_USER:-root}" | cut -d: -f6)}
 
 out=$dest/debondragon-report-$(date +%Y%m%d-%H%M%S).txt
 report > "$out" 2>&1

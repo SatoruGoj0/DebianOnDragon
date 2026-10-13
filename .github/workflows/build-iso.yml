@@ -46,6 +46,7 @@ jobs:
           path: |
             out/*.iso
             out/SHA256SUMS
+            out/*.deb
           compression-level: 0
           retention-days: 14
 
@@ -61,5 +62,5 @@ jobs:
             tag=nightly-${GITHUB_RUN_NUMBER}
             flags="--prerelease --target $GITHUB_SHA"
           fi
-          gh release create "$tag" out/*.iso out/SHA256SUMS out/linux-image-*.deb \
+          gh release create "$tag" out/*.iso out/SHA256SUMS out/*.deb \
             --title "DebOnDragon $tag" --notes-file docs/release-notes.md $flags

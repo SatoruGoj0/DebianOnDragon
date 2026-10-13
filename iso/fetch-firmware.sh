@@ -12,9 +12,13 @@ dest=$2
 fw=$work/linux-firmware
 
 # qcom/x1e80100 also holds other laptops' signed DSP firmware; only the
-# QUP serial-engine firmware there is generic.
+# QUP serial-engine firmware there is generic. The T14s audio topology is
+# an AudioReach graph file (not signed firmware) with the 83N3's layout:
+# two WSA amps, WCD headset codec, VA DMICs. debondragon-support installs
+# it under the 83N3's sound card names.
 patterns=(
   '/qcom/x1e80100/qupv3fw.elf'
+  '/qcom/x1e80100/LENOVO/21N1/X1E80100-LENOVO-Thinkpad-T14s-tplg.bin'
   '/qcom/x1p42100/*'
   '/qcom/gen70500_*'
   '/qcom/gen71500_*'

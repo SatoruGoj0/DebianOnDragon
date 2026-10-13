@@ -1,0 +1,643 @@
+// SPDX-License-Identifier: BSD-3-Clause
+/*
+ * Lenovo IdeaPad Slim 3 15Q8X10 (machine type 83N3)
+ * Snapdragon X X1-26-100 (Purwa), 16 GiB, 15.3" 1920x1200 touch LCD.
+ *
+ * The firmware ACPI tables identify this board as a derivative of the
+ * Qualcomm X1 CRD (SUBSYS_CRD08380), and the I2C/PCIe layout in the 83N3
+ * DSDT matches the CRD except where noted below. This file therefore
+ * starts from x1-crd.dtsi and only overrides what the DSDT shows to be
+ * different. Evidence for every override is in docs/board-notes.md.
+ *
+ * Shared by two boards:
+ *   x1p42100-lenovo-ideapad-slim3-15q8x10.dts           default, speakers off
+ *   x1p42100-lenovo-ideapad-slim3-15q8x10-speakers.dts  opt-in speaker amps
+ */
+
+#include "purwa.dtsi"
+#include "x1-crd.dtsi"
+
+/delete-node/ &pmc8380_6;
+/delete-node/ &pmc8380_6_thermal;
+
+/*
+ * The CRD's third USB-C port does not exist here: ACPI URS2 (usb_1_ss2)
+ * returns _STA 0, and its PHY's DP output feeds the HDMI port instead
+ * (see hdmi-bridge). Besides that port's retimer and pmic-glink connector
+ * (removed below), drop the retimer's supplies: vreg_rtmr2_1p8 claims
+ * TLMM 126 as a GPIO, which is the HDMI hot-plug pin on this board, and
+ * the v0.1.4 report shows it driven low ("gpio126: out low").
+ */
+/delete-node/ &vreg_rtmr2_1p15;
+/delete-node/ &vreg_rtmr2_1p8;
+/delete-node/ &vreg_rtmr2_3p3;
+
+/ {
+	model = "Lenovo IdeaPad Slim 3 15Q8X10";
+	compatible = "lenovo,ideapad-slim3-15q8x10", "qcom,x1p42100";
+	chassis-type = "laptop";
+
+	aliases {
+		serial1 = &uart14;
+	};
+
+	/*
+	 * Backlight. The DSDT panel config for this LCD says PMIC PWM, 14-bit,
+	 * 2000 Hz ("Modify for LCD Backlight PWM"), and the display device
+	 * (\_SB.GPU0) drives PMK8550 GPIO 5, which firmware leaves in func3
+	 * (PWM out). That is the ASUS Zenbook A14 LCD wiring: pmk8550 PWM
+	 * channel 0 on PMK8550 GPIO 5, VBL9 on PMC8380 GPIO 10, enable on
+	 * PMC8380 GPIO 4. (v0.1.1-v0.1.4 used pm8550 LPG channel 3, which is
+	 * not connected: brightness did not change.)
+	 */
+	backlight: backlight {
+		compatible = "pwm-backlight";
+		pwms = <&pmk8550_pwm 0 500000>;
+		enable-gpios = <&pmc8380_3_gpios 4 GPIO_ACTIVE_HIGH>;
+		power-supply = <&vreg_edp_bl>;
+
+		pinctrl-0 = <&edp_bl_en>, <&edp_bl_pwm>;
+		pinctrl-names = "default";
+	};
+
+	vreg_edp_bl: regulator-edp-bl {
+		compatible = "regulator-fixed";
+
+		regulator-name = "VBL9";
+		regulator-min-microvolt = <3600000>;
+		regulator-max-microvolt = <3600000>;
+
+		gpio = <&pmc8380_3_gpios 10 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		pinctrl-0 = <&edp_bl_reg_en>;
+		pinctrl-names = "default";
+
+		regulator-boot-on;
+	};
+
+	/*
+	 * WCN7850 power sequencing, as on the other Lenovo Purwa laptop
+	 * upstream (ThinkBook 16 Gen 7). DSDT: Wi-Fi at \_SB.PCI4.RP1.WLN,
+	 * Bluetooth on UR15 (uart14).
+	 */
+	vreg_wcn_0p95: regulator-wcn-0p95 {
+		compatible = "regulator-fixed";
+
+		regulator-name = "VREG_WCN_0P95";
+		regulator-min-microvolt = <950000>;
+		regulator-max-microvolt = <950000>;
+
+		vin-supply = <&vreg_wcn_3p3>;
+	};
+
+	vreg_wcn_1p9: regulator-wcn-1p9 {
+		compatible = "regulator-fixed";
+
+		regulator-name = "VREG_WCN_1P9";
+		regulator-min-microvolt = <1900000>;
+		regulator-max-microvolt = <1900000>;
+
+		vin-supply = <&vreg_wcn_3p3>;
+	};
+
+	vreg_wcn_3p3: regulator-wcn-3p3 {
+		compatible = "regulator-fixed";
+
+		regulator-name = "VREG_WCN_3P3";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+
+		gpio = <&tlmm 214 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+
+		pinctrl-0 = <&wcn_sw_en>;
+		pinctrl-names = "default";
+
+		regulator-boot-on;
+	};
+
+	wcn7850-pmu {
+		compatible = "qcom,wcn7850-pmu";
+
+		vdd-supply = <&vreg_wcn_0p95>;
+		vddio-supply = <&vreg_l15b_1p8>;
+		vddaon-supply = <&vreg_wcn_0p95>;
+		vdddig-supply = <&vreg_wcn_0p95>;
+		vddrfa1p2-supply = <&vreg_wcn_1p9>;
+		vddrfa1p8-supply = <&vreg_wcn_1p9>;
+
+		wlan-enable-gpios = <&tlmm 117 GPIO_ACTIVE_HIGH>;
+		bt-enable-gpios = <&tlmm 116 GPIO_ACTIVE_HIGH>;
+
+		pinctrl-0 = <&wcn_wlan_bt_en>;
+		pinctrl-names = "default";
+
+		regulators {
+			vreg_pmu_rfa_cmn: ldo0 {
+				regulator-name = "vreg_pmu_rfa_cmn";
+			};
+
+			vreg_pmu_aon_0p59: ldo1 {
+				regulator-name = "vreg_pmu_aon_0p59";
+			};
+
+			vreg_pmu_wlcx_0p8: ldo2 {
+				regulator-name = "vreg_pmu_wlcx_0p8";
+			};
+
+			vreg_pmu_wlmx_0p85: ldo3 {
+				regulator-name = "vreg_pmu_wlmx_0p85";
+			};
+
+			vreg_pmu_btcmx_0p85: ldo4 {
+				regulator-name = "vreg_pmu_btcmx_0p85";
+			};
+
+			vreg_pmu_rfa_0p8: ldo5 {
+				regulator-name = "vreg_pmu_rfa_0p8";
+			};
+
+			vreg_pmu_rfa_1p2: ldo6 {
+				regulator-name = "vreg_pmu_rfa_1p2";
+			};
+
+			vreg_pmu_rfa_1p8: ldo7 {
+				regulator-name = "vreg_pmu_rfa_1p8";
+			};
+
+			vreg_pmu_pcie_0p9: ldo8 {
+				regulator-name = "vreg_pmu_pcie_0p9";
+			};
+
+			vreg_pmu_pcie_1p8: ldo9 {
+				regulator-name = "vreg_pmu_pcie_1p8";
+			};
+		};
+	};
+
+	/*
+	 * HDMI: the third DP controller drives a DP-to-HDMI converter over all
+	 * four lanes of the usb_1_ss2 PHY, as on the ThinkBook 16 and the other
+	 * X1 laptops with HDMI. DSDT: Lenovo added DPFixedLanedConfiguration
+	 * only to the DP2 configs (\_SB.GPU0.ROE5/ROE6), and TLMM 126 is an
+	 * event GPIO that notifies GPU0 (hot plug). No enable GPIO or supply is
+	 * described, so the converter is always powered. Which chip it is
+	 * doesn't matter: simple-bridge treats all of these the same way.
+	 */
+	hdmi-bridge {
+		compatible = "realtek,rtd2171";
+
+		pinctrl-0 = <&hdmi_hpd_default>;
+		pinctrl-names = "default";
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+
+				hdmi_bridge_dp_in: endpoint {
+					remote-endpoint = <&usb_1_ss2_qmpphy_out_dp>;
+				};
+			};
+
+			port@1 {
+				reg = <1>;
+
+				hdmi_bridge_tmds_out: endpoint {
+					remote-endpoint = <&hdmi_con>;
+				};
+			};
+		};
+	};
+
+	hdmi-connector {
+		compatible = "hdmi-connector";
+		type = "a";
+
+		port {
+			hdmi_con: endpoint {
+				remote-endpoint = <&hdmi_bridge_tmds_out>;
+			};
+		};
+	};
+
+	/* The CRD's third USB-C port is the HDMI output here. */
+	pmic-glink {
+		/delete-node/ connector@2;
+	};
+};
+
+/*
+ * Audio: headset (WCD9385 on swr1/swr2) and internal digital microphones
+ * (VA macro). Windows uses Qualcomm's CRD audio configuration
+ * (qcaucd_ext_crd8380.inf) with two SoundWire slave groups: one speaker-amp
+ * group on instance 0 and the headset codec; the CRD's second amp group
+ * (instance 1, swr3) is commented out. The WCD9385 reset (TLMM 191) is held
+ * deasserted by firmware ("out high 16mA" in the v0.1.4 report), as on the
+ * CRD.
+ *
+ * Speaker amplifiers stay off here: Linux has no speaker protection for
+ * them and their exact part is unconfirmed. The -speakers board enables
+ * them (opt-in, see docs/hardware-testing.md).
+ *
+ * The card name selects the DSP topology (qcom/x1e80100/<model>-tplg.bin)
+ * and the ALSA UCM profile; debondragon-support installs both. The USB-C
+ * DisplayPort audio links go with dp0/dp1, which are disabled.
+ */
+&{/sound} {
+	model = "X1E80100-LENOVO-IdeaPad-Slim3-15Q8X10";
+	audio-routing = "IN1_HPHL", "HPHL_OUT",
+			"IN2_HPHR", "HPHR_OUT",
+			"AMIC2", "MIC BIAS2",
+			"VA DMIC0", "MIC BIAS3",
+			"VA DMIC1", "MIC BIAS3",
+			"VA DMIC2", "MIC BIAS1",
+			"VA DMIC3", "MIC BIAS1",
+			"TX SWR_INPUT1", "ADC2_OUTPUT";
+
+	/delete-node/ displayport-0-dai-link;
+	/delete-node/ displayport-1-dai-link;
+	/delete-node/ wsa-dai-link;
+};
+
+&swr0 {
+	status = "disabled";
+};
+
+&swr3 {
+	status = "disabled";
+};
+
+/* Device-specific signed firmware, copied from Windows by debondragon-firmware. */
+&gpu_zap_shader {
+	firmware-name = "qcom/x1p42100/LENOVO/83N3/qcdxkmsucpurwa.mbn";
+};
+
+&remoteproc_adsp {
+	firmware-name = "qcom/x1p42100/LENOVO/83N3/qcadsp8380.mbn",
+			"qcom/x1p42100/LENOVO/83N3/adsp_dtbs.elf";
+};
+
+&remoteproc_cdsp {
+	firmware-name = "qcom/x1p42100/LENOVO/83N3/qccdsp8380.mbn",
+			"qcom/x1p42100/LENOVO/83N3/cdsp_dtbs.elf";
+};
+
+/* DSDT: \_SB.I2C1 (0xb80000) has no consumers on the 83N3. */
+&i2c0 {
+	status = "disabled";
+};
+
+/* The CRD's retimer for its third USB-C port; there is no such port here. */
+&i2c1 {
+	/delete-node/ typec-mux@8;
+};
+
+/* DSDT: ECKB, QTEC0001 at 0x3a on \_SB.IC10 (0xa84000), GpioInt 0x180. */
+&i2c9 {
+	clock-frequency = <400000>;
+
+	pinctrl-0 = <&qup_i2c9_data_clk>, <&kybd_default>;
+	pinctrl-names = "default";
+
+	status = "okay";
+
+	keyboard@3a {
+		compatible = "hid-over-i2c";
+		reg = <0x3a>;
+
+		hid-descr-addr = <0x1>;
+		interrupts-extended = <&tlmm 67 IRQ_TYPE_LEVEL_LOW>;
+
+		vdd-supply = <&vreg_misc_3p3>;
+		vddl-supply = <&vreg_l12b_1p2>;
+
+		wakeup-source;
+	};
+};
+
+/*
+ * DSDT: TCPD on \_SB.IC20 (0x88c000), GpioInt 0x3c0. The DSDT selects one
+ * of four touchpad vendors at runtime; this unit has ELAN06FA at 0x15.
+ */
+&i2c19 {
+	clock-frequency = <400000>;
+
+	pinctrl-0 = <&qup_i2c19_data_clk>, <&tpad_default>;
+	pinctrl-names = "default";
+
+	status = "okay";
+
+	/* ELAN06FA */
+	touchpad@15 {
+		compatible = "hid-over-i2c";
+		reg = <0x15>;
+
+		hid-descr-addr = <0x1>;
+		interrupts-extended = <&tlmm 3 IRQ_TYPE_LEVEL_LOW>;
+
+		vdd-supply = <&vreg_misc_3p3>;
+		vddl-supply = <&vreg_l12b_1p2>;
+
+		wakeup-source;
+	};
+
+	/* SYNA2BA6 */
+	touchpad@2c {
+		compatible = "hid-over-i2c";
+		reg = <0x2c>;
+
+		hid-descr-addr = <0x20>;
+		interrupts-extended = <&tlmm 3 IRQ_TYPE_LEVEL_LOW>;
+
+		vdd-supply = <&vreg_misc_3p3>;
+		vddl-supply = <&vreg_l12b_1p2>;
+
+		wakeup-source;
+	};
+
+	/* FTCS0038 */
+	touchpad@38 {
+		compatible = "hid-over-i2c";
+		reg = <0x38>;
+
+		hid-descr-addr = <0x1>;
+		interrupts-extended = <&tlmm 3 IRQ_TYPE_LEVEL_LOW>;
+
+		vdd-supply = <&vreg_misc_3p3>;
+		vddl-supply = <&vreg_l12b_1p2>;
+
+		wakeup-source;
+	};
+
+	/* GXTP5100 */
+	touchpad@5d {
+		compatible = "hid-over-i2c";
+		reg = <0x5d>;
+
+		hid-descr-addr = <0x1>;
+		interrupts-extended = <&tlmm 3 IRQ_TYPE_LEVEL_LOW>;
+
+		vdd-supply = <&vreg_misc_3p3>;
+		vddl-supply = <&vreg_l12b_1p2>;
+
+		wakeup-source;
+	};
+};
+
+/*
+ * DSDT: the touchscreen (ELAN901C) is at 0x10 on \_SB.I2C9 (0xa80000) with
+ * GpioInt 0x33, which is what x1-crd.dtsi already describes on i2c8.
+ */
+
+/*
+ * The panel is an LCD (EDID LEN9197, "LEN153WUXGA"), not the CRD's Samsung
+ * OLED. On LCD boards PMC8380 GPIO 4 enables the backlight, so it moves
+ * from the panel to the backlight node, as on the other X1 LCD laptops.
+ */
+&mdss_dp3 {
+	aux-bus {
+		panel {
+			compatible = "edp-panel";
+			backlight = <&backlight>;
+			/delete-property/ enable-gpios;
+			/delete-property/ pinctrl-0;
+			/delete-property/ pinctrl-names;
+		};
+	};
+};
+
+/*
+ * USB-C DisplayPort outputs stay off for now. Their bridge chain ends at
+ * pmic_glink, which needs the ADSP firmware that the live system doesn't
+ * have; while those bridges defer, msm never binds, nothing drives the
+ * eDP panel and it powers down (seen on hardware: "aux_bridge ... failed
+ * to acquire drm_bridge", ADSP firmware load error -2).
+ *
+ * dp2 (HDMI) stays on: its chain is PHY -> simple-bridge -> connector and
+ * doesn't involve pmic_glink.
+ */
+&mdss_dp0 {
+	status = "disabled";
+};
+
+&mdss_dp1 {
+	status = "disabled";
+};
+
+/*
+ * pm8550's LPG stays disabled: firmware leaves its channel 0 running for
+ * something other than the panel (likely the keyboard backlight), and the
+ * panel's PWM comes from pmk8550 (see backlight).
+ */
+&pmk8550_gpios {
+	edp_bl_pwm: edp-bl-pwm-state {
+		pins = "gpio5";
+		function = "func3";
+	};
+};
+
+&pmk8550_pwm {
+	status = "okay";
+};
+
+&pmc8380_3_gpios {
+	edp_bl_reg_en: edp-bl-reg-en-state {
+		pins = "gpio10";
+		function = "normal";
+	};
+};
+
+/* DSDT: \_SB.PCI4.RP1.WLN, FastConnect 7800 (17cb:1107). */
+&pcie4_port0 {
+	wifi@0 {
+		compatible = "pci17cb,1107";
+		reg = <0x10000 0x0 0x0 0x0 0x0>;
+
+		vddaon-supply = <&vreg_pmu_aon_0p59>;
+		vddwlcx-supply = <&vreg_pmu_wlcx_0p8>;
+		vddwlmx-supply = <&vreg_pmu_wlmx_0p85>;
+		vddrfacmn-supply = <&vreg_pmu_rfa_cmn>;
+		vddrfa0p8-supply = <&vreg_pmu_rfa_0p8>;
+		vddrfa1p2-supply = <&vreg_pmu_rfa_1p2>;
+		vddrfa1p8-supply = <&vreg_pmu_rfa_1p8>;
+		vddpcie0p9-supply = <&vreg_pmu_pcie_0p9>;
+		vddpcie1p8-supply = <&vreg_pmu_pcie_1p8>;
+	};
+};
+
+/*
+ * DSDT: \_SB.PCI5.RP1 carries the BayHub SD card reader (1217:8621), on the
+ * slot the CRD uses for WWAN. x1-crd.dtsi already enables pcie5.
+ */
+
+&tlmm {
+	wcn_sw_en: wcn-sw-en-state {
+		pins = "gpio214";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	wcn_wlan_bt_en: wcn-wlan-bt-en-state {
+		pins = "gpio116", "gpio117";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
+
+	hdmi_hpd_default: hdmi-hpd-default-state {
+		pins = "gpio126";
+		function = "usb2_dp";
+		bias-disable;
+	};
+
+	/* EC event line; firmware leaves it "in high, no pull" (external pull-up). */
+	ec_int_n_default: ec-int-n-state {
+		pins = "gpio66";
+		function = "gpio";
+		bias-disable;
+	};
+
+	/* Reset of the camera's eUSB2 repeater; ACPI \_SB.USB4 GpioIo pin 7. */
+	eusb9_reset_n: eusb9-reset-n-state {
+		pins = "gpio7";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+		output-low;
+	};
+};
+
+/*
+ * Touchpad interrupt: the DSDT declares it GpioInt(Level, ActiveLow, ...,
+ * PullUp), and the ThinkBook 16 (same ELAN06FA) uses bias-pull-up. The CRD
+ * state has bias-disable; on this board the line then floats low ("gpio3:
+ * in low no pull" in the v0.1.4 report), the IRQ stays asserted and
+ * i2c-hid reads empty reports ("incomplete report (31/255)").
+ */
+&tpad_default {
+	/delete-property/ bias-disable;
+	bias-pull-up;
+};
+
+/*
+ * usb_1_ss2's controller is disabled in ACPI (URS2 _STA 0); only its QMP
+ * PHY is used, as a fixed 4-lane DP PHY for HDMI.
+ */
+&usb_1_ss2 {
+	status = "disabled";
+};
+
+&usb_1_ss2_hsphy {
+	status = "disabled";
+};
+
+&usb_1_ss2_dwc3_hs {
+	/delete-property/ remote-endpoint;
+};
+
+/*
+ * Internal camera (USB 13d3:54bf) on usb_2. DSDT \_SB.USB4 (0xa200000 =
+ * usb_2) holds the camera (RHUB.PRT0.CAM0), drives TLMM 7 and votes LDO4_B
+ * and LDO13_B (eUSB2 repeater supplies) plus LDO2_E/LDO3_E (USB2 PHY):
+ * the same usb_2 design as the ThinkBook 16, whose eUSB2 repeater for
+ * usb_2 is a PTN3222 at 0x4b on i2c5 with reset on TLMM 7. No camera
+ * power GPIO appears in the DSDT, so none is described here.
+ */
+&i2c5 {
+	/*
+	 * Embedded controller (fans, thermal events). DSDT: \_SB.I2C6 (= i2c5)
+	 * talks to 0x76 and its register map has the commands the upstream
+	 * qcom-hamoa-ec driver writes (0x23, 0x30 with 6 data bytes, 0x35) plus
+	 * 0x05 for events; the fan devices (FAN1/FAN2, FECI) depend on it. The
+	 * EC event pin is GpioInt "0x140" in GIO0._AEI, not decodable directly;
+	 * TLMM 66 is inferred: it is the Qualcomm CRD's EC interrupt, it is
+	 * wake-capable, and firmware leaves it configured as an input idling
+	 * high (v0.1.4 report) while neighbouring pins sit at reset defaults.
+	 * ACPI declares the event Edge, ActiveLow.
+	 *
+	 * The driver writes to the EC on probe, so debondragon-support
+	 * blacklists qcom_hamoa_ec until debondragon-ec-check confirms the EC
+	 * answers the driver's read-only queries (docs/hardware-testing.md).
+	 */
+	embedded-controller@76 {
+		compatible = "qcom,hamoa-crd-ec";
+		reg = <0x76>;
+
+		interrupts-extended = <&tlmm 66 IRQ_TYPE_EDGE_FALLING>;
+
+		pinctrl-0 = <&ec_int_n_default>;
+		pinctrl-names = "default";
+	};
+
+	eusb9_repeater: redriver@4b {
+		compatible = "nxp,ptn3222";
+		reg = <0x4b>;
+		#phy-cells = <0>;
+
+		vdd3v3-supply = <&vreg_l13b_3p0>;
+		vdd1v8-supply = <&vreg_l4b_1p8>;
+
+		reset-gpios = <&tlmm 7 GPIO_ACTIVE_LOW>;
+
+		pinctrl-0 = <&eusb9_reset_n>;
+		pinctrl-names = "default";
+	};
+};
+
+&usb_2 {
+	dr_mode = "host";
+
+	status = "okay";
+};
+
+&usb_2_hsphy {
+	vdd-supply = <&vreg_l2e_0p8>;
+	vdda12-supply = <&vreg_l3e_1p2>;
+
+	phys = <&eusb9_repeater>;
+
+	status = "okay";
+};
+
+&usb_1_ss2_qmpphy {
+	/delete-property/ mode-switch;
+	/delete-property/ orientation-switch;
+
+	ports {
+		port@0 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			/delete-node/ endpoint;
+
+			usb_1_ss2_qmpphy_out_dp: endpoint@0 {
+				reg = <0>;
+
+				data-lanes = <0 1 2 3>;
+				remote-endpoint = <&hdmi_bridge_dp_in>;
+			};
+		};
+	};
+};
+
+&uart14 {
+	status = "okay";
+
+	bluetooth {
+		compatible = "qcom,wcn7850-bt";
+		max-speed = <3200000>;
+
+		vddaon-supply = <&vreg_pmu_aon_0p59>;
+		vddwlcx-supply = <&vreg_pmu_wlcx_0p8>;
+		vddwlmx-supply = <&vreg_pmu_wlmx_0p85>;
+		vddrfacmn-supply = <&vreg_pmu_rfa_cmn>;
+		vddrfa0p8-supply = <&vreg_pmu_rfa_0p8>;
+		vddrfa1p2-supply = <&vreg_pmu_rfa_1p2>;
+		vddrfa1p8-supply = <&vreg_pmu_rfa_1p8>;
+	};
+};

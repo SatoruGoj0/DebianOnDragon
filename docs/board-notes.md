@@ -78,6 +78,74 @@ shows which one the firmware set up.
 v0.1.3: dp0-2 disabled, `regulator_ignore_unused` on all entries, and safe
 graphics also blocks panel_edp, pwm_bl and leds_qcom_lpg.
 
+## v0.2.0 findings
+
+Sources: DSDT (decompiled), `REPORT.TXT` from the v0.1.4 live session
+(live TLMM/PMIC pin states, PWM state, `dmesg`), Windows driver INFs.
+`scripts/acpi-pep-gpios.sh` lists the GPIO actions in the PEP power tables.
+
+**Touchpad.** `dmesg` showed `i2c_hid_of 0-0015: incomplete report (31/255)`
+floods. TLMM 3 read `in low, no pull`: the active-low IRQ line was asserted
+permanently. The DSDT declares the IRQ `GpioInt(Level, ActiveLow, ..., PullUp)`
+and the ThinkBook 16 (same ELAN06FA) uses `bias-pull-up`; the CRD state I
+inherited has `bias-disable`. Fix: pull-up on `tpad_default`.
+
+**Backlight.** The PEP table of the display device `\_SB.GPU0` configures
+PMC8380 GPIO 4 (backlight enable) and PMK8550 GPIO 5. Firmware leaves PMK8550
+GPIO 5 in `func3` (PWM out). The panel config XML says PMIC PWM, bank 0,
+2 kHz. That is the ASUS Zenbook A14 LCD wiring: `pmk8550_pwm` channel 0. The
+pm8550 LPG channel 0 that firmware also leaves running (pm8550 GPIO 7,
+`func1`) is not owned by the display, so it's left alone.
+
+**HDMI.** `GIO0._AEI` lists TLMM 126 (edge) and `_EVT` maps it to
+`Notify(\_SB.GPU0, 0xD1)`: display hot-plug. `GPU0` also sets TLMM 126 to
+function 1 (`usb2_dp`). `GPU0.ROE5/ROE6` (DP2 only) carry a Lenovo
+`DPFixedLanedConfiguration=1`. `URS2` (usb_1_ss2) has `_STA` 0. So DP2 runs
+over usb_1_ss2's QMP PHY as a fixed DP link to an always-on DP-to-HDMI bridge.
+The CRD's third USB-C port (retimer on i2c1, pmic-glink connector@2, and the
+`vreg_rtmr2_*` supplies, one of which claimed TLMM 126 and drove it low) is
+removed. Lane order `<0 1 2 3>` is the default with no swap described;
+unverified.
+
+**Camera.** `\_SB.USB4` (MMIO 0xa200000 = `usb_2`) contains
+`RHUB.PRT0.CAM0` (Windows: USB 13d3:54bf), drives TLMM 7 (GpioIo, pulled up)
+and its PEP entry votes LDO4_B and LDO13_B (eUSB2 repeater supplies) plus
+LDO2_E/LDO3_E (USB2 PHY). That is the ThinkBook 16's `usb_2` design: PTN3222
+repeater at i2c5 0x4b, reset on TLMM 7. No camera power GPIO appears in the
+DSDT.
+
+**Fan / EC.** `FAN1`/`FAN2` (PNP0C0B) and `FECI` (QCOM0D05) talk to the EC
+through `\_SB.I2C6._DSM`. `I2C6` (= Linux `i2c5`) defines a GenericSerialBus
+region at address 0x76 with command registers 0x05, 0x20–0x2F, 0x30 (7-byte
+raw), 0x32, 0x34, 0x35, 0x62–0x66, 0x81–0x89, 0x8E, 0x8F. The upstream
+`qcom-hamoa-ec` driver (binding: address 0x76) writes 0x23, 0x30 (+6 bytes)
+and 0x35, and reads 0x05, 0x0E and 0x42. All of its writes exist on this EC
+with matching lengths; 0x0E and 0x42 aren't in the ACPI map, so
+`debondragon-ec-check` tests them read-only. The EC event pin is `_AEI` pin
+0x140 (a wake-encoded number that can't be decoded directly). TLMM 66 is
+inferred: the CRD's EC interrupt, wake-capable (PDC 142), and the only
+nearby pin firmware leaves configured (`in high, no pull`).
+
+**Audio.** Windows uses Qualcomm's CRD audio extension
+(`qcaucd_ext_crd8380.inf`) with two SoundWire slaves (amplifier group on
+instance 0, headset codec). The second amplifier group (instance 1) is
+commented out, so this is a two-speaker layout like the ThinkBook 16, not
+the CRD's four. The WCD9385 reset (TLMM 191) is held deasserted by
+firmware, as on the CRD.
+
+v0.2.0 audio: the default board enables the sound card for the WCD9385
+headset codec (swr1/swr2) and the VA-macro DMICs, with speaker amps (swr0,
+swr3) off and the USB-C DP audio links removed. The card is named
+`X1E80100-LENOVO-IdeaPad-Slim3-15Q8X10`. The kernel loads
+`qcom/x1e80100/<card>-tplg.bin`, so debondragon-support installs the upstream
+T14s AudioReach topology (same two-amp + WCD + VA graph) under that name,
+plus a UCM profile derived from upstream `T14s-HiFi.conf` without the
+speaker sequences. The opt-in `-speakers` board adds two WSA884x on swr0
+(ThinkBook/T14s layout, controls `SpkrLeft`/`SpkrRight`) as card
+`...-SPK`, which uses the upstream T14s UCM unchanged.
+`scripts/check-ucm.sh` checks every UCM include against Debian's
+alsa-ucm-conf.
+
 ## Open questions
 
 - Confirm the backlight PWM channel on hardware (see above).

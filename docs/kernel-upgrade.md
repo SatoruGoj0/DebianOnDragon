@@ -1,0 +1,112 @@
+# Kernel upgrades, rollback and building from source
+
+Kernel updates for an installed DebOnDragon system are two Debian packages.
+You never need to reinstall Debian.
+
+| Package | What it is |
+|---|---|
+| `linux-image-7.2.0-debondragon-N_..._arm64.deb` | The kernel, its modules and its devicetrees |
+| `debondragon-support_X.Y.Z_all.deb` | Boot integration (per-kernel devicetrees, GRUB entries, kernel command line) and tools (`debondragon-firmware`, `-report`, `-ec-check`, `-bootlog`) |
+| `linux-headers-...deb` | Optional; only for building out-of-tree modules (DKMS) |
+
+## How kernels are kept apart
+
+Each kernel series has its own release name: `7.2.0-debondragon` (v0.1.x),
+`7.2.0-debondragon-2` (v0.2.0), and so on. Installing a new one **adds** it next
+to the old one: the old kernel, its modules and its devicetree stay installed.
+
+- `/boot/dtb/debondragon-<release>.dtb`: the devicetree that came with each kernel
+- `/boot/dtb/debondragon.dtb`: a copy of the **newest** kernel's devicetree
+
+GRUB uses them like this:
+
+- **Debian GNU/Linux** and **Advanced options** (Debian's normal entries) load
+  `debondragon.dtb`, i.e. the newest devicetree, for whichever kernel you pick.
+- **DebOnDragon kernels (each with its own devicetree)**: one entry per
+  installed kernel, each with *its own* devicetree. Use this to roll back.
+
+## Upgrade
+
+1. Download from the [Releases page](https://github.com/SatoruGoj0/DebianOnDragon/releases)
+   the `linux-image-...deb`, the `debondragon-support_...deb` and `SHA256SUMS`, into one folder.
+2. Check the downloads:
+   ```bash
+   sha256sum -c --ignore-missing SHA256SUMS
+   ```
+3. Install both in one command (order doesn't matter; the support package
+   refreshes the devicetrees and GRUB itself):
+   ```bash
+   sudo apt install ./debondragon-support_*_all.deb ./linux-image-7.2.0-debondragon-*_arm64.deb
+   ```
+   apt runs the kernel's hooks: it builds the initramfs, copies the kernel's
+   devicetree to `/boot/dtb`, and regenerates `grub.cfg`.
+4. Check before rebooting:
+   ```bash
+   ls /boot/dtb/
+   grep -E "^menuentry|submenu|devicetree" /boot/grub/grub.cfg | head -20
+   ```
+   You should see a `debondragon-<release>.dtb` for every installed kernel, and
+   the "DebOnDragon kernels" submenu.
+5. Reboot. The default entry starts the newest kernel. Check with `uname -r`.
+
+The previous kernel isn't touched. Keep it until the new one has proved itself.
+
+## Roll back
+
+**For one boot:** in the GRUB menu, open **DebOnDragon kernels (each with its
+own devicetree)** and choose the older kernel. It boots with the devicetree it
+was built with.
+
+If the GRUB menu doesn't show, hold **Shift** or press **Esc** while GRUB
+starts, or make the menu always visible:
+```bash
+echo 'GRUB_TIMEOUT_STYLE=menu' | sudo tee /etc/default/grub.d/menu.cfg
+echo 'GRUB_TIMEOUT=5' | sudo tee -a /etc/default/grub.d/menu.cfg
+sudo update-grub
+```
+
+**For good:** boot the older kernel, then remove the newer one:
+```bash
+sudo apt remove linux-image-7.2.0-debondragon-2
+```
+The removal hook deletes that kernel's devicetree, points `debondragon.dtb`
+back at the newest remaining kernel, and regenerates GRUB.
+
+Never remove the kernel you are running, or the last kernel.
+
+**If nothing boots:** start the live USB, then mount and chroot into the
+installed system:
+```bash
+sudo mount /dev/nvme0n1pX /mnt            # your Debian root partition
+sudo mount /dev/nvme0n1p1 /mnt/boot/efi   # the EFI partition
+for d in dev proc sys run; do sudo mount --bind /$d /mnt/$d; done
+sudo chroot /mnt
+apt remove linux-image-7.2.0-debondragon-2   # inside the chroot
+```
+Find the partitions with `lsblk -f`. Debian's root is the large `ext4` one.
+
+## What the upgrade does not touch
+
+- The Windows EFI files and its fallback loader (`\EFI\Boot\bootaa64.efi`)
+- The UEFI boot entries (Linux can't write them on this laptop anyway)
+- Partitions
+- Your existing kernels
+
+## Build from source
+
+On any arm64 Debian 13 system as root (WSL works, so does the laptop itself),
+or in Docker:
+
+```bash
+git clone https://github.com/SatoruGoj0/DebianOnDragon.git
+cd DebianOnDragon
+docker run --rm --privileged -v "$PWD:/src" -w /src -e PACKAGES_ONLY=1 debian:trixie ./build.sh
+```
+
+`PACKAGES_ONLY=1` builds the kernel and support packages without the ISO. The
+packages land in `out/`. The kernel build takes about 25 minutes on 4 cores
+and runs the config, devicetree and module checks described in the README.
+
+To make a new kernel series, raise `KERNEL_PKGREV` in `build.conf`. A build
+with the same series replaces that series' package on upgrade, instead of
+installing beside it.

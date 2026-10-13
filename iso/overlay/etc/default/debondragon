@@ -1,6 +1,0 @@
-# DebOnDragon board settings.
-#
-# Devicetree that GRUB loads before booting Linux, relative to
-# /usr/lib/linux-image-<version>/. Set to "none" to boot without one
-# (ACPI only; most hardware will not work).
-DEBONDRAGON_DTB=qcom/x1p42100-lenovo-ideapad-slim3-15q8x10.dtb

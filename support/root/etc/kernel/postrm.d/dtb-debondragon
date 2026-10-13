@@ -1,0 +1,3 @@
+#!/bin/sh
+# Drop the removed kernel's DTB and re-point the default; runs before zz-update-grub.
+exec /usr/local/sbin/debondragon-dtb-sync

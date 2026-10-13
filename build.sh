@@ -21,7 +21,7 @@ apt-get update
 apt-get install -y --no-install-recommends \
 	git ca-certificates build-essential bc bison flex libssl-dev libelf-dev \
 	dpkg-dev debhelper rsync kmod cpio python3 xz-utils zstd libdw-dev \
-	debootstrap squashfs-tools xorriso mtools dosfstools \
+	debootstrap squashfs-tools xorriso mtools dosfstools device-tree-compiler \
 	grub-common grub-efi-arm64-bin
 
 mkdir -p "$work" "$out"
@@ -29,6 +29,14 @@ if [ "${REBUILD_KERNEL:-0}" = 1 ] || [ ! -f "$work/kernel-debs/RELEASE" ]; then
 	rm -rf "$work/kernel-debs"
 	"$here/kernel/build-kernel.sh" "$work"
 fi
+rm -rf "$work/support-deb" "$work/fw-staging"
+"$here/iso/fetch-firmware.sh" "$work" "$work/fw-staging"
+"$here/support/build-support-deb.sh" "$work/support-deb" "$work/fw-staging"
+
+# Packages for upgrading an installed system (docs/kernel-upgrade.md).
+cp "$work"/kernel-debs/linux-image-*.deb "$work"/kernel-debs/linux-headers-*.deb \
+   "$work"/support-deb/debondragon-support_*_all.deb "$out/"
+[ "${PACKAGES_ONLY:-0}" = 1 ] && exit 0
+
 "$here/iso/build-rootfs.sh" "$work"
 "$here/iso/build-image.sh" "$work" "$out"
-cp "$work"/kernel-debs/linux-image-*.deb "$out/"
