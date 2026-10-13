@@ -172,17 +172,18 @@ with HDMI on `usb_1_ss2` (Zenbook A14, Vivobook S15, ThinkPad T14s, Medion)
 use `<3 2 1 0>`; their nodes are otherwise identical to ours. Series 4
 changes only this.
 
-**Converter: unidentified.** The DSDT names no DP-to-HDMI chip, and a
-search of the Windows DriverStore folder names for HDMI/converter vendors
-(Realtek, Parade, Lontium, "hdmi", "bridge") found none; such converters
-usually need no Windows driver. `realtek,rtd2171` is a
-placeholder: simple-bridge treats every HDMI converter compatible the same
-(connector type HDMI-A only), so it doesn't affect training. DPCD
-0x500–0x50B (branch IEEE OUI, device ID string, HW/FW revision) identifies
-vendor and model; 0x000–0x00F gives DPCD revision, max link rate, max lane
-count and TPS3/TPS4 support; 0x080+ the downstream port (HDMI) caps. DPCD
-can't show board wiring (lane order, polarity) or which connector a lane
-reaches; only training results can.
+**Converter: Parade PS176 (DPCD on hardware, kernel -4, HDMI forced
+off).** `/dev/drm_dp_aux1` 0x000: `12 14 c4 01 01 15 01 81 00 01 04 01 0f 00
+01 00` = DPCD 1.2, max link rate 0x14 (HBR2, 5.4 Gbps/lane), 4 lanes with
+enhanced framing and TPS3 (0xc4), one downstream port of type DVI/HDMI with
+detailed caps (0x15), AUX read interval 4 ms. 0x500: `00 1c f8 31 37 36 47
+42 30 00 c7 55 00` = branch IEEE OUI 00-1C-F8 (Parade Technologies),
+device ID "176GB0" (PS176, DP 1.2 to HDMI 2.0), HW rev 0xc7, FW 0x55.00.
+The DSDT names no converter and the Windows DriverStore has no driver for
+one. `realtek,rtd2171` stays as the compatible for now: simple-bridge has no
+PS176 entry and treats all HDMI converters alike (connector type only), so
+it doesn't affect training. DPCD can't show board wiring (lane order,
+polarity); only training results can.
 
 **Reset on unplug/disable (unexplained):** happened only after failed
 training, with the encoder running without a link. No panic, no pstore, no
