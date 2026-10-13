@@ -14,7 +14,8 @@ for dts in "$here"/dts/*.dts; do
 	cpp -nostdinc -undef -x assembler-with-cpp -D__DTS__ \
 	    -I "$here/dts" -I "$qcom" -I "$linux/include" -I "$linux/scripts/dtc/include-prefixes" \
 	    "$dts" -o "$out.pre"
-	dtc -@ -I dts -O dtb -i "$here/dts" -i "$qcom" \
+	# No -@: match the kernel build, whose DTBs have no __symbols__ table.
+	dtc -I dts -O dtb -i "$here/dts" -i "$qcom" \
 	    -Wno-unit_address_vs_reg -Wno-avoid_unnecessary_addr_size \
 	    -Wno-unique_unit_address -Wno-graph_child_address \
 	    -o "$out" "$out.pre"

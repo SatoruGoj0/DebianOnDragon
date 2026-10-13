@@ -11,7 +11,11 @@ prop() { fdtget -t "${3:-s}" "$dtb" "$1" "$2" 2>/dev/null; }
 expect() { # description, actual, expected
 	if [ "$2" = "$3" ]; then echo "ok   $1"; else echo "FAIL $1: got '$2', want '$3'"; fail=1; fi
 }
-node_status() { local s; s=$(prop "$1" status); echo "${s:-okay}"; }
+node_status() { # "missing" if the node doesn't exist, else its status (default okay)
+	local s
+	fdtget -l "$dtb" "$1" >/dev/null 2>&1 || { echo missing; return; }
+	s=$(prop "$1" status); echo "${s:-okay}"
+}
 
 expect "model" "$(prop / model)" "Lenovo IdeaPad Slim 3 15Q8X10"
 expect "backlight is pwm-backlight" "$(prop /backlight compatible)" "pwm-backlight"
@@ -31,7 +35,8 @@ expect "audio card enabled" "$(node_status /sound)" "okay"
 expect "audio card model" "$(prop /sound model)" "X1E80100-LENOVO-IdeaPad-Slim3-15Q8X10"
 expect "no speaker link in default board" "$(fdtget -l "$dtb" /sound 2>/dev/null | grep -c wsa-dai-link)" "0"
 expect "no DP audio links (dp0/dp1 off)" "$(fdtget -l "$dtb" /sound 2>/dev/null | grep -c displayport)" "0"
-expect "speaker SoundWire (swr0) off" "$(node_status "$(fdtget "$dtb" /__symbols__ swr0)")" "disabled"
-expect "headset SoundWire (swr1) on" "$(node_status "$(fdtget "$dtb" /__symbols__ swr1)")" "okay"
+# Fixed paths, not labels: kernel-built DTBs have no __symbols__ table.
+expect "speaker SoundWire (swr0) off" "$(node_status /soc@0/soundwire@6b10000)" "disabled"
+expect "headset SoundWire (swr1) on" "$(node_status /soc@0/soundwire@6ad0000)" "okay"
 
 exit $fail
