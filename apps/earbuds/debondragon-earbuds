@@ -1,0 +1,776 @@
+#!/usr/bin/python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+"""DebOnDragon Earbuds: Bluetooth earbuds and headsets for Debian.
+
+Pairing, connecting and battery come from BlueZ (system D-Bus); the
+listening mode (music: A2DP, calls with microphone: HFP/HSP), volume and
+microphone come from PulseAudio. GTK 4 + libadwaita.
+"""
+import math
+import queue
+import threading
+
+import gi
+
+gi.require_version("Gtk", "4.0")
+gi.require_version("Adw", "1")
+gi.require_version("Pango", "1.0")
+gi.require_version("PangoCairo", "1.0")
+import cairo  # noqa: E402
+from gi.repository import Adw, Gdk, Gio, GLib, Gtk, Pango, PangoCairo  # noqa: E402
+
+import pulsectl  # noqa: E402
+
+APP_ID = "org.debondragon.Earbuds"
+BLUEZ = "org.bluez"
+AGENT_PATH = "/org/debondragon/earbuds/agent"
+AUDIO_UUIDS = {
+    "0000110b-0000-1000-8000-00805f9b34fb",  # A2DP sink
+    "0000111e-0000-1000-8000-00805f9b34fb",  # Handsfree
+    "00001108-0000-1000-8000-00805f9b34fb",  # Headset
+}
+MUSIC_PROFILES = ("a2dp_sink", "a2dp-sink")
+CALL_PROFILES = ("handsfree_head_unit", "headset_head_unit")
+
+CSS = """
+:root {
+  --accent-bg-color: #7aa2f7;
+  --accent-color: #7aa2f7;
+  --accent-fg-color: #1a1b26;
+}
+window.earbuds { background: #1a1b26; }
+.hero { padding: 18px 0 6px 0; }
+.hero-name { font-size: 22px; font-weight: 800; color: #c0caf5; }
+.status-pill {
+  border-radius: 999px; padding: 3px 12px; font-weight: 700; font-size: 12px;
+  background: rgba(86, 95, 137, 0.35); color: #a9b1d6;
+}
+.status-pill.connected { background: rgba(158, 206, 106, 0.18); color: #9ece6a; }
+.status-pill.busy { background: rgba(224, 175, 104, 0.18); color: #e0af68; }
+.big-button {
+  border-radius: 999px; padding: 10px 28px; font-weight: 800;
+  background-image: linear-gradient(45deg, #bb9af7, #7aa2f7); color: #1a1b26;
+}
+.big-button.disconnect { background-image: none; background: rgba(247, 118, 142, 0.18); color: #f7768e; }
+.codec { color: #7dcfff; font-weight: 700; }
+.hint { color: #565f89; }
+levelbar.mic block.filled { background: linear-gradient(90deg, #9ece6a, #e0af68, #f7768e); }
+"""
+
+
+# ---------------------------------------------------------------- BlueZ ----
+class Bluez:
+    """Thin wrapper around BlueZ's object manager on the system bus."""
+
+    def __init__(self, on_change):
+        self.on_change = on_change
+        self.bus = Gio.bus_get_sync(Gio.BusType.SYSTEM)
+        self.mgr = Gio.DBusObjectManagerClient.new_for_bus_sync(
+            Gio.BusType.SYSTEM, Gio.DBusObjectManagerClientFlags.NONE,
+            BLUEZ, "/", None, None, None)
+        for sig in ("object-added", "object-removed", "interface-added",
+                    "interface-removed", "interface-proxy-properties-changed"):
+            self.mgr.connect(sig, lambda *a: self.on_change())
+        self.agent_id = None
+        self.pairing_target = None
+
+    @staticmethod
+    def _prop(iface, name, default=None):
+        v = iface.get_cached_property(name) if iface else None
+        return v.unpack() if v is not None else default
+
+    def adapter_path(self):
+        for obj in self.mgr.get_objects():
+            if obj.get_interface("org.bluez.Adapter1"):
+                return obj.get_object_path()
+        return None
+
+    def adapter_powered(self):
+        p = self.adapter_path()
+        return bool(p and self._prop(self.mgr.get_interface(p, "org.bluez.Adapter1"), "Powered"))
+
+    def devices(self):
+        out = []
+        for obj in self.mgr.get_objects():
+            dev = obj.get_interface("org.bluez.Device1")
+            if not dev:
+                continue
+            uuids = set(u.lower() for u in self._prop(dev, "UUIDs", []))
+            icon = self._prop(dev, "Icon", "") or ""
+            # Headphones and headsets only: TVs and speakers advertise A2DP
+            # too but report a different icon (video-display, ...).
+            if icon:
+                if icon not in ("audio-headset", "audio-headphones"):
+                    continue
+            elif not uuids & AUDIO_UUIDS:
+                continue
+            bat = obj.get_interface("org.bluez.Battery1")
+            out.append({
+                "path": obj.get_object_path(),
+                "address": self._prop(dev, "Address", ""),
+                "name": self._prop(dev, "Alias") or self._prop(dev, "Name") or "Earbuds",
+                "paired": bool(self._prop(dev, "Paired", False)),
+                "connected": bool(self._prop(dev, "Connected", False)),
+                "trusted": bool(self._prop(dev, "Trusted", False)),
+                "rssi": self._prop(dev, "RSSI"),
+                "battery": self._prop(bat, "Percentage") if bat else None,
+            })
+        return out
+
+    def call(self, path, iface, method, params=None, done=None, timeout=30000):
+        def finish(conn, res):
+            err = None
+            try:
+                conn.call_finish(res)
+            except GLib.Error as e:
+                err = e.message
+            if done:
+                done(err)
+        self.bus.call(BLUEZ, path, iface, method, params, None,
+                      Gio.DBusCallFlags.NONE, timeout, None, finish)
+
+    def set_prop(self, path, iface, name, value, done=None):
+        self.call(path, "org.freedesktop.DBus.Properties", "Set",
+                  GLib.Variant("(ssv)", (iface, name, value)), done)
+
+    def discovery(self, on):
+        p = self.adapter_path()
+        if not p:
+            return
+        if on:
+            self.call(p, "org.bluez.Adapter1", "SetDiscoveryFilter",
+                      GLib.Variant("(a{sv})", ({"Transport": GLib.Variant("s", "auto")},)))
+            self.call(p, "org.bluez.Adapter1", "StartDiscovery")
+        else:
+            self.call(p, "org.bluez.Adapter1", "StopDiscovery")
+
+    # Pairing agent: only active during a pairing started from this app,
+    # and it only accepts requests for the device being paired.
+    AGENT_XML = """<node><interface name="org.bluez.Agent1">
+      <method name="Release"/>
+      <method name="RequestPinCode"><arg type="o" direction="in"/><arg type="s" direction="out"/></method>
+      <method name="DisplayPinCode"><arg type="o" direction="in"/><arg type="s" direction="in"/></method>
+      <method name="RequestPasskey"><arg type="o" direction="in"/><arg type="u" direction="out"/></method>
+      <method name="DisplayPasskey"><arg type="o" direction="in"/><arg type="u" direction="in"/><arg type="q" direction="in"/></method>
+      <method name="RequestConfirmation"><arg type="o" direction="in"/><arg type="u" direction="in"/></method>
+      <method name="RequestAuthorization"><arg type="o" direction="in"/></method>
+      <method name="AuthorizeService"><arg type="o" direction="in"/><arg type="s" direction="in"/></method>
+      <method name="Cancel"/>
+    </interface></node>"""
+
+    def _agent_call(self, conn, sender, path, iface, method, params, inv):
+        dev = params.unpack()[0] if params.n_children() else None
+        if method in ("Release", "Cancel", "DisplayPinCode", "DisplayPasskey"):
+            inv.return_value(None)
+        elif dev != self.pairing_target:
+            inv.return_dbus_error("org.bluez.Error.Rejected", "Not the device being paired")
+        elif method == "RequestPinCode":
+            inv.return_value(GLib.Variant("(s)", ("0000",)))
+        elif method == "RequestPasskey":
+            inv.return_value(GLib.Variant("(u)", (0,)))
+        else:  # RequestConfirmation, RequestAuthorization, AuthorizeService
+            inv.return_value(None)
+
+    def agent_start(self, target):
+        self.pairing_target = target
+        if self.agent_id is None:
+            info = Gio.DBusNodeInfo.new_for_xml(self.AGENT_XML).interfaces[0]
+            self.agent_id = self.bus.register_object(AGENT_PATH, info, self._agent_call, None, None)
+        self.call("/org/bluez", "org.bluez.AgentManager1", "RegisterAgent",
+                  GLib.Variant("(os)", (AGENT_PATH, "NoInputNoOutput")))
+
+    def agent_stop(self):
+        self.pairing_target = None
+        if self.agent_id is not None:
+            self.call("/org/bluez", "org.bluez.AgentManager1", "UnregisterAgent",
+                      GLib.Variant("(o)", (AGENT_PATH,)))
+            self.bus.unregister_object(self.agent_id)
+            self.agent_id = None
+
+
+# ----------------------------------------------------------- PulseAudio ----
+class Pulse(threading.Thread):
+    """PulseAudio access on a worker thread; results go back via idle_add."""
+
+    def __init__(self, on_state, on_peak):
+        super().__init__(daemon=True)
+        self.on_state, self.on_peak = on_state, on_peak
+        self.jobs = queue.Queue()
+        self.address = None
+        self.peak_on = False
+
+    def run(self):
+        pulse = None
+        while True:
+            try:
+                if pulse is None:
+                    pulse = pulsectl.Pulse("debondragon-earbuds")
+                try:
+                    job = self.jobs.get(timeout=0.12 if self.peak_on else 1.0)
+                    job(pulse)
+                except queue.Empty:
+                    pass
+                state = self._state(pulse)
+                GLib.idle_add(self.on_state, state)
+                if self.peak_on and state and state.get("source"):
+                    peak = pulse.get_peak_sample(state["source"], 0.1)
+                    GLib.idle_add(self.on_peak, peak)
+            except Exception:  # PulseAudio restarted, card vanished, ...
+                try:
+                    pulse and pulse.close()
+                except Exception:
+                    pass
+                pulse = None
+                GLib.idle_add(self.on_state, None)
+                threading.Event().wait(1.0)
+
+    def _state(self, pulse):
+        if not self.address:
+            return None
+        mac = self.address.replace(":", "_").upper()
+        card = next((c for c in pulse.card_list() if mac in c.name.upper()), None)
+        if not card:
+            return {"card": None}
+        profiles = {p.name: p for p in card.profile_list}
+        music = next((n for n in MUSIC_PROFILES if n in profiles), None)
+        call = next((n for n in CALL_PROFILES if n in profiles and profiles[n].available), None) \
+            or next((n for n in CALL_PROFILES if n in profiles), None)
+        sink = next((s for s in pulse.sink_list() if s.card == card.index), None)
+        source = next((s for s in pulse.source_list()
+                       if s.card == card.index and not s.name.endswith(".monitor")), None)
+        info = pulse.server_info()
+        return {
+            "card": card.name,
+            "profile": card.profile_active.name if card.profile_active else "off",
+            "music": music, "call": call,
+            "sink": sink.name if sink else None,
+            "sink_volume": sink.volume.value_flat if sink else 0.0,
+            "sink_muted": bool(sink.mute) if sink else False,
+            "codec": (sink.proplist.get("bluetooth.codec") if sink else None)
+            or (source.proplist.get("bluetooth.codec") if source else None),
+            "source": source.name if source else None,
+            "source_volume": source.volume.value_flat if source else 0.0,
+            "default_sink": info.default_sink_name == (sink.name if sink else None),
+            "default_source": info.default_source_name == (source.name if source else None),
+        }
+
+    def do(self, fn):
+        self.jobs.put(fn)
+
+    def set_profile(self, card, profile):
+        self.do(lambda p: p.card_profile_set_by_index(
+            p.get_card_by_name(card).index, profile))
+
+    def set_volume(self, kind, name, value):
+        def job(p):
+            obj = p.get_sink_by_name(name) if kind == "sink" else p.get_source_by_name(name)
+            p.volume_set_all_chans(obj, value)
+        self.do(job)
+
+    def set_default(self, kind, name):
+        def job(p):
+            obj = p.get_sink_by_name(name) if kind == "sink" else p.get_source_by_name(name)
+            p.default_set(obj)
+            # Move playing/recording streams over as well.
+            streams = p.sink_input_list() if kind == "sink" else p.source_output_list()
+            for s in streams:
+                try:
+                    (p.sink_input_move if kind == "sink" else p.source_output_move)(s.index, obj.index)
+                except pulsectl.PulseOperationFailed:
+                    pass
+        self.do(job)
+
+
+# ------------------------------------------------------------ the ring ----
+class BatteryRing(Gtk.DrawingArea):
+    """Earbuds glyph inside a ring that fills with the battery level."""
+
+    def __init__(self):
+        super().__init__()
+        self.set_content_width(168)
+        self.set_content_height(168)
+        self.level = None
+        self.connected = False
+        self.set_draw_func(self._draw)
+
+    def update(self, level, connected):
+        if (level, connected) != (self.level, self.connected):
+            self.level, self.connected = level, connected
+            self.queue_draw()
+
+    def _draw(self, area, cr, w, h):
+        cx, cy, r = w / 2, h / 2, min(w, h) / 2 - 10
+        cr.set_line_width(10)
+        cr.set_source_rgba(0.34, 0.37, 0.54, 0.35)
+        cr.arc(cx, cy, r, 0, 2 * math.pi)
+        cr.stroke()
+        if self.level is not None and self.connected:
+            frac = max(0.0, min(1.0, self.level / 100))
+            grad = cairo.LinearGradient(0, 0, w, h)
+            if frac <= 0.15:
+                grad.add_color_stop_rgb(0, 0.97, 0.46, 0.56)
+                grad.add_color_stop_rgb(1, 1.0, 0.62, 0.39)
+            else:
+                grad.add_color_stop_rgb(0, 0.73, 0.60, 0.97)
+                grad.add_color_stop_rgb(1, 0.48, 0.64, 0.97)
+            cr.set_source(grad)
+            cr.set_line_cap(cairo.LINE_CAP_ROUND)
+            cr.arc(cx, cy, r, -math.pi / 2, -math.pi / 2 + frac * 2 * math.pi)
+            cr.stroke()
+        # glyph: nerd-font earbuds, falls back to a symbolic icon look
+        layout = self.create_pango_layout("\U000F184F")
+        layout.set_font_description(Pango.FontDescription.from_string("JetBrainsMono Nerd Font 54"))
+        tw, th = layout.get_pixel_size()
+        if self.connected:
+            cr.set_source_rgb(0.75, 0.79, 0.96)
+        else:
+            cr.set_source_rgb(0.34, 0.37, 0.54)
+        cr.move_to(cx - tw / 2, cy - th / 2 - (8 if self.level is not None and self.connected else 0))
+        PangoCairo.show_layout(cr, layout)
+        if self.level is not None and self.connected:
+            lay2 = self.create_pango_layout(f"{self.level}%")
+            lay2.set_font_description(Pango.FontDescription.from_string("Sans Bold 13"))
+            tw2, th2 = lay2.get_pixel_size()
+            cr.set_source_rgb(0.75, 0.79, 0.96)
+            cr.move_to(cx - tw2 / 2, cy + th / 2 - 14)
+            PangoCairo.show_layout(cr, lay2)
+
+
+# ------------------------------------------------------------- window ----
+class EarbudsWindow(Adw.ApplicationWindow):
+    def __init__(self, app):
+        super().__init__(application=app, title="Earbuds")
+        self.add_css_class("earbuds")
+        self.set_default_size(440, 760)
+        self.dev = None
+        self.state = None
+        self.busy = None
+        self._updating = False
+
+        self.bluez = Bluez(lambda: GLib.idle_add(self.refresh))
+        self.pulse = Pulse(self.on_pulse_state, self.on_peak)
+        self.pulse.start()
+
+        self.nav = Adw.NavigationView()
+        self.set_content(self.nav)
+        self.nav.add(self._main_page())
+        self.pair_page = self._pair_page()
+        self.refresh()
+        GLib.timeout_add_seconds(5, lambda: self.refresh() or True)
+
+    # ---- main page
+    def _main_page(self):
+        tv = Adw.ToolbarView()
+        header = Adw.HeaderBar()
+        add = Gtk.Button(icon_name="list-add-symbolic", tooltip_text="Pair new earbuds")
+        add.connect("clicked", lambda *_: self.open_pairing())
+        header.pack_start(add)
+        tv.add_top_bar(header)
+
+        self.toasts = Adw.ToastOverlay()
+        scroller = Gtk.ScrolledWindow(hscrollbar_policy=Gtk.PolicyType.NEVER)
+        clamp = Adw.Clamp(maximum_size=520, margin_start=16, margin_end=16, margin_bottom=24)
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=22)
+        self.main_box = box
+        clamp.set_child(box)
+        scroller.set_child(clamp)
+        self.toasts.set_child(scroller)
+        tv.set_content(self.toasts)
+
+        # hero
+        hero = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10,
+                       halign=Gtk.Align.CENTER, css_classes=["hero"])
+        self.ring = BatteryRing()
+        hero.append(self.ring)
+        self.name_label = Gtk.Label(css_classes=["hero-name"])
+        hero.append(self.name_label)
+        self.status = Gtk.Label(css_classes=["status-pill"], halign=Gtk.Align.CENTER)
+        hero.append(self.status)
+        self.connect_btn = Gtk.Button(css_classes=["big-button"], halign=Gtk.Align.CENTER,
+                                      margin_top=6)
+        self.connect_btn.connect("clicked", self.on_connect_clicked)
+        hero.append(self.connect_btn)
+        box.append(hero)
+
+        # device choice (only shown with several paired audio devices)
+        self.dev_group = Adw.PreferencesGroup()
+        self.dev_row = Adw.ComboRow(title="Device")
+        self.dev_model = Gtk.StringList()
+        self.dev_row.set_model(self.dev_model)
+        self.dev_row.connect("notify::selected", self.on_device_selected)
+        self.dev_group.add(self.dev_row)
+        box.append(self.dev_group)
+
+        # mode
+        self.mode_group = Adw.PreferencesGroup(title="Listening mode")
+        mode_row = Adw.ActionRow(title="Mode")
+        self.mode_music = Gtk.ToggleButton(child=Adw.ButtonContent(icon_name="audio-x-generic-symbolic", label="Music"))
+        self.mode_call = Gtk.ToggleButton(child=Adw.ButtonContent(icon_name="call-start-symbolic", label="Calls"), group=self.mode_music)
+        mbox = Gtk.Box(css_classes=["linked"], valign=Gtk.Align.CENTER)
+        mbox.append(self.mode_music)
+        mbox.append(self.mode_call)
+        self.mode_music.connect("toggled", self.on_mode)
+        mode_row.add_suffix(mbox)
+        self.mode_group.add(mode_row)
+        self.mode_hint = Adw.ActionRow(title="", css_classes=["property"])
+        self.mode_group.add(self.mode_hint)
+        box.append(self.mode_group)
+
+        # sound
+        self.sound_group = Adw.PreferencesGroup(title="Sound")
+        vol_row = Adw.ActionRow(title="Volume")
+        self.vol = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 1.0, 0.01)
+        self.vol.set_hexpand(True)
+        self.vol.set_size_request(200, -1)
+        self.vol.connect("value-changed", self.on_volume)
+        vol_row.add_suffix(self.vol)
+        self.sound_group.add(vol_row)
+        self.out_row = Adw.SwitchRow(title="Play sound here",
+                                     subtitle="Use the earbuds as the system output")
+        self.out_row.connect("notify::active", self.on_default_out)
+        self.sound_group.add(self.out_row)
+        box.append(self.sound_group)
+
+        # microphone
+        self.mic_group = Adw.PreferencesGroup(title="Microphone")
+        self.mic_row = Adw.ActionRow(title="Level")
+        self.mic_level = Gtk.LevelBar(min_value=0, max_value=1, css_classes=["mic"],
+                                      valign=Gtk.Align.CENTER, hexpand=True)
+        self.mic_level.set_size_request(160, -1)
+        self.mic_test = Gtk.ToggleButton(icon_name="audio-input-microphone-symbolic",
+                                         tooltip_text="Show microphone level",
+                                         valign=Gtk.Align.CENTER, css_classes=["flat"])
+        self.mic_test.connect("toggled", lambda b: setattr(self.pulse, "peak_on", b.get_active()))
+        self.mic_row.add_suffix(self.mic_level)
+        self.mic_row.add_suffix(self.mic_test)
+        self.mic_group.add(self.mic_row)
+        micvol_row = Adw.ActionRow(title="Input volume")
+        self.micvol = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 1.0, 0.01)
+        self.micvol.set_hexpand(True)
+        self.micvol.set_size_request(200, -1)
+        self.micvol.connect("value-changed", self.on_mic_volume)
+        micvol_row.add_suffix(self.micvol)
+        self.mic_group.add(micvol_row)
+        self.in_row = Adw.SwitchRow(title="Record from here",
+                                    subtitle="Use the earbuds' microphone as the system input")
+        self.in_row.connect("notify::active", self.on_default_in)
+        self.mic_group.add(self.in_row)
+        box.append(self.mic_group)
+
+        # noise control
+        self.anc_group = Adw.PreferencesGroup(
+            title="Noise control",
+            description="realme switches noise cancellation with its own app protocol, "
+                        "which isn't documented. The earbuds' button still works.")
+        anc_row = Adw.ActionRow(title="Mode", sensitive=False)
+        abox = Gtk.Box(css_classes=["linked"], valign=Gtk.Align.CENTER)
+        for label in ("Off", "Cancel", "Transparent"):
+            abox.append(Gtk.ToggleButton(label=label))
+        anc_row.add_suffix(abox)
+        self.anc_group.add(anc_row)
+        box.append(self.anc_group)
+
+        # details
+        self.info_group = Adw.PreferencesGroup(title="Details")
+        self.addr_row = Adw.ActionRow(title="Address", css_classes=["property"])
+        self.codec_row = Adw.ActionRow(title="Codec", css_classes=["property"])
+        self.info_group.add(self.addr_row)
+        self.info_group.add(self.codec_row)
+        forget = Adw.ButtonRow(title="Forget these earbuds", css_classes=["destructive-action"])
+        forget.connect("activated", self.on_forget)
+        self.info_group.add(forget)
+        box.append(self.info_group)
+
+        return Adw.NavigationPage(child=tv, title="Earbuds", tag="main")
+
+    # ---- pairing page
+    def _pair_page(self):
+        tv = Adw.ToolbarView()
+        tv.add_top_bar(Adw.HeaderBar())
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=18,
+                      margin_top=12, margin_start=16, margin_end=16, margin_bottom=24)
+        status = Adw.StatusPage(
+            icon_name="bluetooth-active-symbolic", title="Pair earbuds",
+            description="Put the earbuds in the case, open the lid and hold the button "
+                        "on the case for about 3 seconds until the light flashes.")
+        box.append(status)
+        self.spinner = Adw.Spinner(halign=Gtk.Align.CENTER, height_request=32)
+        box.append(self.spinner)
+        self.found = Gtk.ListBox(css_classes=["boxed-list"], selection_mode=Gtk.SelectionMode.NONE)
+        box.append(self.found)
+        clamp = Adw.Clamp(maximum_size=520, child=box)
+        sc = Gtk.ScrolledWindow(hscrollbar_policy=Gtk.PolicyType.NEVER, child=clamp)
+        tv.set_content(sc)
+        page = Adw.NavigationPage(child=tv, title="Pair", tag="pair")
+        page.connect("hidden", lambda *_: self.bluez.discovery(False))
+        return page
+
+    def open_pairing(self):
+        if not self.bluez.adapter_powered():
+            p = self.bluez.adapter_path()
+            if p:
+                self.bluez.set_prop(p, "org.bluez.Adapter1", "Powered", GLib.Variant("b", True))
+        self.bluez.discovery(True)
+        self.nav.push(self.pair_page)
+        self.refresh()
+
+    def _fill_found(self, devices):
+        child = self.found.get_first_child()
+        while child:
+            nxt = child.get_next_sibling()
+            self.found.remove(child)
+            child = nxt
+        new = [d for d in devices if not d["paired"]]
+        for d in new:
+            row = Adw.ActionRow(title=d["name"], subtitle=d["address"], activatable=True)
+            row.add_prefix(Gtk.Image(icon_name="audio-headphones-symbolic"))
+            btn = Gtk.Button(label="Pair", valign=Gtk.Align.CENTER, css_classes=["suggested-action", "pill"])
+            btn.connect("clicked", lambda _b, dd=d: self.pair(dd))
+            row.add_suffix(btn)
+            self.found.append(row)
+        self.found.set_visible(bool(new))
+
+    def pair(self, d):
+        self.busy = "Pairing…"
+        self.refresh()
+        self.bluez.discovery(False)
+        self.bluez.agent_start(d["path"])
+
+        def paired(err):
+            if err and "AlreadyExists" not in err:
+                self.bluez.agent_stop()
+                self.busy = None
+                self.toast(f"Pairing failed: {err.split(':')[-1].strip()}")
+                self.refresh()
+                return
+            self.bluez.set_prop(d["path"], "org.bluez.Device1", "Trusted", GLib.Variant("b", True))
+            self.bluez.call(d["path"], "org.bluez.Device1", "Connect", done=connected)
+
+        def connected(err):
+            self.bluez.agent_stop()
+            self.busy = None
+            self.toast("Connected" if not err else f"Paired, but connecting failed: {err.split(':')[-1].strip()}")
+            self.dev = d["path"]
+            self.nav.pop_to_tag("main")
+            self.refresh()
+
+        self.bluez.call(d["path"], "org.bluez.Device1", "Pair", done=paired, timeout=60000)
+
+    # ---- state
+    def toast(self, text):
+        self.toasts.add_toast(Adw.Toast(title=text, timeout=3))
+
+    def current(self, devices):
+        paired = [d for d in devices if d["paired"]]
+        if self.dev:
+            for d in paired:
+                if d["path"] == self.dev:
+                    return d
+        return next((d for d in paired if d["connected"]), paired[0] if paired else None)
+
+    def refresh(self):
+        try:
+            devices = self.bluez.devices()
+        except GLib.Error:
+            devices = []
+        if self.nav.get_visible_page() is self.pair_page:
+            self._fill_found(devices)
+        d = self.current(devices)
+        self.dev = d["path"] if d else None
+        self.pulse.address = d["address"] if d and d["connected"] else None
+
+        self._updating = True
+        paired = [x for x in devices if x["paired"]]
+        self.dev_group.set_visible(len(paired) > 1)
+        if len(paired) > 1:
+            names = [x["name"] for x in paired]
+            if [self.dev_model.get_string(i) for i in range(self.dev_model.get_n_items())] != names:
+                self.dev_model.splice(0, self.dev_model.get_n_items(), names)
+            self.paired_paths = [x["path"] for x in paired]
+            self.dev_row.set_selected(self.paired_paths.index(d["path"]))
+        self._updating = False
+
+        connected = bool(d and d["connected"])
+        self.ring.update(d["battery"] if d else None, connected)
+        self.name_label.set_label(d["name"] if d else "No earbuds yet")
+        for c in ("connected", "busy"):
+            self.status.remove_css_class(c)
+        if self.busy:
+            self.status.set_label(self.busy)
+            self.status.add_css_class("busy")
+        elif not self.bluez.adapter_powered():
+            self.status.set_label("Bluetooth is off")
+        elif connected:
+            self.status.set_label("Connected" + (f" · {d['battery']}%" if d["battery"] is not None else ""))
+            self.status.add_css_class("connected")
+        elif d:
+            self.status.set_label("Not connected")
+        else:
+            self.status.set_label("Tap + to pair")
+        self.connect_btn.set_sensitive(not self.busy)
+        if not d:
+            self.connect_btn.set_label("Pair earbuds")
+            self.connect_btn.remove_css_class("disconnect")
+        elif connected:
+            self.connect_btn.set_label("Disconnect")
+            self.connect_btn.add_css_class("disconnect")
+        else:
+            self.connect_btn.set_label("Connect")
+            self.connect_btn.remove_css_class("disconnect")
+        for g in (self.mode_group, self.sound_group, self.mic_group):
+            g.set_visible(connected)
+        self.anc_group.set_visible(connected)
+        self.info_group.set_visible(bool(d))
+        # Nothing to control: keep the hero centred instead of top-aligned.
+        self.main_box.set_valign(Gtk.Align.START if connected else Gtk.Align.CENTER)
+        if d:
+            self.addr_row.set_subtitle(d["address"])
+        self.apply_pulse()
+        return False
+
+    def on_pulse_state(self, state):
+        self.state = state
+        self.apply_pulse()
+        return False
+
+    def apply_pulse(self):
+        s = self.state or {}
+        self._updating = True
+        has_card = bool(s.get("card"))
+        call = s.get("profile") in CALL_PROFILES
+        self.mode_music.set_active(not call)
+        self.mode_call.set_active(call)
+        self.mode_music.set_sensitive(bool(s.get("music")))
+        self.mode_call.set_sensitive(bool(s.get("call")))
+        if not has_card:
+            self.mode_hint.set_title("Waiting for the audio connection…")
+        elif call:
+            self.mode_hint.set_title("Microphone on. Sound is mono and lower quality while in call mode.")
+        else:
+            self.mode_hint.set_title("Best sound quality. Switch to Calls to use the microphone.")
+        codec = s.get("codec")
+        self.codec_row.set_subtitle(codec.upper() if codec else "–")
+        if s.get("sink"):
+            self.vol.set_value(s["sink_volume"])
+        self.vol.set_sensitive(bool(s.get("sink")))
+        self.out_row.set_sensitive(bool(s.get("sink")))
+        self.out_row.set_active(bool(s.get("default_sink")))
+        self.mic_group.set_sensitive(bool(s.get("source")))
+        if s.get("source"):
+            self.micvol.set_value(s["source_volume"])
+        self.in_row.set_active(bool(s.get("default_source")))
+        if not s.get("source"):
+            self.mic_level.set_value(0)
+        self._updating = False
+
+    def on_peak(self, peak):
+        self.mic_level.set_value(min(1.0, peak * 1.6))
+        return False
+
+    # ---- actions
+    def on_connect_clicked(self, _btn):
+        devices = self.bluez.devices()
+        d = self.current(devices)
+        if not d:
+            self.open_pairing()
+            return
+        if d["connected"]:
+            self.busy = "Disconnecting…"
+            self.bluez.call(d["path"], "org.bluez.Device1", "Disconnect", done=self._done)
+        else:
+            if not self.bluez.adapter_powered():
+                self.bluez.set_prop(self.bluez.adapter_path(), "org.bluez.Adapter1",
+                                    "Powered", GLib.Variant("b", True))
+            self.busy = "Connecting…"
+            self.bluez.call(d["path"], "org.bluez.Device1", "Connect", done=self._done)
+        self.refresh()
+
+    def _done(self, err):
+        self.busy = None
+        if err:
+            self.toast(err.split(":")[-1].strip() or "Failed")
+        self.refresh()
+
+    def on_device_selected(self, row, _p):
+        if not self._updating and getattr(self, "paired_paths", None):
+            self.dev = self.paired_paths[row.get_selected()]
+            self.refresh()
+
+    def on_mode(self, btn):
+        if self._updating or not self.state or not self.state.get("card"):
+            return
+        want = self.state["music"] if btn.get_active() else self.state["call"]
+        if want and want != self.state.get("profile"):
+            self.pulse.set_profile(self.state["card"], want)
+
+    def on_volume(self, scale):
+        if not self._updating and self.state and self.state.get("sink"):
+            self.pulse.set_volume("sink", self.state["sink"], scale.get_value())
+
+    def on_mic_volume(self, scale):
+        if not self._updating and self.state and self.state.get("source"):
+            self.pulse.set_volume("source", self.state["source"], scale.get_value())
+
+    def on_default_out(self, row, _p):
+        if not self._updating and row.get_active() and self.state and self.state.get("sink"):
+            self.pulse.set_default("sink", self.state["sink"])
+
+    def on_default_in(self, row, _p):
+        if not self._updating and row.get_active() and self.state and self.state.get("source"):
+            self.pulse.set_default("source", self.state["source"])
+
+    def on_forget(self, _row):
+        d = self.current(self.bluez.devices())
+        if not d:
+            return
+        dlg = Adw.AlertDialog(heading=f"Forget {d['name']}?",
+                              body="You will need to pair them again to use them with this laptop.")
+        dlg.add_response("cancel", "Cancel")
+        dlg.add_response("forget", "Forget")
+        dlg.set_response_appearance("forget", Adw.ResponseAppearance.DESTRUCTIVE)
+
+        def chosen(_d, resp):
+            if resp == "forget":
+                self.bluez.call(self.bluez.adapter_path(), "org.bluez.Adapter1", "RemoveDevice",
+                                GLib.Variant("(o)", (d["path"],)), done=self._done)
+                self.dev = None
+        dlg.connect("response", chosen)
+        dlg.present(self)
+
+
+class EarbudsApp(Adw.Application):
+    def __init__(self):
+        super().__init__(application_id=APP_ID, flags=Gio.ApplicationFlags.DEFAULT_FLAGS)
+        self.win = None
+
+    def do_startup(self):
+        Adw.Application.do_startup(self)
+        Adw.StyleManager.get_default().set_color_scheme(Adw.ColorScheme.FORCE_DARK)
+        css = Gtk.CssProvider()
+        css.load_from_string(CSS)
+        Gtk.StyleContext.add_provider_for_display(
+            Gdk.Display.get_default(), css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        quit_action = Gio.SimpleAction.new("quit", None)
+        quit_action.connect("activate", lambda *_: self.quit())
+        self.add_action(quit_action)
+        self.set_accels_for_action("app.quit", ["<Control>q"])
+        close = Gio.SimpleAction.new("close", None)
+        close.connect("activate", lambda *_: self.win and self.win.close())
+        self.add_action(close)
+        self.set_accels_for_action("app.close", ["<Control>w", "Escape"])
+
+    def do_activate(self):
+        if not self.win:
+            self.win = EarbudsWindow(self)
+            self.win.connect("close-request", self._closed)
+        self.win.present()
+
+    def _closed(self, *_):
+        self.win.bluez.discovery(False)
+        self.win.bluez.agent_stop()
+        self.win = None
+        return False
+
+
+if __name__ == "__main__":
+    raise SystemExit(EarbudsApp().run(None))

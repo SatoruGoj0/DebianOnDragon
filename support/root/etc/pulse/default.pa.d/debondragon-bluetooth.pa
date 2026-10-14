@@ -1,0 +1,15 @@
+# DebOnDragon: Bluetooth headset (HFP/HSP) support in PulseAudio.
+#
+# Debian's default.pa loads module-bluetooth-discover without options, and
+# on this system the headset profiles were then never registered with
+# BlueZ: earbuds and headsets could play music (A2DP) but their microphone
+# was unusable. The native backend registers the Handsfree and Headset
+# profiles itself (no oFono needed) and reports the headset's battery level
+# to BlueZ. This file is included at the end of /etc/pulse/default.pa.
+.nofail
+unload-module module-bluez5-discover
+unload-module module-bluetooth-discover
+.fail
+.ifexists module-bluez5-discover.so
+load-module module-bluez5-discover headset=native
+.endif

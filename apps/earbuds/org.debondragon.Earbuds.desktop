@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Earbuds
+GenericName=Bluetooth Earbuds
+Comment=Connect Bluetooth earbuds, switch between music and calls, check battery
+Exec=debondragon-earbuds
+Icon=audio-headphones
+Terminal=false
+Categories=AudioVideo;Audio;Settings;HardwareSettings;
+Keywords=bluetooth;earbuds;headphones;headset;realme;battery;microphone;
+StartupNotify=true

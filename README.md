@@ -85,6 +85,7 @@ Windows partition.
 | `dts/` | Board devicetree: shared `.dtsi`, default board, opt-in `-speakers` board |
 | `kernel/` | Config fragment, build script, config and module checks |
 | `support/` | `debondragon-support` package: DTB hooks, GRUB entries, tools |
+| `apps/earbuds/` | Earbuds app (GTK 4 + libadwaita) and its Waybar module: pair, connect, music/call mode, volume, microphone, battery |
 | `iso/` | Root filesystem, firmware, GRUB and ISO assembly |
 | `windows/` | Windows-side helpers: export firmware, create the GRUB boot entry |
 | `scripts/` | ACPI/DSDT analysis, DTB assertions, lint |

@@ -24,6 +24,18 @@ setting, long runs, reboot and unplug/replug with active video (earlier
 kernels reset the laptop on unplug after failed training). Tests:
 docs/hdmi-testing.md.
 
+## Bluetooth headsets: microphone and Earbuds app
+
+- `debondragon-support` 0.3.0 makes PulseAudio register the Bluetooth
+  headset profiles itself (`/etc/pulse/default.pa.d/debondragon-bluetooth.pa`,
+  native backend). Before, headsets could only play music; their
+  microphone was unusable. It also reports headset battery levels to BlueZ.
+- `apps/earbuds/`: a GTK 4 + libadwaita app (pair, connect, music vs.
+  call mode, volume, microphone level, battery) and a Waybar module; install
+  with `apps/earbuds/install.sh`. Noise-control switching for realme earbuds
+  isn't possible yet (undocumented protocol). Not yet tested with real
+  earbuds.
+
 Unchanged and still working: touchpad (TLMM 19), internal display, GPU,
 brightness, camera, Wi-Fi, keyboard, touchscreen, USB-A.
 

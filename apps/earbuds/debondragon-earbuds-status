@@ -1,0 +1,96 @@
+#!/usr/bin/python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+"""Waybar module for DebOnDragon Earbuds.
+
+Prints one JSON line whenever a Bluetooth audio device connects,
+disconnects or reports a new battery level (BlueZ signals, no polling):
+  {"text": "...", "tooltip": "...", "class": "connected|disconnected|off"}
+"""
+import json
+import sys
+
+from gi.repository import Gio, GLib  # noqa: E402
+
+BLUEZ = "org.bluez"
+AUDIO_UUIDS = {
+    "0000110b-0000-1000-8000-00805f9b34fb",
+    "0000111e-0000-1000-8000-00805f9b34fb",
+    "00001108-0000-1000-8000-00805f9b34fb",
+}
+GLYPH = "\U000F184F"  # nerd-font earbuds
+last = None
+
+
+def prop(iface, name, default=None):
+    v = iface.get_cached_property(name) if iface else None
+    return v.unpack() if v is not None else default
+
+
+def emit(mgr):
+    global last
+    powered = False
+    connected = []
+    for obj in mgr.get_objects():
+        ad = obj.get_interface("org.bluez.Adapter1")
+        if ad and prop(ad, "Powered"):
+            powered = True
+        dev = obj.get_interface("org.bluez.Device1")
+        if not dev or not prop(dev, "Connected"):
+            continue
+        uuids = {u.lower() for u in prop(dev, "UUIDs", [])}
+        icon = prop(dev, "Icon", "") or ""
+        # Same rule as the app: headphones/headsets, not TVs or speakers.
+        if icon:
+            if icon not in ("audio-headset", "audio-headphones"):
+                continue
+        elif not uuids & AUDIO_UUIDS:
+            continue
+        bat = obj.get_interface("org.bluez.Battery1")
+        connected.append((prop(dev, "Alias") or prop(dev, "Name") or "Earbuds",
+                          prop(bat, "Percentage") if bat else None))
+    if connected:
+        name, level = connected[0]
+        text = f"{GLYPH}  {level}%" if level is not None else GLYPH
+        tip = "\n".join(f"{n}: " + (f"{b}%" if b is not None else "connected") for n, b in connected)
+        cls = "low" if level is not None and level <= 15 else "connected"
+    else:
+        text, cls = GLYPH, ("disconnected" if powered else "off")
+        tip = "Earbuds: not connected" if powered else "Bluetooth is off"
+    out = json.dumps({"text": text, "tooltip": tip + "\nClick: open Earbuds", "class": cls}, ensure_ascii=False)
+    if out != last:
+        print(out, flush=True)
+        last = out
+    return False
+
+
+def main():
+    loop = GLib.MainLoop()
+    state = {"mgr": None}
+
+    def connect():
+        try:
+            mgr = Gio.DBusObjectManagerClient.new_for_bus_sync(
+                Gio.BusType.SYSTEM, Gio.DBusObjectManagerClientFlags.NONE,
+                BLUEZ, "/", None, None, None)
+        except GLib.Error:
+            print(json.dumps({"text": GLYPH, "tooltip": "Bluetooth service not running",
+                              "class": "off"}, ensure_ascii=False), flush=True)
+            return True  # retry
+        for sig in ("object-added", "object-removed", "interface-added",
+                    "interface-removed", "interface-proxy-properties-changed"):
+            mgr.connect(sig, lambda *a: GLib.idle_add(emit, mgr))
+        mgr.connect("notify::name-owner", lambda *a: GLib.idle_add(emit, mgr))
+        state["mgr"] = mgr
+        emit(mgr)
+        return False
+
+    if connect():
+        GLib.timeout_add_seconds(5, connect)
+    loop.run()
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (KeyboardInterrupt, BrokenPipeError):
+        sys.exit(0)
