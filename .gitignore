@@ -10,3 +10,6 @@
 /boot-logs/
 # Local diagnostics from windows/Add-DebianBootEntry.ps1
 /windows/boot-entry-report-*.txt
+
+# Python bytecode
+__pycache__/
