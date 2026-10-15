@@ -7,7 +7,7 @@ the user-facing support matrix; keep the evidence and likely cause here.
 
 ## Kernel/config gaps
 
-### Tailscale and Docker networking cannot start on series 10
+### Tailscale and Docker networking fail on series 10
 
 - **Symptom:** `tailscaled.service` exits while creating `tailscale0`, and
   `docker.service` exits while creating its `DOCKER` NAT chain. Both report
@@ -17,11 +17,14 @@ the user-facing support matrix; keep the evidence and likely cause here.
   namespaces, seccomp, bridge, veth and overlayfs), but has
   `CONFIG_NF_TABLES=n` and `CONFIG_NF_NAT=n`. Debian's `iptables` uses the nft
   backend, so Docker cannot create its bridge/NAT rules.
-- **Series-11 candidate fix:** enable IPv4/IPv6 policy routing, nftables,
-  connection tracking, NAT/masquerading and the xtables compatibility modules
-  in `kernel/debondragon.config`. After rebooting series 11, verify that
-  `tailscale status`, `iptables -L`, `nft list ruleset`, and a Docker container
-  with outbound networking all work. Do not treat a daemon started with its
+- **Series-11 result:** IPv4/IPv6 policy routing, nftables, connection tracking,
+  NAT/masquerading and the xtables compatibility modules restore both daemons.
+  Tailscale reached multiple peers and Docker pulled Alpine and fetched HTTPS
+  from a NATed container. Tailscale still reports a health warning because its
+  reverse-path-filter workaround also needs the omitted `xt_connmark` module.
+- **Series-12 candidate fix:** add `CONFIG_NETFILTER_XT_CONNMARK=m` (which also
+  selects conntrack mark storage), then confirm that the health warning is gone
+  and rerun peer and Docker egress tests. Do not treat a daemon started with its
   firewall disabled as the final fix.
 
 ### Linux cannot create or reorder UEFI boot entries

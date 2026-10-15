@@ -38,7 +38,7 @@ Working.
 | Internal display (eDP, 1920x1200) | **Working** | v0.1.3 | msm DRM drives the panel (`eDP-1 connected`) |
 | GPU acceleration (Adreno X1-45) | **Working** | unreleased (support 0.4.3) | The authenticated `qcdxkmsucpurwa.mbn` from Qualcomm display driver 31.0.133.1 is accepted; Vulkan enumerates Adreno X1-45 with Mesa Turnip |
 | Hardware video decode (Qualcomm Iris) | **Partial** | unreleased (kernel series 10, support 0.4.3) | The 83N3 accepts the display driver's `qcvss8380_pa.mbn`; FFmpeg decoded 90-frame 1280x720 H.264 and HEVC samples and a 30-frame VP9 sample through `/dev/video2`. A 640x360 HEVC sample triggers an Iris firmware session error; see `TO-FIX.md` |
-| Tailscale and Docker networking | **Needs recheck** | unreleased (kernel series 11) | Series 11 adds policy routing and the nftables/connection-tracking/NAT modules omitted by arm64 `defconfig`; series 10 cannot initialize Debian's iptables nft backend |
+| Tailscale and Docker networking | **Working** | unreleased (kernel series 12) | Series 11 restored policy routing, nftables and NAT: Tailscale peer pings and Docker HTTPS egress are verified. Series 12 also supplies `xt_connmark` for Tailscale's reverse-path-filter workaround |
 | Keyboard (I2C HID) | **Working** | v0.1.0 | Reported working |
 | Touchscreen (ELAN 04F3:43B8) | **Working** | v0.1.0 | Reported working |
 | Wi-Fi (WCN7850, ath12k) | **Working** | v0.1.0 | Reported working |

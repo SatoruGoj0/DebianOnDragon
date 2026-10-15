@@ -48,6 +48,7 @@ need CONFIG_NFT_MASQ              m "nftables masquerading"
 need CONFIG_NFT_NAT               m "nftables NAT rules"
 need CONFIG_NFT_COMPAT            m "iptables rules over nftables"
 need CONFIG_NETFILTER_XT_MARK     m "Tailscale packet marks"
+need CONFIG_NETFILTER_XT_CONNMARK m "Tailscale reverse-path-filter marks"
 need CONFIG_NETFILTER_XT_MATCH_COMMENT m "Tailscale rule ownership comments"
 # Display, brightness, HDMI
 need CONFIG_DRM_MSM              m "display"
