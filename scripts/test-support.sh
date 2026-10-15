@@ -112,6 +112,8 @@ expect "long-name file selects the 83N3 card profile" \
 	"$(grep -c 'X1E80100-LENOVO-IdeaPad-Slim3-15Q8X10.conf' "$ucm")" 1
 expect "truncated card name has a profile" \
 	"$([ -f "$root/usr/share/alsa/ucm2/conf.d/x1e80100/X1E80100-LENOVO-IdeaPad-Slim3-1.conf" ] && echo yes)" yes
+expect "support package accepts Ubuntu 25.10 alsa-ucm-conf" \
+	"$(grep -c 'alsa-ucm-conf (>= 1.2.12)' "$here/support/build-support-deb.sh")" 1
 expect "headphones use class-AB, not the ULP mode" \
 	"$(grep -c "RX HPH Mode' CLS_AB_LOHIFI" "$hifi")" 1
 # grep -c prints one count per file. Sum them; print 0 when nothing matches.
