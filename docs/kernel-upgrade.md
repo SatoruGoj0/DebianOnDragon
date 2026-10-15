@@ -52,30 +52,33 @@ tests in `docs/hdmi-testing.md` pass.
 4. Run the tests in `docs/hdmi-testing.md`, then make -4 the default as
    described there.
 
-## Try kernel series 7 (battery and audio)
+## Try kernel series 8 (battery, audio and Snap support)
 
-Series 7 adds the verified UEFI-to-Linux DSP handoff needed for battery status,
-and includes the speaker amplifiers on the default devicetree. Support 0.4.1
-is the matching userspace (firmware helper, UCM, topology, `alsa-ucm-conf`,
-responsive GRUB console). Audio playback has not been confirmed on the 83N3.
-Keep series 4 installed until the audio tests pass.
+Series 8 contains the verified UEFI-to-Linux DSP handoff needed for battery
+status, the speaker amplifiers on the default devicetree, and SquashFS LZO so
+Ubuntu's browser and desktop snaps can mount. Support 0.4.1 is the matching
+userspace (firmware helper, UCM, topology, `alsa-ucm-conf`, responsive GRUB
+console). Audio playback has not been confirmed on the 83N3. Keep series 7
+installed as the known-good rollback while testing series 8.
 
 1. Install support 0.4.1 first. `--force-confold` keeps your edited
    `/etc/default/debondragon`:
    ```bash
    sudo apt install -o Dpkg::Options::=--force-confold ./debondragon-support_0.4.1_all.deb
    ```
-2. Pin the kernel you already trust (series 4 if HDMI is in use), install
-   `linux-image-7.2.0-debondragon-7`, and boot it once with `grub-reboot`.
-   The steps are the next section; use `-4` where that section says `-2`,
-   and `-7` where it says `-3`.
+2. Pin the kernel you already trust (series 7), install
+   `linux-image-7.2.0-debondragon-8`, and boot it once with `grub-reboot`.
+   The steps are the next section; use `-7` where that section says `-2`,
+   and `-8` where it says `-3`.
 3. Copy the device firmware if you have not already (`sudo debondragon-firmware`)
-   and verify battery status before running the audio tests. HDMI video stays on for series 7
+   and verify battery status before running the audio tests. HDMI video stays
+   on for series 8
    (`DEBONDRAGON_HDMI=auto` treats series 4 and later as HDMI-ok). HDMI
    audio does not play.
-4. Make series 7 the default after the battery works; audio can remain experimental.
-   If the sound card never appears, the series-4 submenu entry is the
-   rollback: its devicetree does not wait for the speaker amplifiers.
+4. Make series 8 the default after battery and Snap mounts work; audio can
+   remain experimental. If the sound card never appears, the series-7
+   submenu entry is the rollback: its devicetree does not wait for the
+   speaker amplifiers.
 
 ## Test a new kernel once, keeping the current one as default (recommended)
 

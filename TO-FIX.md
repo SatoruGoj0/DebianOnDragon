@@ -21,7 +21,7 @@ the user-facing support matrix; keep the evidence and likely cause here.
   networking. Do not treat a daemon started with `--iptables=false` as the
   final fix.
 
-### Snap applications, including local browsers, cannot start
+### Verify the series-8 Snap/browser fix
 
 - **Symptom:** Chromium is reported as a broken snap, installing Firefox fails
   while mounting its snap, and the mount units report a bad filesystem. The
@@ -32,10 +32,11 @@ the user-facing support matrix; keep the evidence and likely cause here.
   LZO-compressed, so snapd cannot mount them. This is separate from the GPU
   firmware failure; a browser may still need software rendering after it can
   be mounted.
-- **Fix:** enable `CONFIG_SQUASHFS_LZO=y` in `kernel/debondragon.config`, assert
-  it in `kernel/check-config.sh`, rebuild and reboot. Then reload systemd and
-  refresh or reinstall the broken snaps. Verify Chromium/Firefox launch with
-  software rendering before testing hardware acceleration.
+- **Fix queued for series 8:** `CONFIG_SQUASHFS_LZO=y` is enabled and asserted
+  by the build. Install and boot series 8, then reload systemd and refresh or
+  reinstall the broken snaps. Verify Chromium/Firefox launch with software
+  rendering before testing hardware acceleration; remove this entry once that
+  works on hardware.
 
 ### Linux cannot create or reorder UEFI boot entries
 
