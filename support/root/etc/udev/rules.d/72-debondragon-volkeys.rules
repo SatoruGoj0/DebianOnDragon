@@ -1,0 +1,10 @@
+# QTEC0001 consumer-control collection on the keyboard's I2C controller.
+# Mute and volume live here when Linux splits that collection off the
+# typing keyboard. The typing keyboard (ID_INPUT_KEYBOARD) is not tagged:
+# it carries letter keys, and the active user must not be able to read it.
+# logind's uaccess builtin grants the active session an ACL and drops it
+# when the session is no longer active. Do not put the user in group input.
+# This file is 72- so 73-seat-late.rules still sees the tag.
+ACTION=="add|change", SUBSYSTEM=="input", KERNEL=="event*", \
+  KERNELS=="a84000.i2c", ENV{ID_INPUT_KEY}=="1", ENV{ID_INPUT_KEYBOARD}!="1", \
+  TAG+="uaccess", TAG+="seat", RUN{builtin}+="uaccess"

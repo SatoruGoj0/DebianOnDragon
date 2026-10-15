@@ -25,6 +25,23 @@ driver's reads are the wrong protocol and its probe would write debug
 mode. Not confirmed on hardware. Steps and the power-off warning are in
 docs/hardware-testing.md, "Fan and thermals".
 
+## Mute and volume keys could not open the keyboard
+
+Support 0.4.1 started `debondragon-volkeys` in the user session. On the
+83N3 the keys arrive on `platform-a84000.i2c-event-kbd` (`KEY_MUTE`,
+`KEY_VOLUMEDOWN`, `KEY_VOLUMEUP`). That node is mode 660, `root:input`.
+The session user is not in group `input`, so the open failed, and the
+program logged nothing.
+
+Support 0.5.0 runs it as a system service. It opens the node as root,
+ignores every key except mute and volume, and runs `pactl` as the
+active seat user. If it cannot open a device it logs that, and the
+message says not to add the user to group `input`. A udev rule grants
+`uaccess` only to a consumer-control node on `a84000.i2c` that is not
+the typing keyboard. The 0.4.1 user service is masked and its autostart
+entry is removed. Not confirmed on hardware. Steps:
+docs/hardware-testing.md, "Mute and volume keys".
+
 ---
 
 # DebOnDragon v0.4.0
@@ -66,13 +83,13 @@ The device-signed ADSP firmware is still not in the image. Copy it with
 
 ## Mute and volume keys
 
-F1, F2 and F3 (mute, volume down, volume up) did nothing. The ITE
-keyboard (ACPI QTEC0001) reports them on a consumer-control evdev node,
-separate from the typing keys. X does not open that node, and Hyprland
-has no binding for it, so the events never reached PulseAudio. Support
-0.4.1 runs `debondragon-volkeys`, which calls `pactl` for `KEY_MUTE`,
-`KEY_VOLUMEDOWN` and `KEY_VOLUMEUP`. Not confirmed on hardware yet. Steps:
-docs/hardware-testing.md, "Mute and volume keys".
+F1, F2 and F3 (mute, volume down, volume up) did nothing. Support 0.4.1
+runs `debondragon-volkeys` in the user session and calls `pactl` for
+`KEY_MUTE`, `KEY_VOLUMEDOWN` and `KEY_VOLUMEUP`. Hardware later showed
+those events on the typing-keyboard node
+(`platform-a84000.i2c-event-kbd`), which that user service cannot open,
+and the failure was silent. The fix is in support 0.5.0 (above). v0.4.0
+itself is unchanged.
 
 ## Why series 5 had to describe the speakers
 

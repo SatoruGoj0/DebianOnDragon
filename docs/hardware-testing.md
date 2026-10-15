@@ -228,16 +228,31 @@ HDMI audio stays silent.
 
 ## Mute and volume keys
 
-F1, F2 and F3 are mute, volume down and volume up. The keyboard sends
-them as consumer-control keys (`KEY_MUTE`, `KEY_VOLUMEDOWN`,
-`KEY_VOLUMEUP`) on their own input device, separate from the typing
-keys. Support 0.4.1 runs `debondragon-volkeys`, which calls `pactl` for
-those keys. Log out and back in (or reboot) after installing 0.4.1.
+F1, F2 and F3 are mute, volume down and volume up. On the 83N3,
+`libinput` reports `KEY_MUTE`, `KEY_VOLUMEDOWN` and `KEY_VOLUMEUP` on
+the typing-keyboard node
+(`/dev/input/by-path/platform-a84000.i2c-event-kbd`). That node is
+`root:input` mode 660. Support 0.4.1 started `debondragon-volkeys` in
+the user session, which cannot open it, and the failure was silent.
+Do not add your user to group `input`: that group can read every
+keyboard.
 
-1. The service is running:
+Support 0.5.0 runs the same program as a system service. It reads that
+node as root, ignores every key except mute and volume, and calls
+`pactl` as the active seat user. If the kernel exposes a separate
+consumer-control node (volume keys, no letter keys) on the `a84000.i2c`
+bus, a udev rule tags only that node `uaccess` for the active seat.
+Reboot after installing 0.5.0.
+
+1. The system service is running:
    ```bash
-   systemctl --user is-active debondragon-volkeys.service
+   systemctl is-active debondragon-volkeys.service
+   journalctl -u debondragon-volkeys -b
    ```
+   A line that says it is reading the typing keyboard as root is the
+   expected path on this machine. `cannot open …: permission denied`
+   means the device still cannot be read; the same line says not to
+   join group `input`.
 2. Press F1, F2 and F3 with a tune playing. F1 mutes, F2 lowers the
    volume, F3 raises it, in steps of 5%. The panel icon should follow.
 3. If nothing changes, see which event the key actually produces:
@@ -247,4 +262,5 @@ those keys. Log out and back in (or reboot) after installing 0.4.1.
    A working key prints `KEY_MUTE`, `KEY_VOLUMEDOWN` or `KEY_VOLUMEUP`.
    `KEY_F1` / `KEY_F2` / `KEY_F3` means the keyboard is in function-key
    mode (Fn+Esc toggles Fn Lock; the Esc LED shows it). Send the
-   `libinput` lines and `debondragon-report`.
+   `libinput` lines, `journalctl -u debondragon-volkeys -b`, and
+   `debondragon-report`.
