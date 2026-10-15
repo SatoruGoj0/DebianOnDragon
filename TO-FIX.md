@@ -21,6 +21,22 @@ the user-facing support matrix; keep the evidence and likely cause here.
   networking. Do not treat a daemon started with `--iptables=false` as the
   final fix.
 
+### Snap applications, including local browsers, cannot start
+
+- **Symptom:** Chromium is reported as a broken snap, installing Firefox fails
+  while mounting its snap, and the mount units report a bad filesystem. The
+  kernel log gives the decisive error: `Filesystem uses "lzo" compression.
+  This is not supported`.
+- **Cause:** the kernel enables SquashFS with XZ and Zstd, but not
+  `CONFIG_SQUASHFS_LZO`. Several installed Ubuntu snap images are
+  LZO-compressed, so snapd cannot mount them. This is separate from the GPU
+  firmware failure; a browser may still need software rendering after it can
+  be mounted.
+- **Fix:** enable `CONFIG_SQUASHFS_LZO=y` in `kernel/debondragon.config`, assert
+  it in `kernel/check-config.sh`, rebuild and reboot. Then reload systemd and
+  refresh or reinstall the broken snaps. Verify Chromium/Firefox launch with
+  software rendering before testing hardware acceleration.
+
 ### Linux cannot create or reorder UEFI boot entries
 
 - **Symptom:** installation needs the Windows `Add-DebianBootEntry.ps1`
