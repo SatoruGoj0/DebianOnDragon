@@ -60,8 +60,9 @@ The DSDT picks one of four touchpads (ELAN 0x15, Synaptics 0x2c, FocalTech
 - Panel EDID vendor/product: LEN 0x9197, an LCD. The CRD's Samsung OLED
   compatible is replaced with generic `edp-panel`.
 - Bluetooth: `QCOM0C6B` on UR15 (0xa98000) → `uart14`.
-- Audio: ADSP subsystem ID `380317AA`. The speaker amplifiers aren't identified
-  yet, so audio is disabled.
+- Audio: ADSP subsystem ID `380317AA`. Two WSA8845 on SoundWire 0, WCD9385
+  headset codec, two VA-macro DMICs. Details in the Audio section below.
+  The ADSP firmware is device-signed and is not in the image.
 
 ## Display and backlight
 
@@ -223,18 +224,39 @@ commented out, so this is a two-speaker layout like the ThinkBook 16, not
 the CRD's four. The WCD9385 reset (TLMM 191) is held deasserted by
 firmware, as on the CRD.
 
-v0.2.0 audio: the default board enables the sound card for the WCD9385
-headset codec (swr1/swr2) and the VA-macro DMICs, with speaker amps (swr0,
-swr3) off and the USB-C DP audio links removed. The card is named
-`X1E80100-LENOVO-IdeaPad-Slim3-15Q8X10`. The kernel loads
-`qcom/x1e80100/<card>-tplg.bin`, so debondragon-support installs the upstream
-T14s AudioReach topology (same two-amp + WCD + VA graph) under that name,
-plus a UCM profile derived from upstream `T14s-HiFi.conf` without the
-speaker sequences. The opt-in `-speakers` board adds two WSA884x on swr0
-(ThinkBook/T14s layout, controls `SpkrLeft`/`SpkrRight`) as card
-`...-SPK`, which uses the upstream T14s UCM unchanged.
-`scripts/check-ucm.sh` checks every UCM include against Debian's
-alsa-ucm-conf.
+Kernel series 5 enables that two-speaker card on the default board.
+The CRD's four-amp playback link waits for a second pair on swr3; those
+parts are absent, so that link is replaced with the two WSA8845 already
+described on swr0 (`speaker@0,0` / `speaker@0,1`, port maps left as the
+CRD wrote them) plus the WSA macro. Their prefixes are `SpkrLeft` and
+`SpkrRight`. swr3 stays disabled. The USB-C DP audio links stay removed:
+the T14s topology this card loads has no DisplayPort graphs, so HDMI audio
+is unsupported. The card name stays
+`X1E80100-LENOVO-IdeaPad-Slim3-15Q8X10` so the topology filename does not
+change. ALSA's 31-character card id truncates it; the UCM profile is also
+installed under that truncated id and under the DMI long name.
+
+Internal mics are the two VA-macro DMICs. They need both WCD `MIC BIAS3`
+and `VA MIC BIAS1`. The CRD's extra DMIC2/DMIC3 route to `MIC BIAS1` is
+not this laptop.
+
+`debondragon-support` 0.4.0 installs the T14s AudioReach topology under
+the card name and a UCM profile that drives speakers, headphones, the
+headset mic and the internal mics. It does not include Debian's speaker
+sequence (that writes PA volume 12, which this kernel rejects; the limit
+is 6, which is 0 dB) or Debian's WSA-macro init (digital volume 84 on an
+unprefixed control; the prefixed limit is 81, which is −3 dB). Headphone
+playback is class-AB (`CLS_AB_LOHIFI`); Debian's RX-macro enable sequence
+selects the ultra-low-power class-H mode, which does not drive these
+WCD9385 outputs. Speaker and WSA controls are written only when they
+exist, so the same package still loads headphones on a series-4 kernel
+that has no amps. `scripts/check-ucm.sh` checks every UCM include against
+Debian's alsa-ucm-conf. The `-speakers` devicetree is the same file as
+the default board, so an old `DEBONDRAGON_DTB` setting still boots.
+
+None of this playback path has been confirmed audible on the 83N3. The
+amp type is the CRD WSA8845 at the addresses Windows and the other X1
+laptops use; a SoundWire bind log from this machine is still the check.
 
 **smb2360 PMICs (v0.2.0 boot log).** The CRD has three smb2360 at SPMI
 SIDs 0x7, 0xa and 0xb, each with the eUSB2 repeater of one USB-C port. On
@@ -260,4 +282,5 @@ either (-6; the ss2 one is already removed), which keeps
 - Second USB-C port: is its eUSB2 repeater the smb2360 at SID 0xb?
 - Exact USB-C/USB-A port mapping and whether every CRD retimer is populated
   (none of the three answered on hardware).
-- Speaker amplifier type and count.
+- Confirm on hardware that the swr0 amplifiers bind as WSA8845 and that
+  speakers, headphones and mics are audible (docs/hardware-testing.md).

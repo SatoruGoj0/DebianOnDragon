@@ -1,3 +1,90 @@
+# Unreleased: kernel 7.2.0-debondragon-5, debondragon-support 0.4.0
+
+Not a tagged release, and **not verified on the 83N3**. Status stays
+Experimental until someone hears sound. Installs beside series 4; series 4
+remains the rollback (docs/kernel-upgrade.md, "Try kernel series 5").
+
+## Why the laptop was silent
+
+The sound card, the WCD9385 and the DSP already came up on hardware, and
+support 0.2.1 made PulseAudio show a Headphones sink. Nothing played:
+
+- The default devicetree left the speaker amplifiers off and deleted the
+  speaker playback link. The only playback device was Headphones, and that
+  device is gated on the jack. With nothing plugged in there is no output.
+- Turning the CRD's four-amp link back on would not have fixed it. That
+  link also waits for a second amplifier pair on SoundWire 3. Those parts
+  are not on this board (Windows' audio INF comments that group out), so
+  the whole card, headphones included, would wait forever.
+- Debian's two-speaker enable sequence sets `SpkrLeft`/`SpkrRight PA Volume`
+  to 12. This kernel rejects anything above 6 (0 dB), and a rejected write
+  aborts the sequence.
+- Debian's WSA-macro init writes digital volume 84 on the unprefixed
+  control. The control that exists is `WSA WSA_RX0/RX1 Digital Volume`,
+  and the kernel limit is 81 (−3 dB).
+- The headphone path included Debian's RX-macro enable sequence, which
+  forces the ultra-low-power class-H mode. That mode does not drive the
+  WCD9385 headphone outputs on these laptops. Class-AB (`CLS_AB_LOHIFI`)
+  does.
+- The internal microphones were powered from the WCD bias only. The
+  VA-macro DMICs also need `VA MIC BIAS1`.
+- The image did not install `alsa-ucm-conf`, `pulseaudio` or `alsa-utils`
+  by name. The codec sequences the profile includes come from
+  `alsa-ucm-conf`.
+
+The device-signed ADSP firmware is still required. It cannot be shipped.
+Without `qcadsp8380.mbn` (and the matching DTBs) under
+`/lib/firmware/qcom/x1p42100/LENOVO/83N3/`, the card never probes.
+
+## What changed
+
+Kernel series 5, default board (the `-speakers` file is the same hardware,
+so an old `DEBONDRAGON_DTB` still boots):
+
+- Two WSA8845 on SoundWire 0, prefixes `SpkrLeft` and `SpkrRight`, CRD
+  port maps kept. SoundWire 3 stays off. The playback link lists only
+  those two amplifiers.
+- Internal mics: `VA DMIC0/1` to WCD `MIC BIAS3` and `VA MIC BIAS1`.
+- DisplayPort audio links stay deleted. HDMI audio is unsupported.
+
+`debondragon-support` 0.4.0:
+
+- UCM enables speakers at PA volume 6 and WSA digital volume 81, and
+  headphones in class-AB. Speaker controls are written only when they
+  exist, so this package still loads headphones on a series-4 kernel.
+- Depends on `alsa-ucm-conf` (>= 1.2.14). Recommends PulseAudio (or
+  PipeWire's Pulse compatibility) and `alsa-utils`. The ISO installs
+  those packages.
+- The redistributable T14s topology is still installed under the card
+  name. That file has no DisplayPort graphs.
+
+`DEBONDRAGON_HDMI=auto` already treats series 4 and later as HDMI-ok, so
+series 5 keeps HDMI video on.
+
+## How to test
+
+`docs/hardware-testing.md`, section "Audio". Short version: install
+support 0.4.0 and `linux-image-7.2.0-debondragon-5` beside series 4, run
+`sudo debondragon-firmware` (or export the firmware from Windows), reboot
+into series 5, and check `alsaucm -c hw:0 list _verbs` (HiFi),
+`pactl list short sinks` (Speaker, and Headphones when the jack is
+plugged), then play `hw:0,1` (speakers) and `hw:0,0` (headphones) at a
+moderate volume. Headset mic is `hw:0,2`, internal mics are `hw:0,3`.
+
+If `/proc/asound/cards` is empty, either the ADSP firmware is missing or
+the amplifiers did not bind. Boot the series-4 submenu entry and report
+`/sys/bus/soundwire/devices` plus `dmesg`.
+
+## Still open
+
+- No hardware confirmation that the amplifiers are WSA8845, or that any
+  output is audible.
+- No active speaker protection. The PA is capped at 0 dB; keep the volume
+  moderate.
+- HDMI audio stays silent.
+
+---
+
 # DebOnDragon v0.4.0
 
 Kernel `7.2.0-debondragon-4` (Linux v7.2) and `debondragon-support` 0.3.0.

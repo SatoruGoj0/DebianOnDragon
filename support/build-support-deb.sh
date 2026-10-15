@@ -39,16 +39,16 @@ Architecture: all
 Maintainer: DebOnDragon <noreply@users.noreply.github.com>
 Section: admin
 Priority: optional
-Depends: grub-common, dpkg (>= 1.17)
-Recommends: i2c-tools, usbutils, pciutils, alsa-ucm-conf (>= 1.2.14)
+Depends: grub-common, dpkg (>= 1.17), alsa-ucm-conf (>= 1.2.14)
+Recommends: i2c-tools, usbutils, pciutils, pulseaudio | pipewire-pulse, alsa-utils
 Description: Lenovo IdeaPad Slim 3 15Q8X10 (83N3) boot integration and tools
  Keeps one devicetree per DebOnDragon kernel in /boot/dtb, loads it from
  GRUB (default entries use the newest kernel's devicetree; a "DebOnDragon
  kernels" submenu boots any installed kernel with its own), sets the kernel
- command line the 83N3 needs (HDMI off until it works), keeps the panel
- brightness across boots and hard resets, selects the 83N3 audio profile,
- and installs debondragon-firmware, debondragon-report,
- debondragon-ec-check and debondragon-bootlog.
+ command line the 83N3 needs, keeps the panel brightness across boots and
+ hard resets, selects the 83N3 audio profile (speakers, headphones, mics)
+ and its DSP topology, and installs debondragon-firmware,
+ debondragon-report, debondragon-ec-check and debondragon-bootlog.
 EOF
 
 # Files users are expected to edit keep their changes across upgrades.

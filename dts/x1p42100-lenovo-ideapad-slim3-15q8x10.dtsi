@@ -9,9 +9,8 @@
  * starts from x1-crd.dtsi and only overrides what the DSDT shows to be
  * different. Evidence for every override is in docs/board-notes.md.
  *
- * Shared by two boards:
- *   x1p42100-lenovo-ideapad-slim3-15q8x10.dts           default, speakers off
- *   x1p42100-lenovo-ideapad-slim3-15q8x10-speakers.dts  opt-in speaker amps
+ * Shared by two boards. They describe the same hardware; the -speakers
+ * file is kept so an existing DEBONDRAGON_DTB=...-speakers.dtb still boots.
  */
 
 #include "purwa.dtsi"
@@ -231,44 +230,84 @@
 };
 
 /*
- * Audio: headset (WCD9385 on swr1/swr2) and internal digital microphones
- * (VA macro). Windows uses Qualcomm's CRD audio configuration
- * (qcaucd_ext_crd8380.inf) with two SoundWire slave groups: one speaker-amp
- * group on instance 0 and the headset codec; the CRD's second amp group
- * (instance 1, swr3) is commented out. The WCD9385 reset (TLMM 191) is held
- * deasserted by firmware ("out high 16mA" in the v0.1.4 report), as on the
- * CRD.
+ * Audio. Windows uses Qualcomm's CRD audio extension (qcaucd_ext_crd8380.inf)
+ * with two SoundWire slave groups: one speaker-amp group on instance 0 and
+ * the headset codec. The CRD's second amp group (instance 1, swr3) is
+ * commented out, so this is the two-speaker layout of the ThinkBook 16 and
+ * the ThinkPad T14s, not the CRD's four. The amps at swr0 addresses 0,0 and
+ * 0,1 are already WSA8845 ("sdw20217020400") in x1-crd.dtsi, and their port
+ * maps (<1 2 3 7 10 13> and <4 5 6 7 11 13>) are the left/right maps used by
+ * those laptops. Only the control prefixes differ (the CRD calls them
+ * WooferLeft/TweeterLeft). The WCD9385 reset (TLMM 191) is held deasserted
+ * by firmware, as on the CRD.
  *
- * Speaker amplifiers stay off here: Linux has no speaker protection for
- * them and their exact part is unconfirmed. The -speakers board enables
- * them (opt-in, see docs/hardware-testing.md).
+ * The CRD's wsa-dai-link also waits for two more amps on swr3. Those parts
+ * are not populated; leaving them in the link keeps the whole card (headphones
+ * included) from probing. Replace that link with the two amps that are here.
  *
- * The card name selects the DSP topology (qcom/x1e80100/<model>-tplg.bin)
- * and the ALSA UCM profile; debondragon-support installs both. The USB-C
- * DisplayPort audio links go with dp0/dp1, which are disabled.
+ * The x1e80100 machine driver caps "SpkrLeft/SpkrRight PA Volume" at 6
+ * (0 dB) and the WSA digital volume at -3 dB. That is the same speaker
+ * limit upstream ships on the T14s and the ThinkBook.
+ *
+ * Internal mics are the VA-macro DMICs. They need the VA macro's own mic
+ * bias as well as the WCD bias; without "VA MIC BIAS1" they are unpowered.
+ * Two mics, as on the T14s, not the CRD's four.
+ *
+ * The card name selects the DSP topology (qcom/x1e80100/<model>-tplg.bin).
+ * debondragon-support installs the T14s topology under that name. It has no
+ * DisplayPort graphs, and dp0/dp1 are disabled, so those playback links are
+ * removed. HDMI audio is not part of this card.
  */
 &{/sound} {
 	model = "X1E80100-LENOVO-IdeaPad-Slim3-15Q8X10";
-	audio-routing = "IN1_HPHL", "HPHL_OUT",
+	audio-routing = "SpkrLeft IN", "WSA WSA_SPK1 OUT",
+			"SpkrRight IN", "WSA WSA_SPK2 OUT",
+			"IN1_HPHL", "HPHL_OUT",
 			"IN2_HPHR", "HPHR_OUT",
 			"AMIC2", "MIC BIAS2",
 			"VA DMIC0", "MIC BIAS3",
 			"VA DMIC1", "MIC BIAS3",
-			"VA DMIC2", "MIC BIAS1",
-			"VA DMIC3", "MIC BIAS1",
+			"VA DMIC0", "VA MIC BIAS1",
+			"VA DMIC1", "VA MIC BIAS1",
 			"TX SWR_INPUT1", "ADC2_OUTPUT";
 
 	/delete-node/ displayport-0-dai-link;
 	/delete-node/ displayport-1-dai-link;
 	/delete-node/ wsa-dai-link;
+
+	wsa-dai-link {
+		link-name = "WSA Playback";
+
+		cpu {
+			sound-dai = <&q6apmbedai WSA_CODEC_DMA_RX_0>;
+		};
+
+		codec {
+			sound-dai = <&left_woofer>, <&left_tweeter>,
+				    <&swr0 0>, <&lpass_wsamacro 0>;
+		};
+
+		platform {
+			sound-dai = <&q6apm>;
+		};
+	};
 };
 
 &swr0 {
-	status = "disabled";
+	status = "okay";
 };
 
 &swr3 {
 	status = "disabled";
+};
+
+/* CRD labels, two-speaker names. Port maps are already left/right. */
+&left_woofer {
+	sound-name-prefix = "SpkrLeft";
+};
+
+&left_tweeter {
+	sound-name-prefix = "SpkrRight";
 };
 
 /* Device-specific signed firmware, copied from Windows by debondragon-firmware. */

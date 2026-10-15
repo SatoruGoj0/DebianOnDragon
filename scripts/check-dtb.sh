@@ -82,10 +82,17 @@ expect "eDP (dp3) enabled" "$(node_status /soc@0/display-subsystem@ae00000/displ
 expect "camera eUSB2 repeater" "$(echo "$dts" | grep -c 'redriver@4b {')" "1"
 expect "audio card enabled" "$(node_status /sound)" "okay"
 expect "audio card model" "$(prop /sound model)" "X1E80100-LENOVO-IdeaPad-Slim3-15Q8X10"
-expect "no speaker link in default board" "$(fdtget -l "$dtb" /sound 2>/dev/null | grep -c wsa-dai-link)" "0"
+expect "two-speaker playback link" "$(fdtget -l "$dtb" /sound 2>/dev/null | grep -c wsa-dai-link)" "1"
 expect "no DP audio links (dp0/dp1 off)" "$(fdtget -l "$dtb" /sound 2>/dev/null | grep -c displayport)" "0"
 # Fixed paths, not labels: kernel-built DTBs have no __symbols__ table.
-expect "speaker SoundWire (swr0) off" "$(node_status /soc@0/soundwire@6b10000)" "disabled"
+# swr3 stays disabled, so its CRD WooferRight/TweeterRight nodes are never bound.
+swr0=/soc@0/soundwire@6b10000
+expect "speaker SoundWire (swr0) on" "$(node_status $swr0)" "okay"
+expect "second amp bus (swr3) off" "$(node_status /soc@0/soundwire@6ab0000)" "disabled"
+expect "left speaker prefix" "$(prop $swr0/speaker@0,0 sound-name-prefix)" "SpkrLeft"
+expect "right speaker prefix" "$(prop $swr0/speaker@0,1 sound-name-prefix)" "SpkrRight"
+expect "left speaker port map" "$(fdtget -t u "$dtb" "$swr0/speaker@0,0" qcom,port-mapping 2>/dev/null)" "1 2 3 7 10 13"
+expect "right speaker port map" "$(fdtget -t u "$dtb" "$swr0/speaker@0,1" qcom,port-mapping 2>/dev/null)" "4 5 6 7 11 13"
 expect "headset SoundWire (swr1) on" "$(node_status /soc@0/soundwire@6ad0000)" "okay"
 
 exit $fail

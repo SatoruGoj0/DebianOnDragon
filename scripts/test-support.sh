@@ -4,7 +4,8 @@
 #   - debondragon-backlight: restore/save rules
 #   - /etc/default/grub.d/debondragon.cfg: kernel command line, GRUB default,
 #     Windows Boot Manager (os-prober) kept
-#   - the UCM long-name dispatcher points at both board profiles
+#   - the UCM long-name file selects the 83N3 profile, which drives speakers
+#     when the amps are bound and headphones in class-AB
 # Usage: scripts/test-support.sh
 set -uo pipefail
 here=$(cd "$(dirname "$0")/.." && pwd)
@@ -100,12 +101,26 @@ expect "submenu has the id GRUB_DEFAULT uses" \
 
 # --- UCM -------------------------------------------------------------------
 ucm=$root/usr/share/alsa/ucm2/conf.d/x1e80100/LENOVO-83N3-IdeaPadSlim315Q8X10-LNVNB161216.conf
+hifi=$root/usr/share/alsa/ucm2/Qualcomm/x1e80100/DebOnDragon-IdeaPad-HiFi.conf
+card=$root/usr/share/alsa/ucm2/conf.d/x1e80100/X1E80100-LENOVO-IdeaPad-Slim3-15Q8X10.conf
 expect "UCM long-name file exists" "$([ -f "$ucm" ] && echo yes)" yes
-expect "UCM dispatcher includes the default and -SPK profiles" \
-	"$(grep -cE 'X1E80100-LENOVO-IdeaPad-Slim3-15Q8X10(-SPK)?\.conf' "$ucm")" 2
-expect "default UCM profile touches no speaker (WSA) controls" \
-	"$(cat "$root/usr/share/alsa/ucm2/conf.d/x1e80100/X1E80100-LENOVO-IdeaPad-Slim3-15Q8X10.conf" \
-	       "$root/usr/share/alsa/ucm2/Qualcomm/x1e80100/DebOnDragon-IdeaPad-HiFi.conf" |
-	   grep -v '^ *#' | grep -ci 'wsa')" 0
+expect "long-name file selects the 83N3 card profile" \
+	"$(grep -c 'X1E80100-LENOVO-IdeaPad-Slim3-15Q8X10.conf' "$ucm")" 1
+expect "truncated card name has a profile" \
+	"$([ -f "$root/usr/share/alsa/ucm2/conf.d/x1e80100/X1E80100-LENOVO-IdeaPad-Slim3-1.conf" ] && echo yes)" yes
+expect "headphones use class-AB, not the ULP mode" \
+	"$(grep -c "RX HPH Mode' CLS_AB_LOHIFI" "$hifi")" 1
+# grep -c prints one count per file. Sum them; print 0 when nothing matches.
+grepc() { grep -h -c "$@" | awk '{ s += $1 } END { print s + 0 }'; }
+expect "ULP headphone mode is not selected" "$(grepc CLS_H_ULP "$hifi" "$card")" 0
+expect "speaker path is present" "$(grep -c 'SectionDevice."Speaker"' "$hifi")" 1
+expect "speaker PA volume stays within the kernel limit of 6" \
+	"$(grep -c "PA Volume' 6" "$hifi")" 2
+expect "WSA digital volume stays within the kernel limit of 81" \
+	"$(grep -c "Digital Volume' 81" "$card")" 2
+expect "no DisplayPort mixer writes (absent from the T14s topology)" \
+	"$(grepc DISPLAY_PORT "$hifi" "$card")" 0
+expect "speakers are skipped when the amp controls are absent" \
+	"$(grepc "Control \"name='SpkrLeft PA Volume'\"" "$hifi" "$card")" 2
 
 exit $fail

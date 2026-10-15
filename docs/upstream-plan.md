@@ -17,7 +17,7 @@ are **no kernel source patches**. Everything kernel-side is:
 | DebOnDragon change | Where | Upstream class |
 |---|---|---|
 | Board devicetree (`dts/*.dtsi`, `*.dts`) | added to `arch/arm64/boot/dts/qcom` at build time | Board-specific DT addition (needs rework, §3) |
-| `-speakers` board variant | `dts/...-speakers.dts` | DebOnDragon-only (opt-in while unverified); upstream gets one board file |
+| `-speakers` board file | `dts/...-speakers.dts` | Same hardware as the default board (kept so an old `DEBONDRAGON_DTB` still boots). Upstream gets one board file |
 | Config fragment (`kernel/debondragon.config`) | distro kernel config | Distro configuration. Checked against linux-next `arch/arm64/configs/defconfig`: every driver of the verified hardware is enabled there directly or selected by one that is, except `MMC_SDHCI_PCI` (BayHub SD reader, untested; an `arm64: defconfig` patch once it's verified). The rest (tethering, DP AUX chardev, lockup detectors, EC module) is DebOnDragon's choice |
 | Kernel command line `clk_ignore_unused pd_ignore_unused regulator_ignore_unused` | GRUB | **Temporary workaround**, must be understood and dropped (§4, B2) |
 | `video=HDMI-A-1:d` for old kernels | GRUB | Workaround for broken DTBs; obsolete once the fixed DT is upstream |
@@ -27,7 +27,7 @@ Userspace and packaging (belong outside the kernel):
 
 | Item | Upstream project |
 |---|---|
-| UCM profile (HiFi: headphones, headset mic, DMICs) | alsa-ucm-conf (`ucm2/Qualcomm/x1e80100/`, DMI match in `x1e80100.conf`) |
+| UCM profile (HiFi: speakers, headphones, headset mic, DMICs) | alsa-ucm-conf (`ucm2/Qualcomm/x1e80100/`, DMI match in `x1e80100.conf`) |
 | DSP topology (`...-tplg.bin`, today a renamed T14s topology) | linux-firmware (`qcom/x1e80100/LENOVO/83N3/`) |
 | Device-signed ADSP/CDSP/GPU firmware | Not redistributable; stays in the user's Windows partition (`debondragon-firmware`) |
 | GRUB devicetree entries, per-kernel DTB sync, HDMI switch, brightness save/restore | Distribution integration (Debian: DTB handling in GRUB / flash-kernel); DebOnDragon-only meanwhile |
@@ -47,8 +47,8 @@ Userspace and packaging (belong outside the kernel):
 | USB-A | usb_mp | Verified |
 | USB-C port 1 | usb_1_ss0, smb2360 SID 0x7 | Controller up; retimers absent, role switch/alt mode broken |
 | USB-C port 2 | usb_1_ss1 | Never probes (repeater PMIC SID 0xa absent; 0xb suspected) |
-| Headset codec, DMICs | WCD9385, VA macro | Card + UCM load; sound not confirmed |
-| Speakers | 2x WSA884x (layout from Windows INF) | Unverified, off |
+| Headset codec, DMICs | WCD9385, VA macro (`MIC BIAS3` + `VA MIC BIAS1`) | Card + UCM load on series 4; class-AB playback in series 5, sound not confirmed |
+| Speakers | 2× WSA8845 on swr0 (`SpkrLeft`/`SpkrRight`); swr3 off | On the default board in series 5; bind and playback not confirmed |
 | Thermal sensors | tsens | Verified |
 | EC / fan | i2c5 0x76 | Protocol unknown; not for upstream |
 | Suspend/resume | - | Untested |
@@ -65,8 +65,10 @@ assertions there, but it is not in upstreamable form:
   and PMIC dtsi files and describes exactly the populated hardware.
   Including the CRD also pulls in whatever the CRD gains later (the DTB is
   already 6 KB larger against linux-next).
-- **One board file, no `-speakers` variant.** Speakers go in once their
-  layout is verified, as on the T14s/ThinkBook 16.
+- **One board file.** The two WSA8845 are already in DebOnDragon's default
+  board. Upstream should take that description only after a SoundWire bind
+  log from the 83N3 confirms the parts. The `-speakers` file is not a
+  second board.
 - **Compatible strings** must be documented: `lenovo,ideapad-slim3-15q8x10`
   is not in `Documentation/devicetree/bindings/arm/qcom.yaml` (the
   x1p42100 laptop enum next to `lenovo,thinkbook-16`).
@@ -97,11 +99,13 @@ assertions there, but it is not in upstreamable form:
   with HDMI active (`docs/hdmi-testing.md`), before claiming HDMI upstream.
 - **B4. USB-C:** describe both ports as built (no retimers; second port's
   repeater PMIC), verify data, charging and orientation on hardware.
-- **B5. Audio:** confirm headphones and mics; identify and verify the
-  speaker amplifier layout (SoundWire IDs) before enabling speakers.
-  Choose a sound card `model` of at most 31 characters (ours is 37 and
-  gets truncated, which broke UCM matching), then the alsa-ucm-conf and
-  linux-firmware topology submissions.
+- **B5. Audio:** on hardware, confirm the swr0 parts bind as WSA8845 and
+  that speakers, headphones and mics are audible. The card `model` is still
+  37 characters (ALSA truncates the id to 31); UCM is installed under the
+  DMI long name and under that truncated id. A mainline board should use a
+  model of at most 31 characters. HDMI audio needs a topology with
+  DisplayPort graphs; the renamed T14s file does not have them. Then the
+  alsa-ucm-conf and linux-firmware topology submissions.
 - **B6. Panel:** a panel-edp entry for CMN 0x1567 "N153JCN-ELK" needs
   power-sequencing delays from a datasheet or a justified conservative set;
   until then panel-edp's generic fallback works with a warning.
@@ -124,7 +128,7 @@ for the cover letter and recipients.
 | C. Panel (optional) | `drm/panel-edp: Add CMN N153JCN-ELK` | Douglas Anderson, Neil Armstrong, Jessica Zhang, DRM misc; dri-devel | B6 |
 | D. Userspace | alsa-ucm-conf profile; linux-firmware topology | alsa-project (GitHub), linux-firmware (GitLab) | B5 |
 
-Later, only with hardware evidence: speakers (B5), USB-C fixes (B4).
+Later, only with hardware evidence: the audio userspace submission (B5) and USB-C fixes (B4).
 
 There are no generic driver fixes yet. The DisplayPort reset after failed
 link training (series 2) is a possible msm DP bug, but it hasn't been

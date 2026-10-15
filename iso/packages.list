@@ -80,6 +80,13 @@ fonts-noto-color-emoji
 adwaita-icon-theme
 firefox-esr
 
+# Sound. XFCE's mixer plugin pulls a sound server, but the Qualcomm card
+# stays silent without alsa-ucm-conf (the codec sequences the 83N3 profile
+# includes) and without aplay/arecord there is no way to test it.
+pulseaudio
+alsa-ucm-conf
+alsa-utils
+
 # Hardware bring-up and debugging
 pciutils
 usbutils

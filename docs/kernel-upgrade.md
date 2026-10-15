@@ -52,6 +52,30 @@ tests in `docs/hdmi-testing.md` pass.
 4. Run the tests in `docs/hdmi-testing.md`, then make -4 the default as
    described there.
 
+## Try kernel series 5 (audio)
+
+Series 5 puts the speaker amplifiers on the default devicetree. Support
+0.4.0 is the matching userspace (UCM, topology, `alsa-ucm-conf`). Neither
+has been confirmed audible on the 83N3. Keep series 4 installed and pinned
+until the tests in `docs/hardware-testing.md` ("Audio") pass.
+
+1. Install support 0.4.0 first. `--force-confold` keeps your edited
+   `/etc/default/debondragon`:
+   ```bash
+   sudo apt install -o Dpkg::Options::=--force-confold ./debondragon-support_0.4.0_all.deb
+   ```
+2. Pin the kernel you already trust (series 4 if HDMI is in use), install
+   `linux-image-7.2.0-debondragon-5`, and boot it once with `grub-reboot`.
+   The steps are the next section; use `-4` where that section says `-2`,
+   and `-5` where it says `-3`.
+3. Copy the device firmware if you have not already (`sudo debondragon-firmware`)
+   and run the audio tests. HDMI video stays on for series 5
+   (`DEBONDRAGON_HDMI=auto` treats series 4 and later as HDMI-ok). HDMI
+   audio does not play.
+4. Make series 5 the default only after speakers or headphones are audible.
+   If the sound card never appears, the series-4 submenu entry is the
+   rollback: its devicetree does not wait for the speaker amplifiers.
+
 ## Test a new kernel once, keeping the current one as default (recommended)
 
 Use this for any kernel that hasn't been confirmed on hardware yet. The
