@@ -27,6 +27,9 @@ GRUB uses them like this:
 
 ## Upgrade from v0.3.0 (HDMI)
 
+Superseded by "Upgrade to v0.4.0" below. These steps install only kernel -4
+and support 0.3.0.
+
 You have kernel -3 (maybe also -4 from testing) and support 0.2.1, with
 `DEBONDRAGON_DEFAULT_KERNEL` pinned. Keep -3 as the default until the HDMI
 tests in `docs/hdmi-testing.md` pass.
@@ -61,7 +64,8 @@ retain their confinement capabilities. It also enables the X1P42100 Iris
 hardware video codec with the Lenovo firmware. Support 0.4.3 is the matching
 userspace (firmware helper, UCM, topology, `alsa-ucm-conf`, responsive GRUB
 console). Hardware H.264, HEVC (at 720p) and VP9 decoding and Adreno
-acceleration are verified on the 83N3; audio playback is still experimental.
+acceleration are verified on the 83N3. The audio setup is inherited from the
+hardware-verified series-5 work, but should be rechecked after this upgrade.
 Keep series 9 installed as the rollback while testing series 10.
 
 1. Install support 0.4.3 first. `--force-confold` keeps your edited
@@ -78,10 +82,39 @@ Keep series 9 installed as the rollback while testing series 10.
    on for series 10
    (`DEBONDRAGON_HDMI=auto` treats series 4 and later as HDMI-ok). HDMI
    audio does not play.
-4. Make series 10 the default after battery, Snap applications and hardware
-   video decoding work; audio can remain experimental. If it regresses, the
+4. Make series 10 the default after battery, Snap applications, audio and
+   hardware video decoding work. If it regresses, the
    series-9 submenu entry is the rollback: its devicetree does not enable the
    video decoder.
+
+## Upgrade to v0.4.0 (kernel series 5, support 0.4.1)
+
+Series 5 is the default kernel. Speakers and headphones are verified on
+the 83N3. Support 0.4.1 is the matching userspace: the audio profile,
+reloading PulseAudio when the card appears, the mute and volume keys, and
+the firmware finder. HDMI video stays on (`DEBONDRAGON_HDMI=auto` treats
+series 4 and later as HDMI-ok). HDMI audio does not play.
+
+From a system that already runs series 5 and support 0.4.0, install
+0.4.1 on its own and reboot (or log out and back in for the volume keys):
+
+```bash
+sudo apt install -o Dpkg::Options::=--force-confold ./debondragon-support_0.4.1_all.deb
+```
+
+From v0.3.0 (kernel -3, support 0.2.1), install both and reboot:
+
+```bash
+sudo apt install -o Dpkg::Options::=--force-confold \
+  ./debondragon-support_0.4.1_all.deb \
+  ./linux-image-7.2.0-debondragon-5_*_arm64.deb
+```
+
+`--force-confold` keeps your edited `/etc/default/debondragon`. Series 4
+stays installed as the rollback if you still have it: its devicetree does
+not wait on the speaker amplifiers. Copy the device firmware if you have
+not already (`sudo debondragon-firmware`). Audio checks are in
+`docs/hardware-testing.md`.
 
 ## Test a new kernel once, keeping the current one as default (recommended)
 

@@ -23,6 +23,7 @@ jobs:
   checks:
     # Fast checks in the same Debian release the packages target: shellcheck,
     # UCM include paths against Debian's alsa-ucm-conf, support package tests.
+    # python3 runs debondragon-volkeys' self-test inside test-support.sh.
     runs-on: ubuntu-24.04-arm
     container: debian:trixie
     steps:
@@ -30,7 +31,7 @@ jobs:
       - name: Install tools
         run: |
           apt-get update
-          apt-get install -y --no-install-recommends shellcheck alsa-ucm-conf
+          apt-get install -y --no-install-recommends shellcheck alsa-ucm-conf python3
       - name: Shell syntax and shellcheck
         run: scripts/lint.sh
       - name: UCM include paths

@@ -79,6 +79,8 @@ them. Support 0.4.3 selects the authenticated Iris `_pa` variant. GPU
 acceleration and direct H.264 hardware decoding are verified with Qualcomm
 display driver 31.0.133.1's signed files. Firmware does not fix the outstanding
 USB-C wiring or the browser/userspace integration checks in `TO-FIX.md`.
+With no arguments, `debondragon-firmware` also finds a Windows partition that
+is already mounted; `debondragon-firmware --help` prints the usage.
 
 ## If something doesn't work
 

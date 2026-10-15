@@ -9,3 +9,4 @@
 # format marker, or blank context lines, as whitespace errors in vendored
 # kernel adaptation patches.
 kernel/patches/*.patch whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab
+userspace/patches/*.patch whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab

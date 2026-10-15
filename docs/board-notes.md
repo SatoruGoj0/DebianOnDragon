@@ -254,9 +254,13 @@ that has no amps. `scripts/check-ucm.sh` checks every UCM include against
 Debian's alsa-ucm-conf. The `-speakers` devicetree is the same file as
 the default board, so an old `DEBONDRAGON_DTB` setting still boots.
 
-None of this playback path has been confirmed audible on the 83N3. The
-amp type is the CRD WSA8845 at the addresses Windows and the other X1
-laptops use; a SoundWire bind log from this machine is still the check.
+On the 83N3 with series 5 and support 0.4.0, the card and the HiFi profile
+come up and Front Left plays. Front Right is silent in Debian and in
+Windows on this unit, which is a failed speaker, not a missing channel.
+The keyboard (QTEC0001, HID vendor 048D) is one I2C HID device. Its second
+collection is a consumer-control device (mute, volume down, volume up).
+Linux exposes that as its own evdev node, and `debondragon-volkeys` in
+support 0.4.1 feeds those keys to PulseAudio.
 
 **Battery and DSP handoff (kernel series 7).** UEFI leaves the ADSP running,
 but Linux v7.2 originally overwrote its SMP2P state and then tried a PAS reset
@@ -292,5 +296,5 @@ either (-6; the ss2 one is already removed), which keeps
 - Second USB-C port: is its eUSB2 repeater the smb2360 at SID 0xb?
 - Exact USB-C/USB-A port mapping and whether every CRD retimer is populated
   (none of the three answered on hardware).
-- Confirm on hardware that the swr0 amplifiers bind as WSA8845 and that
-  speakers, headphones and mics are audible (docs/hardware-testing.md).
+- Headset and internal microphones, and the mute/volume keys
+  (docs/hardware-testing.md).

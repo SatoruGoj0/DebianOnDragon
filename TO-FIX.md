@@ -37,7 +37,9 @@ the user-facing support matrix; keep the evidence and likely cause here.
 
 - **Working:** forced V4L2 mem2mem tests decode all 90 frames of 1280x720
   H.264 and HEVC samples, and all 30 frames of a 640x360 VP9 sample, through
-  `iris_driver` on `/dev/video2`.
+  `iris_driver`. The decoder was `/dev/video0` on the latest boot, but video
+  node numbering changes when the camera and Iris register in a different
+  order.
 - **Symptom:** a 640x360 8-bit HEVC Main sample produces one corrupt frame,
   then the kernel logs `session error received 0x4000003: fatal error`. Iris
   should be unloaded/reloaded after this failure. The same codec and encoder
@@ -51,6 +53,30 @@ the user-facing support matrix; keep the evidence and likely cause here.
   with current upstream Iris, and report the exact stream plus error upstream.
   AV1 is advertised by the driver but this FFmpeg build has no
   `av1_v4l2m2m` wrapper, so it is also unverified.
+
+### Moonlight needs a libplacebo host-pointer guard
+
+- **Symptom:** Moonlight 6.1.0 segfaults during its startup decoder probe after
+  Iris successfully decodes a 1280x720 HEVC frame. The backtrace enters
+  `pl_map_avframe_ex()` and calls address zero from libplacebo's Vulkan buffer
+  import path. This is userspace, not an Iris firmware crash; the kernel logs
+  no session error.
+- **Cause:** Ubuntu 25.10 ships libplacebo 7.349.0, which can try host-pointer
+  import when `vkGetMemoryHostPointerPropertiesEXT` is unavailable. Upstream
+  commit `6eaaa9a68be5` adds the missing capability check.
+- **Current workaround:** an ABI-compatible 7.349.0 build with that three-line
+  backport is installed in `/usr/local/lib/aarch64-linux-gnu`. Moonlight then
+  keeps the Vulkan renderer, selects `hevc_v4l2m2m`, and stays running. Setting
+  `VK_DRIVER_FILES=/nonexistent` also avoids the crash and still permits Iris
+  decode through Moonlight's SDL renderer, but disables Vulkan for that process.
+- **Reproduce:** install the build dependencies listed at the top of
+  `scripts/build-libplacebo-hotfix.sh`, run that script, then install the
+  resulting `out/debondragon-libplacebo-hotfix_*.deb`. Removing that package
+  restores Ubuntu's library after `ldconfig`.
+- **Fix to finish:** package the backport reproducibly or move to a distro
+  libplacebo release containing the upstream check, then remove the local
+  override. Also test a real Moonlight H.264 and HEVC streaming session, not
+  only its built-in decoder probe.
 
 ### CDSP is not available
 
@@ -88,12 +114,12 @@ the user-facing support matrix; keep the evidence and likely cause here.
 - **Fix:** obtain or build an 83N3 topology with the correct DP graph, restore
   only the matching DAI link, and test without regressing internal audio.
 
-### Internal speakers, headphones and microphones need hardware testing
+### Series-10 audio needs regression testing
 
-- **State:** current `main` describes the two WSA8845 amplifiers and revised
-  UCM paths, but this merged audio version has not yet been boot-tested here.
-  The older boot showed SoundWire/sound-card deferred probes.
-- **Next check:** boot a package built from current `main`, inspect
+- **State:** speakers and headphones were verified with series 5. Series 10
+  inherits those WSA8845 and UCM changes, but has not been regression-tested
+  after the DSP handoff and video changes. Microphones remain unconfirmed.
+- **Next check:** inspect
   `/sys/bus/soundwire/devices` and `/proc/asound/cards`, then follow the
   moderate-volume tests in `docs/hardware-testing.md`.
 
@@ -118,7 +144,7 @@ the user-facing support matrix; keep the evidence and likely cause here.
 
 - **Browser use of Iris:** direct V4L2 H.264 decode is verified with FFmpeg,
   and Chromium launches after reconnecting its stale `gpu-2404` snap content
-  mount. Confirm a browser video actually selects `/dev/video2`; this is a
+  mount. Confirm a browser video actually selects the Iris decoder node; this is a
   browser/userspace integration check, not a missing kernel codec driver.
 
 - **Suspend/resume:** test suspend, wake, repeated cycles, Wi-Fi reconnect,

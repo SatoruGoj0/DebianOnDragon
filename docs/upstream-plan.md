@@ -51,8 +51,10 @@ Userspace and packaging (belong outside the kernel):
 | USB-A | usb_mp | Verified |
 | USB-C port 1 | usb_1_ss0, smb2360 SID 0x7 | Controller up; retimers absent, role switch/alt mode broken |
 | USB-C port 2 | usb_1_ss1 | Never probes (repeater PMIC SID 0xa absent; 0xb suspected) |
-| Headset codec, DMICs | WCD9385, VA macro (`MIC BIAS3` + `VA MIC BIAS1`) | Card + UCM load on series 4; class-AB playback in series 7, sound not confirmed |
-| Speakers | 2× WSA8845 on swr0 (`SpkrLeft`/`SpkrRight`); swr3 off | On the default board in series 7; bind and playback not confirmed |
+| Headset codec | WCD9385, class-AB headphone playback | Headphones verified on series 5 (v0.4.0) |
+| Internal mics | VA macro (`MIC BIAS3` + `VA MIC BIAS1`) | In the profile; not confirmed |
+| Speakers | 2× WSA8845 on swr0 (`SpkrLeft`/`SpkrRight`); swr3 off | Front Left verified on series 5. Front Right is dead on this unit in Windows too (hardware) |
+| Volume keys | QTEC0001 consumer-control collection | Userspace `debondragon-volkeys` (support 0.4.1); not confirmed |
 | Thermal sensors | tsens | Verified |
 | EC / fan | i2c5 0x76 | Protocol unknown; not for upstream |
 | Suspend/resume | - | Untested |
@@ -103,8 +105,9 @@ assertions there, but it is not in upstreamable form:
   with HDMI active (`docs/hdmi-testing.md`), before claiming HDMI upstream.
 - **B4. USB-C:** describe both ports as built (no retimers; second port's
   repeater PMIC), verify data, charging and orientation on hardware.
-- **B5. Audio:** on hardware, confirm the swr0 parts bind as WSA8845 and
-  that speakers, headphones and mics are audible. The card `model` is still
+- **B5. Audio:** speakers and headphones are verified on series 5 (Front
+  Right on this unit is a hardware fault). Still confirm the headset and
+  internal mics. The card `model` is still
   37 characters (ALSA truncates the id to 31); UCM is installed under the
   DMI long name and under that truncated id. A mainline board should use a
   model of at most 31 characters. HDMI audio needs a topology with

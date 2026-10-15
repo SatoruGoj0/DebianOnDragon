@@ -5,9 +5,9 @@ been seen working on the laptop. This page lists the tests for each
 **Experimental** item and what to send back.
 
 Run every test on the kernel that implements it (`uname -r`). The touchpad
-test is series 3, HDMI is series 4, the battery/audio tests use series 7,
-and hardware video decode uses series 10 with support 0.4.3. When done,
-collect everything with:
+test is series 3, HDMI is series 4, audio is series 5, the battery test uses
+series 7, and hardware video decode uses series 10 with support 0.4.3. Volume
+keys need support 0.4.1 or later. When done, collect everything with:
 
 ```bash
 sudo debondragon-report
@@ -206,56 +206,77 @@ These are compiled but nobody has tested them yet. Any results help:
 - SD card reader
 - suspend: `systemctl suspend`, then wake with the power button
 
-## Audio: speakers, headphones, microphones
+## Audio: speakers and headphones
 
-Needs kernel `7.2.0-debondragon-7` (or later) and `debondragon-support`
-0.4.2. Speakers, the headphone jack and the microphones are on the default
-devicetree. Install the packages beside the kernel you already trust and
-boot series 7 once (`docs/kernel-upgrade.md`, "Test a new kernel once").
-Series 4 stays the rollback: it has headphones and mics, and no speaker
-amps.
+Verified on the 83N3 with kernel `7.2.0-debondragon-5` and
+`debondragon-support` 0.4.0: the card and the HiFi profile come up,
+PulseAudio lists Speaker and Headphones, and `speaker-test` plays Front
+Left. Front Right is silent on this unit in Debian and in Windows, so
+that speaker is a hardware fault.
 
-The PA volume is capped at 0 dB. There is still no active speaker
-protection. Start at a moderate volume.
+Support 0.4.1 reloads PulseAudio when the playback devices appear, so the
+sinks should be there after boot without
+`systemctl --user restart pulseaudio`. The PA volume is capped at 0 dB.
+There is still no active speaker protection. Keep the volume moderate.
 
-The ADSP firmware is signed for this machine and is not in the image. Copy
-it before expecting a sound card, then reboot:
+The ADSP firmware is signed for this machine and is not in the image:
 
 ```bash
 sudo debondragon-firmware
+sudo debondragon-firmware --help
 ```
 
-Or, from Windows, `windows/Export-Firmware.ps1` onto a stick and
-`sudo debondragon-firmware /media/$USER/<stick>/debondragon-firmware`.
+A Windows partition that is already mounted is picked up. You can still
+pass the FileRepository folder, or a folder from
+`windows/Export-Firmware.ps1`.
 
-1. The card and the profile:
+1. After a normal boot, without restarting PulseAudio:
    ```bash
-   cat /proc/asound/cards          # a card, not an empty file
+   cat /proc/asound/cards
    alsaucm -c hw:0 list _verbs     # HiFi
-   ls /sys/bus/soundwire/devices/  # two WSA8845 on swr0, plus the WCD9385
-   systemctl --user restart pulseaudio
-   pactl list short sinks          # Speaker; Headphones appears with a jack
+   pactl list short sinks          # Speaker, and Headphones when the jack is in
    ```
-2. Speakers, moderate volume:
+   If the only sink is `auto_null`, wait a few seconds and list again
+   (the card can finish probing just after login). If it stays
+   `auto_null`, `systemctl --user restart pulseaudio` is the workaround;
+   report `dmesg` from that boot.
+2. Speakers, moderate volume. Front Left should play. Front Right on this
+   unit stays silent:
    ```bash
    speaker-test -D hw:0,1 -c 2 -t wav
    ```
-   `hw:0,1` is the speaker PCM. `hw:0,0` is the headphone jack.
-3. Headphones: plug in a 3-pole jack. PulseAudio should switch to
-   Headphones (`Headphone Jack`). Play at moderate volume.
-4. Headset microphone (4-pole) and the internal microphones:
-   ```bash
-   arecord -D hw:0,2 -f S16_LE -r 48000 -d 5 /tmp/headset.wav && aplay /tmp/headset.wav
-   arecord -D hw:0,3 -f S16_LE -r 48000 -d 5 /tmp/mic.wav && aplay /tmp/mic.wav
-   ```
-   `hw:0,2` is the headset mic, `hw:0,3` the internal mics.
-5. HDMI audio will stay silent. The topology has no DisplayPort playback.
-6. Report what is audible, and send `debondragon-report`.
+3. Headphones: plug in a 3-pole jack. PulseAudio switches to Headphones.
+   `hw:0,0` is the headphone PCM.
 
-If `/proc/asound/cards` stays empty, the card never probed. Check
-`dmesg` for the topology file and for SoundWire, and list
-`/sys/bus/soundwire/devices`. Two likely causes: the ADSP firmware was
-not copied, or the amplifiers are not the WSA8845 parts this devicetree
-waits for (the whole card, headphones included, waits until they bind).
-Boot the series-4 submenu entry; headphones should come back, and the
-SoundWire list from that boot is the report we need.
+## Microphones (not confirmed yet)
+
+```bash
+arecord -D hw:0,2 -f S16_LE -r 48000 -d 5 /tmp/headset.wav && aplay /tmp/headset.wav
+arecord -D hw:0,3 -f S16_LE -r 48000 -d 5 /tmp/mic.wav && aplay /tmp/mic.wav
+```
+
+`hw:0,2` is the headset mic (4-pole jack), `hw:0,3` the internal mics.
+HDMI audio stays silent.
+
+## Mute and volume keys
+
+F1, F2 and F3 are mute, volume down and volume up. The keyboard sends
+them as consumer-control keys (`KEY_MUTE`, `KEY_VOLUMEDOWN`,
+`KEY_VOLUMEUP`) on their own input device, separate from the typing
+keys. Support 0.4.1 runs `debondragon-volkeys`, which calls `pactl` for
+those keys. Log out and back in (or reboot) after installing 0.4.1.
+
+1. The service is running:
+   ```bash
+   systemctl --user is-active debondragon-volkeys.service
+   ```
+2. Press F1, F2 and F3 with a tune playing. F1 mutes, F2 lowers the
+   volume, F3 raises it, in steps of 5%. The panel icon should follow.
+3. If nothing changes, see which event the key actually produces:
+   ```bash
+   sudo libinput debug-events
+   ```
+   A working key prints `KEY_MUTE`, `KEY_VOLUMEDOWN` or `KEY_VOLUMEUP`.
+   `KEY_F1` / `KEY_F2` / `KEY_F3` means the keyboard is in function-key
+   mode (Fn+Esc toggles Fn Lock; the Esc LED shows it). Send the
+   `libinput` lines and `debondragon-report`.

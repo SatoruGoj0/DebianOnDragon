@@ -39,7 +39,7 @@ Architecture: all
 Maintainer: DebOnDragon <noreply@users.noreply.github.com>
 Section: admin
 Priority: optional
-Depends: grub-common, dpkg (>= 1.17), alsa-ucm-conf (>= 1.2.12)
+Depends: grub-common, dpkg (>= 1.17), alsa-ucm-conf (>= 1.2.12), python3
 Recommends: i2c-tools, usbutils, pciutils, pulseaudio | pipewire-pulse, alsa-utils, v4l-utils, ffmpeg
 Description: Lenovo IdeaPad Slim 3 15Q8X10 (83N3) boot integration and tools
  Keeps one devicetree per DebOnDragon kernel in /boot/dtb, loads it from
@@ -47,7 +47,8 @@ Description: Lenovo IdeaPad Slim 3 15Q8X10 (83N3) boot integration and tools
  kernels" submenu boots any installed kernel with its own), sets the kernel
  command line the 83N3 needs, keeps the panel brightness across boots and
  hard resets, selects the 83N3 audio profile (speakers, headphones, mics)
- and its DSP topology, and installs debondragon-firmware,
+ and its DSP topology, reloads PulseAudio when the sound card appears,
+ handles the mute and volume keys, and installs debondragon-firmware,
  debondragon-report, debondragon-ec-check and debondragon-bootlog.
 EOF
 
@@ -67,6 +68,7 @@ if [ "$1" = configure ]; then
 	fi
 	systemctl daemon-reload 2>/dev/null || true
 	systemctl enable debondragon-backlight-save.timer 2>/dev/null || true
+	systemctl --global enable debondragon-volkeys.service 2>/dev/null || true
 	if [ -d /run/systemd/system ]; then
 		udevadm control --reload 2>/dev/null || true
 		systemctl start debondragon-backlight-save.timer 2>/dev/null || true
@@ -80,6 +82,7 @@ cat > "$pkg/DEBIAN/prerm" <<'EOF'
 set -e
 if [ "$1" = remove ]; then
 	systemctl disable --now debondragon-backlight-save.timer 2>/dev/null || true
+	systemctl --global disable debondragon-volkeys.service 2>/dev/null || true
 fi
 EOF
 chmod 755 "$pkg/DEBIAN/prerm"

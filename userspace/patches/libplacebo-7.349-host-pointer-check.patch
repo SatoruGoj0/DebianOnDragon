@@ -1,0 +1,43 @@
+From: DebOnDragon <noreply@users.noreply.github.com>
+Subject: [PATCH] libplacebo 7.349: guard host-pointer import
+
+Backport upstream commit 6eaaa9a68be510b0c1504a91652abcc28b0c57e3 so
+libplacebo does not call an unavailable Vulkan host-pointer function.  Also
+backport the Python 3.13+ XML parser compatibility part of 12509c0f so the old
+release can be built on Ubuntu 25.10.
+
+---
+ src/vulkan/malloc.c    | 3 +++
+ src/vulkan/utils_gen.py | 3 ++-
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/src/vulkan/malloc.c b/src/vulkan/malloc.c
+index c35183b8..1b5aabf1 100644
+--- a/src/vulkan/malloc.c
++++ b/src/vulkan/malloc.c
+@@ -339,6 +339,9 @@ static bool buf_external_check(struct vk_ctx *vk, VkBufferUsageFlags usage,
+     if (!handle_type)
+         return true;
+ 
++    if (handle_type == PL_HANDLE_HOST_PTR && !vk->GetMemoryHostPointerPropertiesEXT)
++        return false;
++
+     VkPhysicalDeviceExternalBufferInfo info = {
+         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO_KHR,
+         .usage = usage,
+diff --git a/src/vulkan/utils_gen.py b/src/vulkan/utils_gen.py
+index a8652fdf..19fe2413 100644
+--- a/src/vulkan/utils_gen.py
++++ b/src/vulkan/utils_gen.py
+@@ -202,7 +202,8 @@ if __name__ == '__main__':
+     if not xmlfile or xmlfile == '':
+         xmlfile = find_registry_xml(datadir)
+ 
+-    registry = VkXML(ET.parse(xmlfile))
++    tree = ET.parse(xmlfile)
++    registry = VkXML(tree.getroot())
+     with open(outfile, 'w') as f:
+         f.write(TEMPLATE.render(
+             vkresults = get_vkenum(registry, 'VkResult'),
+-- 
+2.51.0

@@ -128,14 +128,82 @@ expect "speakers are skipped when the amp controls are absent" \
 	"$(grepc "Control \"name='SpkrLeft PA Volume'\"" "$hifi" "$card")" 2
 
 # --- Device-signed firmware helpers ----------------------------------------
-firmware=$root/usr/local/sbin/debondragon-firmware
+fw=$root/usr/local/sbin/debondragon-firmware
 expect "Linux firmware helper requires the authenticated Iris PA firmware" \
-	"$(sed -n '/^required=(/,/)/p' "$firmware" | grep -c 'qcvss8380_pa.mbn')" 1
+	"$(sed -n '/^required=(/,/)/p' "$fw" | grep -c 'qcvss8380_pa.mbn')" 1
 expect "Linux firmware helper selects PA image at the series-10 path" \
-	"$(grep -c 'install -m 0644.*qcvss8380_pa.mbn.*qcvss8380.mbn' "$firmware")" 1
+	"$(grep -c 'install -m 0644.*qcvss8380_pa.mbn.*qcvss8380.mbn' "$fw")" 1
 expect "Windows helper exports the authenticated Iris PA firmware" \
 	"$(grep -c "'qcvss8380_pa.mbn'" "$here/windows/Export-Firmware.ps1")" 1
 expect "Windows helper does not export the rejected non-PA Iris image" \
 	"$(grep -c "'qcvss8380.mbn'" "$here/windows/Export-Firmware.ps1" || true)" 0
+help=$(DEBONDRAGON_FIRMWARE_DRY=1 "$fw" --help)
+expect "firmware --help exits 0" "$?" 0
+expect "firmware --help is usage text" "$(printf '%s\n' "$help" | grep -c 'Usage: debondragon-firmware')" 1
+win=$tmp/win
+store=$win/Windows/System32/DriverStore/FileRepository/hidi2c
+mkdir -p "$store"
+for blob in qcadsp8380.mbn adsp_dtbs.elf qccdsp8380.mbn cdsp_dtbs.elf qcdxkmsucpurwa.mbn qcvss8380_pa.mbn; do
+	echo x > "$store/$blob"
+done
+mkdir -p "$tmp/bin"
+cat > "$tmp/bin/findmnt" <<EOF
+#!/bin/sh
+case "\$*" in
+*-rno\ TARGET,FSTYPE*) echo '$win ntfs' ;;
+*-S*) echo '$win' ;;
+*) exit 0 ;;
+esac
+EOF
+cat > "$tmp/bin/lsblk" <<'EOF'
+#!/bin/sh
+case "$*" in
+*NAME,FSTYPE*) echo '/dev/nvme0n1p3 ntfs' ;;
+*) exit 0 ;;
+esac
+EOF
+cat > "$tmp/bin/mount" <<'EOF'
+#!/bin/sh
+echo "mount must not run when the NTFS volume is already mounted: $*" >&2
+exit 99
+EOF
+chmod 755 "$tmp/bin/findmnt" "$tmp/bin/lsblk" "$tmp/bin/mount"
+dry=$(PATH="$tmp/bin:$PATH" DEBONDRAGON_FIRMWARE_DRY=1 "$fw")
+expect "firmware dry-run finds an already-mounted Windows tree" "$?" 0
+expect "firmware dry-run names the DriverStore" \
+	"$(printf '%s\n' "$dry" | grep -c "source $win/Windows/System32/DriverStore/FileRepository$")" 1
+expect "firmware dry-run would install the ADSP firmware" \
+	"$(printf '%s\n' "$dry" | grep -c 'would-install qcadsp8380.mbn')" 1
+expect "firmware dry-run would install the authenticated Iris firmware" \
+	"$(printf '%s\n' "$dry" | grep -c 'would-install qcvss8380_pa.mbn')" 1
+expect "firmware dry-run would select the PA image at the kernel path" \
+	"$(printf '%s\n' "$dry" | grep -c 'would-select qcvss8380_pa.mbn as qcvss8380.mbn')" 1
+
+# --- PulseAudio late card --------------------------------------------------
+cat > "$tmp/bin/pactl" <<EOF
+#!/bin/sh
+if [ "\$1" = info ]; then exit 0; fi
+printf '%s\n' "\$PACTL_SINKS"
+EOF
+cat > "$tmp/bin/systemctl" <<EOF
+#!/bin/sh
+printf '%s\n' "\$*" >> '$tmp/systemctl.log'
+exit 0
+EOF
+chmod 755 "$tmp/bin/pactl" "$tmp/bin/systemctl"
+refresh=$root/usr/local/sbin/debondragon-pulse-refresh
+: > "$tmp/systemctl.log"
+out=$(PATH="$tmp/bin:$PATH" XDG_RUNTIME_DIR="$tmp/run1" DEBONDRAGON_PULSE_REFRESH_DELAY=0 \
+	DEBONDRAGON_PULSE_REFRESH_DRY=1 PACTL_SINKS='0 auto_null module-null-sink.c s16le 2ch 48000Hz SUSPENDED' \
+	"$refresh")
+expect "pulse refresh restarts when the only sink is auto_null" "$out" restart
+out=$(PATH="$tmp/bin:$PATH" XDG_RUNTIME_DIR="$tmp/run2" DEBONDRAGON_PULSE_REFRESH_DELAY=0 \
+	DEBONDRAGON_PULSE_REFRESH_DRY=1 PACTL_SINKS='0 alsa_output.HiFi__Speaker module-alsa-card.c s16le 2ch 48000Hz RUNNING' \
+	"$refresh")
+expect "pulse refresh leaves a real sink alone" "$out" ""
+
+# --- volume keys -----------------------------------------------------------
+expect "volume key mapping" \
+	"$(DEBONDRAGON_VOLKEYS_SELFTEST=1 "$root/usr/local/sbin/debondragon-volkeys")" ok
 
 exit $fail
