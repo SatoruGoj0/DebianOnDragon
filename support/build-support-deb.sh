@@ -19,7 +19,8 @@ cp -a "$here/support/root/." "$pkg/"
 find "$pkg" -type d -exec chmod 755 {} +
 find "$pkg" -type f -exec chmod 644 {} +
 chmod 755 "$pkg"/usr/local/sbin/* "$pkg"/etc/grub.d/* \
-          "$pkg"/etc/kernel/postinst.d/* "$pkg"/etc/kernel/postrm.d/*
+          "$pkg"/etc/kernel/postinst.d/* "$pkg"/etc/kernel/postrm.d/* \
+          "$pkg"/usr/lib/systemd/system-sleep/*
 
 # Audio topology for the 83N3's two sound card names (default and -SPK),
 # from linux-firmware (redistributable; licence files alongside).
@@ -39,8 +40,8 @@ Architecture: all
 Maintainer: DebOnDragon <noreply@users.noreply.github.com>
 Section: admin
 Priority: optional
-Depends: grub-common, dpkg (>= 1.17), alsa-ucm-conf (>= 1.2.14), python3
-Recommends: i2c-tools, usbutils, pciutils, pulseaudio | pipewire-pulse, alsa-utils
+Depends: grub-common, dpkg (>= 1.17), alsa-ucm-conf (>= 1.2.14), python3, i2c-tools
+Recommends: usbutils, pciutils, pulseaudio | pipewire-pulse, alsa-utils
 Description: Lenovo IdeaPad Slim 3 15Q8X10 (83N3) boot integration and tools
  Keeps one devicetree per DebOnDragon kernel in /boot/dtb, loads it from
  GRUB (default entries use the newest kernel's devicetree; a "DebOnDragon
@@ -49,7 +50,8 @@ Description: Lenovo IdeaPad Slim 3 15Q8X10 (83N3) boot integration and tools
  hard resets, selects the 83N3 audio profile (speakers, headphones, mics)
  and its DSP topology, reloads PulseAudio when the sound card appears,
  handles the mute and volume keys, and installs debondragon-firmware,
- debondragon-report, debondragon-ec-check and debondragon-bootlog.
+ debondragon-report, debondragon-ec-check, debondragon-fan and
+ debondragon-bootlog. The fan reporter is opt-in.
 EOF
 
 # Files users are expected to edit keep their changes across upgrades.
@@ -69,6 +71,11 @@ if [ "$1" = configure ]; then
 	systemctl daemon-reload 2>/dev/null || true
 	systemctl enable debondragon-backlight-save.timer 2>/dev/null || true
 	systemctl --global enable debondragon-volkeys.service 2>/dev/null || true
+	# Fan reporting writes the EC. It stays off until debondragon-fan enable,
+	# including across this upgrade. A disable stamp must survive it.
+	if [ -e /etc/debondragon/fan-disabled ]; then
+		systemctl disable --now debondragon-fan.service 2>/dev/null || true
+	fi
 	if [ -d /run/systemd/system ]; then
 		udevadm control --reload 2>/dev/null || true
 		systemctl start debondragon-backlight-save.timer 2>/dev/null || true
@@ -83,6 +90,11 @@ set -e
 if [ "$1" = remove ]; then
 	systemctl disable --now debondragon-backlight-save.timer 2>/dev/null || true
 	systemctl --global disable debondragon-volkeys.service 2>/dev/null || true
+	# Park the EC before the reporter disappears, if it was running.
+	if systemctl is-active --quiet debondragon-fan.service 2>/dev/null; then
+		/usr/local/sbin/debondragon-fan suspend || true
+	fi
+	systemctl disable --now debondragon-fan.service 2>/dev/null || true
 fi
 EOF
 chmod 755 "$pkg/DEBIAN/prerm"

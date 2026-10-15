@@ -1,3 +1,32 @@
+# Unreleased (kernel series 6, support 0.5.0)
+
+Not a tagged release. v0.4.0 stays on kernel series 5 and support 0.4.1.
+Series 6 installs beside it.
+
+## The fan was not seeing the SoC
+
+On series 5, light use left every SoC thermal zone at 59–63 °C while the
+battery read 30 °C and the PMICs 37 °C. The zones matching each other is
+a fan that is off or barely spinning. Windows feeds die temperature to
+the EC ("Temp to EC", register 0x20). Linux never did, and the CPU zones
+had no passive trip short of a 115 °C shutdown.
+
+Kernel `7.2.0-debondragon-6` adds a 75 °C passive trip on the CPU and
+CPUSS zones (cluster 0 cools cpu0–3, cluster 1 cools cpu4–7) and lowers
+the GPU passive trip from 95 °C to 85 °C. The 115 °C critical trips stay.
+Nothing in the devicetree writes the EC.
+
+`debondragon-support` 0.5.0 adds `debondragon-fan`. It is off until
+`sudo debondragon-fan enable`. It reports SoC temperature (register 0x20,
+decidegrees Celsius, sensors 0x01/0x02/0x03) and tells the EC about
+suspend (register 0x23). It does not set RPM, replace the fan curve, or
+write debug mode. `qcom-hamoa-ec` stays blacklisted: on this EC that
+driver's reads are the wrong protocol and its probe would write debug
+mode. Not confirmed on hardware. Steps and the power-off warning are in
+docs/hardware-testing.md, "Fan and thermals".
+
+---
+
 # DebOnDragon v0.4.0
 
 Kernel `7.2.0-debondragon-5` (Linux v7.2) and `debondragon-support` 0.4.1.

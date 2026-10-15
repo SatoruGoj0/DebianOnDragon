@@ -6,7 +6,7 @@ You never need to reinstall Debian.
 | Package | What it is |
 |---|---|
 | `linux-image-7.2.0-debondragon-N_..._arm64.deb` | The kernel, its modules and its devicetrees |
-| `debondragon-support_X.Y.Z_all.deb` | Boot integration (per-kernel devicetrees, GRUB entries, kernel command line) and tools (`debondragon-firmware`, `-report`, `-ec-check`, `-bootlog`) |
+| `debondragon-support_X.Y.Z_all.deb` | Boot integration (per-kernel devicetrees, GRUB entries, kernel command line) and tools (`debondragon-firmware`, `-report`, `-ec-check`, `-fan`, `-bootlog`) |
 | `linux-headers-...deb` | Optional; only for building out-of-tree modules (DKMS) |
 
 ## How kernels are kept apart
@@ -54,6 +54,30 @@ tests in `docs/hdmi-testing.md` pass.
    Expected: `-4: HDMI on`, `-4-hdmi-off: HDMI off`, `-3: HDMI off`.
 4. Run the tests in `docs/hdmi-testing.md`, then make -4 the default as
    described there.
+
+## Upgrade to series 6 (support 0.5.0)
+
+Series 6 is the kernel with CPU/GPU passive trips. Support 0.5.0 is the
+matching userspace: everything in 0.4.1, plus `debondragon-fan`. There is
+no release tag for this yet. v0.4.0 (series 5, support 0.4.1) stays as it
+is. HDMI stays on (`DEBONDRAGON_HDMI=auto` treats series 4 and later as
+HDMI-ok).
+
+The fan reporter does not start on install. After the new kernel is the
+one you are booting:
+
+```bash
+sudo apt install -o Dpkg::Options::=--force-confold \
+  ./debondragon-support_0.5.0_all.deb \
+  ./linux-image-7.2.0-debondragon-6_*_arm64.deb
+sudo reboot
+```
+
+Then the tests in docs/hardware-testing.md, "Fan and thermals". Series 5
+remains bootable from the "DebOnDragon kernels" submenu, without the new
+trips and without the reporter (the reporter is a userspace service; if
+you boot series 5 while it is enabled it still reports, which is safe,
+and the series 5 devicetree simply has no 75 °C trip).
 
 ## Upgrade to v0.4.0 (kernel series 5, support 0.4.1)
 
