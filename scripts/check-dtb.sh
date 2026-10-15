@@ -46,6 +46,18 @@ expect "USB-C 1 controller (usb_1_ss0) enabled" "$(node_status /soc@0/usb@a60000
 expect "camera controller (usb_2) enabled" "$(node_status /soc@0/usb@a200000)" "okay"
 expect "USB-A controller (multiport) enabled" "$(node_status /soc@0/usb@a400000)" "okay"
 expect "GPU enabled" "$(node_status /soc@0/gpu@3d00000)" "okay"
+# UEFI starts the DSPs before Linux.  The 83N3 secure monitor rejects a PAS
+# reset from bare metal, so Linux must preserve SMP2P and attach instead.
+adsp=/soc@0/remoteproc@6800000
+cdsp=/soc@0/remoteproc@32300000
+expect "ADSP uses attach-only broken-reset mode" \
+	"$(fdtget -p "$dtb" "$adsp" 2>/dev/null | grep -cx 'qcom,broken-reset')" "1"
+expect "CDSP uses attach-only broken-reset mode" \
+	"$(fdtget -p "$dtb" "$cdsp" 2>/dev/null | grep -cx 'qcom,broken-reset')" "1"
+expect "ADSP uses 83N3 firmware" "$(prop "$adsp" firmware-name)" \
+	"qcom/x1p42100/LENOVO/83N3/qcadsp8380.mbn qcom/x1p42100/LENOVO/83N3/adsp_dtbs.elf"
+expect "CDSP uses 83N3 firmware" "$(prop "$cdsp" firmware-name)" \
+	"qcom/x1p42100/LENOVO/83N3/qccdsp8380.mbn qcom/x1p42100/LENOVO/83N3/cdsp_dtbs.elf"
 expect "keyboard IRQ on TLMM 67" "$(fdtget -t x "$dtb" /soc@0/geniqup@ac0000/i2c@a84000/keyboard@3a interrupts-extended 2>/dev/null)" "$tlmm 43 8"
 expect "touchscreen IRQ on TLMM 51" "$(fdtget -t x "$dtb" /soc@0/geniqup@ac0000/i2c@a80000/touchscreen@10 interrupts-extended 2>/dev/null)" "$tlmm 33 8"
 expect "no CRD retimer-2 supplies (TLMM 126)" "$(echo "$dts" | grep -c 'VREG_RTMR2')" "0"

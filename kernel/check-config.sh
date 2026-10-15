@@ -32,6 +32,8 @@ need CONFIG_BLK_DEV_NVME         y "NVMe root"
 need CONFIG_SQUASHFS             y "live medium"
 need CONFIG_OVERLAY_FS           y "live medium"
 need CONFIG_FB_EFI               y "early console"
+need CONFIG_FW_LOADER_COMPRESS   y "compressed distro firmware"
+need CONFIG_FW_LOADER_COMPRESS_ZSTD y "Ubuntu .zst firmware"
 # Display, brightness, HDMI
 need CONFIG_DRM_MSM              m "display"
 need CONFIG_DRM_PANEL_EDP        m "eDP panel"

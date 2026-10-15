@@ -1,0 +1,21 @@
+diff --git a/drivers/remoteproc/remoteproc_sysfs.c b/drivers/remoteproc/remoteproc_sysfs.c
+--- a/drivers/remoteproc/remoteproc_sysfs.c
++++ b/drivers/remoteproc/remoteproc_sysfs.c
+@@ -135,12 +135,13 @@ static ssize_t firmware_show(struct device *dev, struct device_attribute *attr,
+ 	struct rproc *rproc = to_rproc(dev);
+ 	const char *firmware = rproc->firmware;
+ 
+ 	/*
+-	 * If the remote processor has been started by an external
+-	 * entity we have no idea of what image it is running.  As such
+-	 * simply display a generic string rather then rproc->firmware.
++	 * The exact boot-loaded image is unknown for an attached processor, but
++	 * keep exposing its configured firmware name. User space such as
++	 * pd-mapper uses its directory to locate protection-domain service maps.
++	 * Fall back to "unknown" only when no name was configured at all.
+ 	 */
+-	if (rproc->state == RPROC_ATTACHED)
++	if (!firmware)
+ 		firmware = "unknown";
+ 
+ 	return sprintf(buf, "%s\n", firmware);

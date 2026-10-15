@@ -316,11 +316,14 @@
 };
 
 &remoteproc_adsp {
+	/* This board's secure monitor cannot reset PAS from bare metal. */
+	qcom,broken-reset;
 	firmware-name = "qcom/x1p42100/LENOVO/83N3/qcadsp8380.mbn",
 			"qcom/x1p42100/LENOVO/83N3/adsp_dtbs.elf";
 };
 
 &remoteproc_cdsp {
+	qcom,broken-reset;
 	firmware-name = "qcom/x1p42100/LENOVO/83N3/qccdsp8380.mbn",
 			"qcom/x1p42100/LENOVO/83N3/cdsp_dtbs.elf";
 };
