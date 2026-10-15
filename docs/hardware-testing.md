@@ -4,8 +4,9 @@ The README's support matrix only marks a component **Working** once it has
 been seen working on the laptop. This page lists the tests for each
 **Experimental** item and what to send back.
 
-Run every test on the **new** kernel (`uname -r` shows `7.2.0-debondragon-3`
-for the touchpad; the brightness and audio tests work on -2 with support 0.2.1). When done, collect everything with:
+Run every test on the kernel that implements it (`uname -r`). The touchpad
+test is series 3, HDMI is series 4, and the audio test is series 5 with
+support 0.4.0. When done, collect everything with:
 
 ```bash
 sudo debondragon-report
@@ -131,51 +132,56 @@ These are compiled but nobody has tested them yet. Any results help:
 - SD card reader
 - suspend: `systemctl suspend`, then wake with the power button
 
-## Audio: headphones, headset mic, internal mics
+## Audio: speakers, headphones, microphones
 
-The default devicetree enables the headset codec and the internal
-microphones. The speaker amplifiers stay off. The card, codecs and DSP come
-up on hardware. Up to support 0.2.0 the UCM profile never loaded (ALSA cuts
-the card name to 31 characters); support 0.2.1 installs it under the card's
-long name.
+Needs kernel `7.2.0-debondragon-5` (or later) and `debondragon-support`
+0.4.0. Speakers, the headphone jack and the microphones are on the default
+devicetree. Install the packages beside the kernel you already trust and
+boot series 5 once (`docs/kernel-upgrade.md`, "Test a new kernel once").
+Series 4 stays the rollback: it has headphones and mics, and no speaker
+amps.
 
-1. Check that the profile loads:
+The PA volume is capped at 0 dB. There is still no active speaker
+protection. Start at a moderate volume.
+
+The ADSP firmware is signed for this machine and is not in the image. Copy
+it before expecting a sound card, then reboot:
+
+```bash
+sudo debondragon-firmware
+```
+
+Or, from Windows, `windows/Export-Firmware.ps1` onto a stick and
+`sudo debondragon-firmware /media/$USER/<stick>/debondragon-firmware`.
+
+1. The card and the profile:
    ```bash
-   alsaucm -c hw:0 list _verbs     # expect "HiFi"
-   ```
-2. Restart the sound server so it picks up the profile (or reboot):
-   ```bash
+   cat /proc/asound/cards          # a card, not an empty file
+   alsaucm -c hw:0 list _verbs     # HiFi
+   ls /sys/bus/soundwire/devices/  # two WSA8845 on swr0, plus the WCD9385
    systemctl --user restart pulseaudio
-   pactl list short sinks          # expect more than auto_null
+   pactl list short sinks          # Speaker; Headphones appears with a jack
    ```
-3. Headphones: plug in headphones, select "Headphones", play something at
-   **low volume first**.
-4. Headset microphone (4-pole headset) and internal microphones:
+2. Speakers, moderate volume:
    ```bash
-   arecord -L | head
-   arecord -f S16_LE -r 48000 -d 5 /tmp/mic.wav && aplay /tmp/mic.wav
+   speaker-test -D hw:0,1 -c 2 -t wav
    ```
-5. Report what works, and send `debondragon-report`.
-
-## Internal speakers (opt-in)
-
-Linux has **no speaker protection** for these amplifiers. Overdriving them
-can damage the speakers. The upstream profile limits the volume, but keep it
-moderate anyway. Only try this after headphones work.
-
-1. Switch to the speakers devicetree:
+   `hw:0,1` is the speaker PCM. `hw:0,0` is the headphone jack.
+3. Headphones: plug in a 3-pole jack. PulseAudio should switch to
+   Headphones (`Headphone Jack`). Play at moderate volume.
+4. Headset microphone (4-pole) and the internal microphones:
    ```bash
-   sudo sed -i 's#^DEBONDRAGON_DTB=.*#DEBONDRAGON_DTB=qcom/x1p42100-lenovo-ideapad-slim3-15q8x10-speakers.dtb#' /etc/default/debondragon
-   sudo debondragon-dtb-sync && sudo update-grub && sudo reboot
+   arecord -D hw:0,2 -f S16_LE -r 48000 -d 5 /tmp/headset.wav && aplay /tmp/headset.wav
+   arecord -D hw:0,3 -f S16_LE -r 48000 -d 5 /tmp/mic.wav && aplay /tmp/mic.wav
    ```
-2. Check:
-   ```bash
-   cat /proc/asound/cards      # expect ...-SPK
-   ls /sys/bus/soundwire/devices/   # expect the two amplifiers on swr0
-   ```
-   If the amplifiers aren't WSA884x, they don't bind and the speakers stay
-   silent. That's harmless; report the SoundWire device list.
-3. Play something at low volume.
+   `hw:0,2` is the headset mic, `hw:0,3` the internal mics.
+5. HDMI audio will stay silent. The topology has no DisplayPort playback.
+6. Report what is audible, and send `debondragon-report`.
 
-Undo: set `DEBONDRAGON_DTB` back to `qcom/x1p42100-lenovo-ideapad-slim3-15q8x10.dtb`
-and run the same two commands.
+If `/proc/asound/cards` stays empty, the card never probed. Check
+`dmesg` for the topology file and for SoundWire, and list
+`/sys/bus/soundwire/devices`. Two likely causes: the ADSP firmware was
+not copied, or the amplifiers are not the WSA8845 parts this devicetree
+waits for (the whole card, headphones included, waits until they bind).
+Boot the series-4 submenu entry; headphones should come back, and the
+SoundWire list from that boot is the report we need.

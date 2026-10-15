@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 /*
- * Lenovo IdeaPad Slim 3 15Q8X10 (83N3): default board. Speaker amplifiers
- * are off; headphones, headset microphone and internal microphones are on.
+ * Lenovo IdeaPad Slim 3 15Q8X10 (83N3): default board.
+ * Headphones, headset microphone, internal microphones and the two
+ * internal WSA8845 speakers (SoundWire 0).
  */
 
 /dts-v1/;

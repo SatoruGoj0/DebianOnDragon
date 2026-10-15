@@ -49,8 +49,8 @@ Working.
 | Internal camera (USB 13d3:54bf) | **Working** | v0.2.0 | Reported working on hardware (UVC on usb_2 behind the PTN3222 repeater) |
 | Fan / EC thermal control | **Unsupported, off** | — | `debondragon-ec-check` on hardware: version reads, but fan count and thermal capabilities return 0. Those commands (0x0E, 0x42) aren't in this EC's ACPI command map, so the `qcom-hamoa-ec` protocol doesn't match. Driver stays blacklisted; the EC controls the fan by itself |
 | SoC temperature sensors | **Working** | v0.1.0 | CPU/GPU/PMIC zones read 37–40 °C on hardware |
-| Headphones, headset mic, internal mics | **Experimental** | v0.3.0 | Card, codecs and DSP come up on hardware. v0.2.0's UCM profile never loaded (ALSA cuts the card name to 31 characters); support 0.2.1 installs it under the card's long name. On hardware the profile now loads and PulseAudio offers a Headphones sink instead of `auto_null`. Sound output not yet tested |
-| Internal speakers | **Experimental, opt-in** | v0.2.0 | Windows config: one amp group on SoundWire 0. Separate `-speakers` devicetree with 2× WSA884x (ThinkBook/T14s layout) and the upstream two-speaker UCM. Off by default: no speaker protection on Linux |
+| Headphones, headset mic, internal mics | **Experimental** | v0.3.0 | Card, codecs and DSP come up on hardware, and support 0.2.1 made the UCM profile load. Kernel series 5 keeps that card and drives the headphone jack in class-AB (the Debian class-H sequence does not drive a WCD9385). Internal mics get the VA-macro bias. Sound output is not yet confirmed on hardware |
+| Internal speakers | **Experimental** | unreleased (kernel series 5) | Default board: two WSA8845 on SoundWire 0 (Windows INF, ThinkBook/T14s layout). The kernel caps PA volume at 0 dB. There is no active speaker-protection algorithm. Not yet tested on hardware; keep the volume moderate |
 | USB-A ports (2, multiport controller) | **Working** | v0.1.0 | Both ports used on hardware (mouse, install stick); USB 3 lanes enabled, speed not yet measured |
 | USB-C ports (2, `usb_1_ss0/ss1`) | **Untested** | v0.1.0 | First port's controller (`usb_1_ss0`) comes up. The second (`usb_1_ss1`) never probes: the CRD puts its eUSB2 repeater in a PMIC (SPMI SID 0xa) that this laptop doesn't have (board notes). The CRD retimers don't answer, so role switching / alt mode don't work |
 | Third USB controller (`usb_1_ss2`) | **N/A** | v0.2.0 | Disabled in this laptop's ACPI; its PHY carries HDMI |
@@ -62,10 +62,14 @@ Working.
 
 ## Remaining hardware (after v0.4.0)
 
-- **Internal speakers**: off by default (no speaker protection on Linux);
-  opt-in `-speakers` devicetree untested on hardware.
-- **Headphones / microphones**: the UCM profile loads and PulseAudio has a
-  Headphones sink; sound output not yet confirmed.
+- **Audio** (kernel series 5, support 0.4.0, not yet tested on hardware):
+  speakers, headphones and mics are on the default board. The device-signed
+  ADSP firmware still has to be copied with `debondragon-firmware` (or
+  `windows/Export-Firmware.ps1`); without it the sound card never probes.
+  HDMI audio stays silent: the T14s topology has no DisplayPort graphs.
+  Keep speaker volume moderate; the PA is capped at 0 dB, and there is no
+  active speaker protection. If the card never appears, boot kernel series 4
+  and report `/sys/bus/soundwire/devices`.
 - **USB-C, second port**: its USB 2.0 repeater sits in an smb2360 at SPMI
   SID 0xa that this laptop doesn't have (probably SID 0xb instead,
   unverified); the CRD retimers don't answer, so role switching and DP alt
@@ -82,7 +86,7 @@ Windows partition.
 
 | Path | What |
 |---|---|
-| `dts/` | Board devicetree: shared `.dtsi`, default board, opt-in `-speakers` board |
+| `dts/` | Board devicetree: shared `.dtsi`, default board, and a `-speakers` file that is the same hardware (so an old `DEBONDRAGON_DTB` still boots) |
 | `kernel/` | Config fragment, build script, config and module checks |
 | `support/` | `debondragon-support` package: DTB hooks, GRUB entries, tools |
 | `apps/earbuds/` | Earbuds app (GTK 4 + libadwaita) and its Waybar module: pair, connect, music/call mode, volume, microphone, battery |

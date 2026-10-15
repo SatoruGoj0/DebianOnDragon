@@ -1,63 +1,13 @@
 // SPDX-License-Identifier: BSD-3-Clause
 /*
- * Lenovo IdeaPad Slim 3 15Q8X10 (83N3) with the internal speakers enabled.
- * OPT-IN: select it in /etc/default/debondragon (docs/hardware-testing.md).
+ * Lenovo IdeaPad Slim 3 15Q8X10 (83N3).
  *
- * Windows' audio configuration has one speaker-amp group, on SoundWire
- * instance 0 (swr0, WSA macro). This describes it like the Lenovo ThinkBook
- * 16 and ThinkPad T14s: two WSA884x amplifiers on swr0, shared reset on
- * LPASS TLMM 12, controls prefixed SpkrLeft/SpkrRight so the upstream
- * two-speaker UCM (with its volume limits) applies. If the amplifiers are
- * not WSA884x, SoundWire won't bind them and the speakers stay silent.
- *
- * Linux has no speaker protection for these amplifiers: keep the volume
- * moderate.
+ * Kept so a system whose /etc/default/debondragon still points at
+ * qcom/x1p42100-lenovo-ideapad-slim3-15q8x10-speakers.dtb boots the same
+ * audio hardware as the default board. Speakers are no longer a separate
+ * opt-in: the shared dtsi enables the two WSA8845 amplifiers.
  */
 
 /dts-v1/;
 
 #include "x1p42100-lenovo-ideapad-slim3-15q8x10.dtsi"
-
-&{/sound} {
-	model = "X1E80100-LENOVO-IdeaPad-Slim3-15Q8X10-SPK";
-	audio-routing = "SpkrLeft IN", "WSA WSA_SPK1 OUT",
-			"SpkrRight IN", "WSA WSA_SPK2 OUT",
-			"IN1_HPHL", "HPHL_OUT",
-			"IN2_HPHR", "HPHR_OUT",
-			"AMIC2", "MIC BIAS2",
-			"VA DMIC0", "MIC BIAS3",
-			"VA DMIC1", "MIC BIAS3",
-			"VA DMIC2", "MIC BIAS1",
-			"VA DMIC3", "MIC BIAS1",
-			"TX SWR_INPUT1", "ADC2_OUTPUT";
-
-	wsa-dai-link {
-		link-name = "WSA Playback";
-
-		cpu {
-			sound-dai = <&q6apmbedai WSA_CODEC_DMA_RX_0>;
-		};
-
-		codec {
-			sound-dai = <&left_woofer>, <&left_tweeter>,
-				    <&swr0 0>, <&lpass_wsamacro 0>;
-		};
-
-		platform {
-			sound-dai = <&q6apm>;
-		};
-	};
-};
-
-&swr0 {
-	status = "okay";
-};
-
-/* The CRD's two amps on swr0, renamed to the two-speaker layout. */
-&left_woofer {
-	sound-name-prefix = "SpkrLeft";
-};
-
-&left_tweeter {
-	sound-name-prefix = "SpkrRight";
-};
