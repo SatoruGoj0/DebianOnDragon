@@ -52,7 +52,7 @@ Working.
 | Headphones | **Working** | v0.4.0 | Kernel series 5, support 0.4.0, on the 83N3: the Headphones sink appears and playback works. Class-AB on the WCD9385. Needs the device ADSP firmware |
 | Headset mic, internal mics | **Experimental** | v0.4.0 | The capture PCMs are in the profile (`hw:0,2` headset, `hw:0,3` internal). Not confirmed on hardware yet |
 | Internal speakers | **Working** | v0.4.0 | Kernel series 5 on the 83N3: `speaker-test` plays Front Left. Front Right is silent on this unit in Debian and in Windows, so that speaker is a hardware fault. PA volume is capped at 0 dB; there is no active speaker protection. Keep the volume moderate |
-| Mute, volume down, volume up (F1/F2/F3) | **Experimental** | v0.4.0 | The ITE keyboard reports these on a separate consumer-control evdev node, which the desktop does not open. `debondragon-volkeys` (support 0.4.1) handles them. Not confirmed on hardware yet |
+| Mute, volume down, volume up (F1/F2/F3) | **Experimental** | series 6 | On the 83N3 these keys arrive on the typing-keyboard node (`platform-a84000.i2c-event-kbd`, mode 660, `root:input`). Support 0.4.1's user service could not open it and logged nothing. Support 0.5.1 runs `debondragon-volkeys` as a system service, ignores every key except mute and volume, and does not add the user to group `input`. Not confirmed on hardware yet |
 | USB-A ports (2, multiport controller) | **Working** | v0.1.0 | Both ports used on hardware (mouse, install stick); USB 3 lanes enabled, speed not yet measured |
 | USB-C ports (2, `usb_1_ss0/ss1`) | **Untested** | v0.1.0 | First port's controller (`usb_1_ss0`) comes up. The second (`usb_1_ss1`) never probes: the CRD puts its eUSB2 repeater in a PMIC (SPMI SID 0xa) that this laptop doesn't have (board notes). The CRD retimers don't answer, so role switching / alt mode don't work |
 | Third USB controller (`usb_1_ss2`) | **N/A** | v0.2.0 | Disabled in this laptop's ACPI; its PHY carries HDMI |
@@ -66,9 +66,9 @@ Working.
 
 - **Microphones**: headset mic and internal mics are in the profile and
   have not been confirmed on hardware.
-- **Mute and volume keys**: support 0.4.1 listens for the keyboard's
-  consumer-control events. Confirm with the steps in
-  docs/hardware-testing.md.
+- **Mute and volume keys**: support 0.5.1 runs them as root
+  (`systemctl is-active debondragon-volkeys.service`). Confirm with the
+  steps in docs/hardware-testing.md. Do not add your user to group `input`.
 - **HDMI audio** stays silent: the T14s topology has no DisplayPort graphs.
 - **This unit's right speaker** is dead in Windows as well. That is a
   hardware fault, not a missing channel in the driver.

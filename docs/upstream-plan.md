@@ -50,7 +50,7 @@ Userspace and packaging (belong outside the kernel):
 | Headset codec | WCD9385, class-AB headphone playback | Headphones verified on series 5 (v0.4.0) |
 | Internal mics | VA macro (`MIC BIAS3` + `VA MIC BIAS1`) | In the profile; not confirmed |
 | Speakers | 2× WSA8845 on swr0 (`SpkrLeft`/`SpkrRight`); swr3 off | Front Left verified on series 5. Front Right is dead on this unit in Windows too (hardware) |
-| Volume keys | QTEC0001 consumer-control collection | Userspace `debondragon-volkeys` (support 0.4.1); not confirmed |
+| Volume keys | QTEC0001 events on the `a84000` typing-keyboard node | System `debondragon-volkeys` (support 0.5.1) reads it as root and ignores non-volume keys. `uaccess` only for a split consumer node. Not confirmed |
 | Thermal sensors | tsens | Verified. Series 6 adds 75 °C CPU passive trips and an 85 °C GPU passive trip |
 | EC / fan | i2c5 0x76, "Temp to EC" register 0x20, LUT register 0x28 | 0.5.0 reports left the fan stopped at 72.7 °C. 0.5.1 programs a 4000 rpm fan-1 curve and still sends decidegrees on sensor 0x01. Not confirmed to spin. Not for upstream yet |
 | Suspend/resume | - | Untested |

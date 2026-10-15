@@ -55,35 +55,41 @@ tests in `docs/hdmi-testing.md` pass.
 4. Run the tests in `docs/hdmi-testing.md`, then make -4 the default as
    described there.
 
-## Upgrade to series 6 (support 0.5.0)
+## Upgrade to v0.5.0 (kernel series 6, support 0.5.1)
 
-Series 6 is the kernel with CPU/GPU passive trips. Support 0.5.0 is the
-matching userspace: everything in 0.4.1, plus `debondragon-fan`. There is
-no release tag for this yet. v0.4.0 (series 5, support 0.4.1) stays as it
-is. HDMI stays on (`DEBONDRAGON_HDMI=auto` treats series 4 and later as
-HDMI-ok).
+Series 6 is the kernel with CPU/GPU passive trips. v0.4.0 (series 5,
+support 0.4.1) stays as it is. HDMI stays on (`DEBONDRAGON_HDMI=auto`
+treats series 4 and later as HDMI-ok).
 
-The fan reporter does not start on install. After the new kernel is the
-one you are booting:
+Support 0.5.0, from the untagged series-6 image, added `debondragon-fan`
+and still ran the volume keys as a user service. Support 0.5.1 programs
+the fan curve and moves mute and volume to a system service. The 0.4.1
+user service could not open the keyboard node. Do not add your user to
+group `input`.
+
+From v0.4.0, install series 6 and support 0.5.1 together, then reboot.
+The fan reporter does not start on install.
 
 ```bash
 sudo apt install -o Dpkg::Options::=--force-confold \
-  ./debondragon-support_0.5.0_all.deb \
+  ./debondragon-support_0.5.1_all.deb \
   ./linux-image-7.2.0-debondragon-6_*_arm64.deb
 sudo reboot
 ```
 
-Then the tests in docs/hardware-testing.md, "Fan and thermals". Support
-0.5.1 is that same kernel plus the fan curve. If 0.5.0 is already
-installed and the reporter is enabled, install 0.5.1 on its own. No new
-kernel and no reboot. The package restarts the reporter, which takes a
-few seconds; leave it running after that.
+If the untagged 0.5.0 package is already installed and the reporter is
+enabled, install 0.5.1 on its own. No new kernel and no reboot. The
+package restarts the reporter, which takes a few seconds; leave it
+running after that.
 
 ```bash
 sudo apt install -o Dpkg::Options::=--force-confold ./debondragon-support_0.5.1_all.deb
 systemctl is-active debondragon-fan.service
 sudo journalctl -u debondragon-fan -b --no-pager | tail -n 20
 ```
+
+Then the tests in docs/hardware-testing.md, "Fan and thermals" and
+"Mute and volume keys".
 
 Series 5 remains bootable from the "DebOnDragon kernels" submenu, without the new
 trips and without the reporter (the reporter is a userspace service; if
