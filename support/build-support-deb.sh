@@ -71,10 +71,11 @@ if [ "$1" = configure ]; then
 	systemctl daemon-reload 2>/dev/null || true
 	systemctl enable debondragon-backlight-save.timer 2>/dev/null || true
 	# 0.4.1 started this in the user session, which cannot open the keyboard
-	# node (root:input, mode 660). The packaged mask
+	# node (root:input, mode 660). That package enabled it with a wants
+	# symlink. The unit file is gone, so disable has no [Install] section
+	# to follow; remove the link directly. The packaged mask
 	# (/etc/systemd/user/debondragon-volkeys.service -> /dev/null) stops a
-	# leftover enable. Drop the static wants link too: disable only removes
-	# symlinks, and 0.4.1 shipped that path as a regular file.
+	# leftover enable.
 	rm -f /etc/systemd/user/default.target.wants/debondragon-volkeys.service \
 		/usr/lib/systemd/user/default.target.wants/debondragon-volkeys.service
 	systemctl --global disable --now debondragon-volkeys.service 2>/dev/null || true
