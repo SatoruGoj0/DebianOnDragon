@@ -1,7 +1,10 @@
 # Unreleased: kernel 7.2.0-debondragon-13, debondragon-support 0.5.0
 
 Not a tagged release. Kernel series 13 includes the thermal changes from
-series 6 and installs beside the older kernels.
+series 6 and installs beside the older kernels. It boots on the 83N3; battery,
+Wi-Fi, Bluetooth, eDP, GPU/Vulkan, Snap, Iris video, Tailscale and Docker were
+regression-tested, and the keyboard/touchpad enumerate. Series 11 remains the
+configured fallback.
 
 ## The fan was not seeing the SoC
 
@@ -64,10 +67,10 @@ connection-tracking, NAT and masquerading modules required by Tailscale and
 Docker. Series 10 had a working TUN device, bridge and veth support, but
 Tailscale still failed because policy routing returned `EOPNOTSUPP` and
 Debian's iptables nft backend could not open its netfilter socket.
-Series 11 restored peer connectivity and Docker container HTTPS egress on
-hardware. Series 12 adds the connmark extension used by Tailscale's
-reverse-path-filter workaround; without it the basic tunnel works but
-`tailscale status` retains a router health warning.
+hardware. Series 13 adds the connmark extension used by Tailscale's
+reverse-path-filter workaround. On hardware, `xt_connmark` loads, Tailscale
+enables that workaround without its previous health warning and reaches a
+peer, and a newly pulled Docker container has HTTPS egress.
 
 Moonlight 6.1.0 exposed a separate userspace crash after successful Iris HEVC
 decode: Ubuntu's libplacebo 7.349 called an unavailable Vulkan host-pointer
@@ -171,24 +174,20 @@ and the UCM profile stopped using the Debian sequences that this kernel rejects
 notes. Series 4 remains a rollback: its devicetree does not wait for the speaker
 amplifiers.
 
-## Recheck audio on series 13
+## Series 13 audio result
 
-`docs/hardware-testing.md`, section "Audio". Short version: install
-support 0.5.0 and `linux-image-7.2.0-debondragon-13` beside series 11, run
-`sudo debondragon-firmware` (or export the firmware from Windows), reboot
-into series 13, and check `alsaucm -c hw:0 list _verbs` (HiFi),
-`pactl list short sinks` (Speaker, and Headphones when the jack is
-plugged), then play `hw:0,1` (speakers) and `hw:0,0` (headphones) at a
-moderate volume. Headset mic is `hw:0,2`, internal mics are `hw:0,3`.
-
-If `/proc/asound/cards` is empty, either the ADSP firmware is missing or
-the amplifiers did not bind. Boot the series-4 submenu entry and report
-`/sys/bus/soundwire/devices` plus `dmesg`.
+The sound card does not probe on series 13 (the identical state is present on
+series 11). The ADSP attaches and PMIC GLINK battery telemetry works, but its
+GLINK edge does not publish the `adsp_apps` GPR channel. The APR/GPR audio bus
+therefore stays empty, Q6PRM does not provide the LPASS clocks, and LPI
+pinctrl, SoundWire and the machine card remain deferred. This is now tracked
+with the exact dependency chain in `TO-FIX.md`; it is not a UCM or PulseAudio
+problem because no ALSA card exists yet.
 
 ## Still open on series 13
 
-- Reconfirm speaker, headphone and microphone behavior after the DSP-handoff
-  and Iris changes; series 5 already verified speaker and headphone playback.
+- Restore the ADSP `adsp_apps`/GPR path so the series-5 speaker and headphone
+  setup can bind again; microphones still need their first hardware test.
 - No active speaker protection. The PA is capped at 0 dB; keep the volume
   moderate.
 - HDMI audio stays silent.

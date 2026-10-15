@@ -1,33 +1,11 @@
 # DebOnDragon follow-up work
 
 Observed on the Lenovo IdeaPad Slim 3 15Q8X10 (83N3), most recently with
-`7.2.0-debondragon-11`; series 13 is built but not yet boot-tested. This is the
-short, actionable backlog for things that are broken, unsupported, or still
-need hardware verification. The README is the user-facing support matrix;
-keep the evidence and likely cause here.
+`7.2.0-debondragon-13`. This is the short, actionable backlog for things that
+are broken, unsupported, or still need hardware verification. The README is
+the user-facing support matrix; keep the evidence and likely cause here.
 
 ## Kernel/config gaps
-
-### Tailscale and Docker networking fail on series 10
-
-- **Symptom:** `tailscaled.service` exits while creating `tailscale0`, and
-  `docker.service` exits while creating its `DOCKER` NAT chain. Both report
-  `iptables: Failed to initialize nft: Protocol not supported`; Tailscale also
-  reports that the kernel may lack `IP_MULTIPLE_TABLES`.
-- **Cause:** the kernel has containers' basic requirements (`CGROUPS`,
-  namespaces, seccomp, bridge, veth and overlayfs), but has
-  `CONFIG_NF_TABLES=n` and `CONFIG_NF_NAT=n`. Debian's `iptables` uses the nft
-  backend, so Docker cannot create its bridge/NAT rules.
-- **Series-11 result:** IPv4/IPv6 policy routing, nftables, connection tracking,
-  NAT/masquerading and the xtables compatibility modules restore both daemons.
-  Tailscale reached multiple peers and Docker pulled Alpine and fetched HTTPS
-  from a NATed container. Tailscale still reports a health warning because its
-  reverse-path-filter workaround also needs the omitted `xt_connmark` module.
-- **Series-13 candidate fix:** the combined build includes
-  `CONFIG_NETFILTER_XT_CONNMARK=m` (first built in series 12, which was not
-  boot-tested) and its conntrack mark storage. Confirm that the health warning
-  is gone and rerun peer and Docker egress tests. Do not treat a daemon started
-  with its firewall disabled as the final fix.
 
 ### Linux cannot create or reorder UEFI boot entries
 
@@ -141,14 +119,24 @@ keep the evidence and likely cause here.
 - **Fix:** obtain or build an 83N3 topology with the correct DP graph, restore
   only the matching DAI link, and test without regressing internal audio.
 
-### Series-10 audio needs regression testing
+### The attached ADSP does not expose its audio GPR channel
 
-- **State:** speakers and headphones were verified with series 5. Series 10
-  inherits those WSA8845 and UCM changes, but has not been regression-tested
-  after the DSP handoff and video changes. Microphones remain unconfirmed.
-- **Next check:** inspect
-  `/sys/bus/soundwire/devices` and `/proc/asound/cards`, then follow the
-  moderate-volume tests in `docs/hardware-testing.md`.
+- **Symptom:** on series 11 and 13, `/proc/asound/cards` is empty. The ADSP is
+  attached and battery telemetry works, but the LPI pin controller, SoundWire
+  controllers and `snd-x1e80100` card remain deferred.
+- **Cause boundary:** UEFI's running ADSP publishes `IPCRTR`,
+  `PMIC_RTR_ADSP_APPS` and several diagnostic GLINK channels, but not the
+  devicetree's `adsp_apps` channel. Consequently the APR/GPR bus has no
+  devices, the Q6PRM LPASS clock provider never appears, and the LPI pinctrl
+  probe cannot acquire its `core`/`audio` clocks. This exact state was already
+  present on series 11, so it is not caused by the series-13 thermal merge.
+- **Known history:** speaker and headphone playback worked with the series-5
+  audio DT/UCM setup. Microphones remain unconfirmed.
+- **Fix to investigate:** determine how Windows or the vendor firmware starts
+  the AVS audio protection domain and makes `adsp_apps` available; compare a
+  Windows-to-Linux warm boot with a Linux reboot and inspect service-registry/
+  `pd-mapper` activation. Do not try to reset the attached ADSP: PAS reset is
+  rejected on this machine.
 
 ### EC temperature reporting is experimental; fan control is unverified
 
@@ -158,9 +146,10 @@ keep the evidence and likely cause here.
 - **Cause boundary:** that driver has the wrong protocol and remains
   blacklisted. Windows instead reports die temperature to register `0x20` and
   leaves the embedded controller in charge of its own fan curve.
-- **Series-13 candidate mitigation:** CPU/GPU passive thermal trips are present,
-  and support 0.5.0 adds the opt-in `debondragon-fan` temperature reporter. It
-  never writes an RPM target and has not yet been confirmed on hardware.
+- **Series-13 result:** all CPU/CPUSS zones expose a 75 °C passive trip and all
+  GPU zones expose an 85 °C passive trip. Support 0.5.0's opt-in
+  `debondragon-fan` status command reads the zones and fan registers, but the
+  reporter has not been enabled. It never writes an RPM target.
 - **Fix/validation:** test opt-in reporting under load, suspend/resume and power
   off as documented in `docs/hardware-testing.md`; derive and review the full
   83N3 protocol before attempting direct fan control. Keep `qcom-hamoa-ec`
