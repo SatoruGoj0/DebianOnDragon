@@ -1,7 +1,11 @@
-# Unreleased (kernel series 6, support 0.5.1)
+# DebOnDragon v0.5.0
 
-Not a tagged release. v0.4.0 stays on kernel series 5 and support 0.4.1.
-Series 6 installs beside it.
+Kernel `7.2.0-debondragon-6` (Linux v7.2) and `debondragon-support` 0.5.1.
+Series 6 installs beside series 5. v0.4.0 stays on series 5 and support 0.4.1.
+
+The support package is 0.5.1. The 0.5.0 package was already installed from
+the untagged series-6 image, and a deb with the same version would not
+upgrade it. There is no new kernel in 0.5.1.
 
 ## The fan was not seeing the SoC
 
@@ -35,14 +39,32 @@ After 90 seconds of all-core load the hottest zone was `cpu0-0-btm` at
 The 0 rpm decode is right. 72.7 °C is already above the DSDT active trip
 for the SoC fan zone (0x0D3E, about 66 °C).
 
-Support 0.5.1 adds `debondragon-fan probe`. It only reads: fan status
-(`0x21`), fan speed (`0x22`), the five EC thermistors (`0x29`–`0x2d`,
-integer °C), the current profile (`0x24`), and the fan curve (`0x28`,
-the get-LUT read). It does not write RPM, the profile, the curve, trip
-points, or debug mode (`0x30`). A failed temperature report is now logged
-once. The unit of the `0x20` report is not changed until that curve is
-seen: sending tenths of Kelvin by guess would look like 346 °C if the
-curve is actually in decidegrees. Not confirmed on hardware.
+A later light-load read, with the reporter still running, gave the same
+shape. Hottest zone 55.9 °C, battery 30.3 °C. Fan 1 status `0x00` and
+speed `0x02 0x00 0x00` (byte count 2, 0 rpm). Fan 2 speed
+`0x00 0x00 0x00` (byte count 0: no second fan). EC thermistors
+`0x29`–`0x2d` all `0x00`. Profile `0x24` was `0x06`, which is the
+best-performance-on-AC profile, not a fan-off mode. The curve reads used
+LUT ids `0x00`, `0x10` and `0x01`. The id the DSDT and Qualcomm's driver
+use for fan 1 profile 6 is `0x61` (`profile << 4 | fan`), so those buffers
+were not the active curve. One of them trailed into `0x03 0x00 0x18 0x01`,
+the EC firmware version from register `0x0e`.
+
+Qualcomm's Hamoa driver sends sensor `0x01` only, in 0.1 °C units
+(651 means 65.1 °C), and it programs the fan LUT itself. The unit we were
+already sending matches that. Sending tenths of Kelvin for 72.7 °C would
+look like 345.9 °C, so the unit is not changed. What was missing is the
+curve: temperature reports with no LUT left the fan at 0 rpm.
+
+Support 0.5.1, once the reporter is enabled, writes that curve for fan 1
+and profiles 1–7. The table is the Hamoa breakpoints. Speed is off below
+52 °C, 1600 rpm at 55 °C, 2800 rpm at 70 °C, and never above 4000 rpm.
+The write is register `0x28`, 68 bytes, temp source `0x01`. It does not
+change the selected profile, set a direct RPM, or write debug mode
+(`0x30`) or EC enable (`0x35`). `qcom-hamoa-ec` stays blacklisted. The
+temperature report is now sensor `0x01` only. `debondragon-fan probe`
+stays read-only and reads the `0x61` slot. Not confirmed on hardware:
+the fan is still Experimental until it is heard to spin.
 
 ---
 

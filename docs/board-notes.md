@@ -220,24 +220,30 @@ Windows does not set RPM. `\_SB.I2C6._DSM` function 1 ("Temp to EC") writes
 register 0x20: sensor id, a 0x02 length, and a 16-bit temperature. TZ31
 (all eight Oryon cores) forces sensor 0x02; TZ32 (GPU) forces 0x03. The
 same FC20 block is what keeps the fan curve alive on other X1 laptops.
-`debondragon-fan` (support 0.5.0, opt-in) sends that report in decidegrees
-Celsius for sensors 0x01 (the aggregate those machines use), 0x02 and
-0x03, and writes 0x23 only to tell the EC about suspend. It does not write
-0x24, 0x25, 0x28 or 0x30. TZ31's ACPI passive trip is 0x0D48 (67 °C);
-TZ31 critical is 0x0E92 (100 °C). The SoC dtsi only had a 115 °C critical
-trip on the CPU zones, so series 6 adds a 75 °C passive trip on each CPU
-and CPUSS zone and lowers the existing GPU passive trip from 95 °C to
-85 °C. Critical trips stay at 115 °C.
+`debondragon-fan` (support 0.5.1, opt-in) sends that report in decidegrees
+Celsius on sensor 0x01 only, which is the SoC Tj source in Qualcomm's
+Hamoa EC driver (651 means 65.1 °C). It also writes the fan-1 LUT
+(register 0x28, 68 bytes, temp source 0x01) for profiles 1–7, because
+that driver programs the LUT itself and temperature reports alone left
+the fan stopped. The table follows the Hamoa breakpoints and never asks
+for more than 4000 rpm. It writes 0x23 only to tell the EC about suspend.
+It does not write 0x24, 0x25, 0x30 or 0x35, and it does not program fan 2.
+TZ31's ACPI passive trip is 0x0D48 (67 °C); TZ31 critical is 0x0E92
+(100 °C). The SoC dtsi only had a 115 °C critical trip on the CPU zones,
+so series 6 adds a 75 °C passive trip on each CPU and CPUSS zone and
+lowers the existing GPU passive trip from 95 °C to 85 °C. Critical trips
+stay at 115 °C.
 
 On series 5, light use held every SoC zone at 59–63 °C while the battery
-read 30 °C and the PMICs 37 °C. That is the fan curve looking at the EC
-thermistors and not at the die. On series 6 with the reporter running,
-72.7 °C under load still left both fans at 0 rpm, and the fan was
-physically stopped. The DSDT's SoC fan zone (`TZ98`, "SoCTj Thermal-zone
-for Fan Control") engages active cooling at 0x0D3E, about 66 °C, on this
-board. `debondragon-fan probe` (support 0.5.1) reads the curve and the
-EC thermistors and does not change the unit of the `0x20` report until
-that curve shows which unit it is.
+read 30 °C and the PMICs 37 °C. On series 6 with support 0.5.0 reporting,
+72.7 °C under load still left the fan physically stopped, and a later
+light-load read at 55.9 °C was the same: fan 1 at 0 rpm, fan 2 absent
+(speed byte count 0), thermistors `0x29`–`0x2d` all 0, profile 0x06.
+Profile 0x06 is best-performance on AC. The curve ids that were read
+(`0x00`, `0x10`, `0x01`) are not the fan-1 profile-6 slot; that id is
+0x61. The DSDT SoC fan zone (`TZ98`) engages active cooling at 0x0D3E,
+about 66 °C. `debondragon-fan probe` reads the 0x61 slot and does not
+write it.
 
 The EC event pin is `_AEI` pin 0x140 (a wake-encoded number that can't be
 decoded directly). TLMM 66 is inferred: the CRD's EC interrupt,

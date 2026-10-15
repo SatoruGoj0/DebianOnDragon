@@ -47,7 +47,7 @@ Working.
 | HDMI extended desktop (Hyprland) | **Working** | v0.4.0 | Verified: two monitors, pointer and windows move between them. Layout comes from your own Hyprland monitor rules |
 | HDMI on at boot, hotplug, unplug/replug with active video, long runs | **Not yet verified** | v0.4.0 | support 0.3.0 switches HDMI on automatically for series-4 kernels (`DEBONDRAGON_HDMI=auto`); older kernels keep it off. Earlier kernels reset the laptop on unplug after failed training; tests in docs/hdmi-testing.md |
 | Internal camera (USB 13d3:54bf) | **Working** | v0.2.0 | Reported working on hardware (UVC on usb_2 behind the PTN3222 repeater) |
-| Fan / EC thermal control | **Experimental** | series 6 | `qcom-hamoa-ec` stays blacklisted. Series 6 throttles the CPUs at 75 °C and the GPU at 85 °C. `debondragon-fan enable` reports die temperature (register 0x20) and does not set RPM. On this laptop the reporter ran and the fan stayed physically stopped at 72.7 °C. Support 0.5.1 adds a read-only probe of the fan curve |
+| Fan / EC thermal control | **Experimental** | series 6 | `qcom-hamoa-ec` stays blacklisted. Series 6 throttles the CPUs at 75 °C and the GPU at 85 °C. Support 0.5.1 reports SoC Tj (register 0x20, sensor 0x01, decidegrees) and installs a fan-1 curve capped at 4000 rpm. It does not write debug mode or change the fan profile. On this laptop, 0.5.0's temperature reports alone left the fan stopped at 72.7 °C. Not yet confirmed to spin |
 | SoC temperature sensors | **Working** | v0.1.0 | Zones read on hardware. Series 5, light use: every SoC zone 59–63 °C while the battery was 30 °C and the PMICs 37 °C |
 | Headphones | **Working** | v0.4.0 | Kernel series 5, support 0.4.0, on the 83N3: the Headphones sink appears and playback works. Class-AB on the WCD9385. Needs the device ADSP firmware |
 | Headset mic, internal mics | **Experimental** | v0.4.0 | The capture PCMs are in the profile (`hw:0,2` headset, `hw:0,3` internal). Not confirmed on hardware yet |
@@ -77,10 +77,10 @@ Working.
   unverified); the CRD retimers don't answer, so role switching and DP alt
   mode don't work on either port.
 - **Fan**: series 6 throttles the CPUs at 75 °C and the GPU at 85 °C.
-  With `debondragon-fan` reporting, the fan stayed physically stopped at
-  72.7 °C. Support 0.5.1 reads the curve (`sudo debondragon-fan probe`)
-  and does not change the temperature unit until that dump is in.
-  `qcom-hamoa-ec` stays off.
+  Support 0.5.0's temperature reports left the fan physically stopped at
+  72.7 °C. Support 0.5.1 installs a fan curve capped at 4000 rpm
+  (`sudo debondragon-fan enable`, already the case if 0.5.0 was enabled).
+  Confirm it spins before treating this as done. `qcom-hamoa-ec` stays off.
 - **Suspend/resume**: untested.
 
 Device-signed firmware (audio/compute DSP, GPU zap shader) is signed for this

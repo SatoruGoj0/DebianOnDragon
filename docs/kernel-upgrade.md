@@ -74,13 +74,15 @@ sudo reboot
 ```
 
 Then the tests in docs/hardware-testing.md, "Fan and thermals". Support
-0.5.1 is the same kernel with a read-only `debondragon-fan probe` added,
-for the case where the reporter is running and the fan still does not
-spin. Install that package on its own; no new kernel and no reboot:
+0.5.1 is that same kernel plus the fan curve. If 0.5.0 is already
+installed and the reporter is enabled, install 0.5.1 on its own. No new
+kernel and no reboot. The package restarts the reporter, which takes a
+few seconds; leave it running after that.
 
 ```bash
 sudo apt install -o Dpkg::Options::=--force-confold ./debondragon-support_0.5.1_all.deb
-sudo debondragon-fan probe
+systemctl is-active debondragon-fan.service
+sudo journalctl -u debondragon-fan -b --no-pager | tail -n 20
 ```
 
 Series 5 remains bootable from the "DebOnDragon kernels" submenu, without the new

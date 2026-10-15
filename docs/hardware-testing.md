@@ -105,79 +105,44 @@ uname -r    # 7.2.0-debondragon-6
 grep . /sys/class/thermal/thermal_zone*/type /sys/class/thermal/thermal_zone*/trip_point_*_temp /sys/class/thermal/thermal_zone*/trip_point_*_type | grep -E 'passive|75000|85000'
 ```
 
-**Fan reporter (opt-in, writes the EC).** It sends only the temperature
-report (register 0x20, decidegrees Celsius, sensors 0x01 CPU-aggregate,
-0x02 the CPU zone, 0x03 the GPU zone) and, around suspend, modern-standby
-status (register 0x23). It does not set RPM, replace the fan curve, or
-clear any EC failsafe. The EC decides the speed.
+**Fan reporter (opt-in, writes the EC).** Support 0.5.1 sends SoC Tj
+(register 0x20, sensor 0x01, decidegrees Celsius: 65.1 °C is 651) and
+installs a fan-1 curve (register 0x28) for profiles 1–7. The curve is
+off below 52 °C, about 1600 rpm at 55 °C, about 2800 rpm at 70 °C, and
+never above 4000 rpm. It does not change the selected profile, write
+debug mode (`0x30`), or write EC enable (`0x35`). Around suspend it
+writes modern-standby status (register 0x23).
 
-Read first. This writes nothing:
+On this laptop, support 0.5.0's temperature reports left the fan
+physically stopped at 72.7 °C, and a light-load read at 55.9 °C was the
+same: fan 1 at 0 rpm, fan 2 absent, profile 0x06. 0.5.1 is the fix to
+try. If the reporter was already enabled, installing the 0.5.1 package
+restarts it. Do not disable it first.
 
 ```bash
+sudo apt install -o Dpkg::Options::=--force-confold ./debondragon-support_0.5.1_all.deb
+systemctl is-active debondragon-fan.service
+sudo journalctl -u debondragon-fan -b --no-pager | tail -n 20
 sudo debondragon-fan status
 ```
 
-Then turn reporting on and watch the fan. Stop the load with Ctrl-C; leave
+`sudo` on the journal matters: this user is not in group `adm`, so a
+plain `journalctl` is empty. The journal line to look for is
+`programmed fan 1 curve for profiles 1-7`.
+
+Then put a short load on and listen. Stop the load with Ctrl-C. Leave
 the reporter running.
 
 ```bash
-sudo debondragon-fan enable
 for i in $(seq 8); do timeout 90 sh -c 'while :; do :; done' & done
-watch -n2 'sudo debondragon-fan status'
+sleep 30
+sudo debondragon-fan status
 ```
 
-**Series 6, support 0.5.0, on this laptop.** The reporter was running.
-Idle SoC zones were 48–50 °C and both fans were at 0 rpm. After 90
-seconds of all-core load the hottest zone was 72.7 °C, fan 1 still
-answered `0x02 0x00 0x00` (0 rpm), and the fan made no sound and moved
-no air. That 0 rpm is real. 72.7 °C is already above the DSDT's active
-trip for the SoC fan zone (about 66 °C), so the curve is not treating
-the value we send as "hot". Leave the reporter running and collect the
-reads below. Do not `debondragon-fan disable` for this; that writes the
-suspend notice and the reads need to happen while reports are still
-going out.
-
-Support 0.5.1 wraps the same reads in `sudo debondragon-fan probe`. On
-0.5.0, run them directly. Nothing here writes a register. Paste the
-whole output back.
-
-```bash
-journalctl -u debondragon-fan -b --no-pager | tail -n 40
-BUS=$(for a in /sys/bus/i2c/devices/i2c-*; do
-	case $(readlink -f "$a/of_node" 2>/dev/null) in
-	*i2c@b94000) echo "${a##*/i2c-}" ;;
-	esac
-done)
-echo "bus $BUS"
-echo "--- zones ---"
-paste <(cat /sys/class/thermal/thermal_zone*/type) <(cat /sys/class/thermal/thermal_zone*/temp)
-echo "--- fan status 0x21, speed 0x22 ---"
-sudo i2ctransfer -f -y "$BUS" w2@0x76 0x21 0x01 r1
-sudo i2ctransfer -f -y "$BUS" w2@0x76 0x21 0x02 r1
-sudo i2ctransfer -f -y "$BUS" w2@0x76 0x22 0x01 r3
-sudo i2ctransfer -f -y "$BUS" w2@0x76 0x22 0x02 r3
-echo "--- EC thermistors 0x29-0x2d, integer °C ---"
-sudo i2ctransfer -f -y "$BUS" w1@0x76 0x29 r1
-sudo i2ctransfer -f -y "$BUS" w1@0x76 0x2a r1
-sudo i2ctransfer -f -y "$BUS" w1@0x76 0x2b r1
-sudo i2ctransfer -f -y "$BUS" w1@0x76 0x2c r1
-sudo i2ctransfer -f -y "$BUS" w1@0x76 0x2d r1
-echo "--- profile 0x24, profile count 0x26, lut count 0x27 ---"
-sudo i2ctransfer -f -y "$BUS" w1@0x76 0x24 r1
-sudo i2ctransfer -f -y "$BUS" w2@0x76 0x26 0x00 r2
-sudo i2ctransfer -f -y "$BUS" w2@0x76 0x27 0x00 r1
-sudo i2ctransfer -f -y "$BUS" w2@0x76 0x27 0x01 r1
-echo "--- fan curve, get only (65 bytes). A NACK is fine, paste it ---"
-sudo i2ctransfer -f -y "$BUS" w5@0x76 0x28 0x00 0x00 0x00 0x00 r65
-sudo i2ctransfer -f -y "$BUS" w5@0x76 0x28 0x10 0x00 0x00 0x00 r65
-sudo i2ctransfer -f -y "$BUS" w5@0x76 0x28 0x01 0x00 0x00 0x00 r65
-```
-
-Do not write any other register. In particular do not write `0x30`
-(debug mode), `0x24` (profile), `0x25` (trip points), `0x28` as a long
-write (that would replace the curve), or `0x35`. A wrong temperature
-unit can look like an overtemp, so do not hand-send a different `0x20`
-value either. The curve dump says which unit is safe.
+Fan 1 rpm should be above 0 once the hottest zone is in the mid-50s, and
+you should hear airflow. Paste `status` and the journal tail back. If
+rpm is still 0, also paste `sudo debondragon-fan probe` (read-only) and
+do not hand-write any register.
 
 **Safety.** After `enable`, do not `systemctl stop debondragon-fan` and
 walk away. If temperature reports stop for more than a couple of minutes,
@@ -191,9 +156,10 @@ sudo reboot
 ```
 
 `disable` tells the EC the OS is suspended before it stops the updates.
-Reboot so that notice does not linger. While the fan is still stopped,
-leave the reporter enabled and send the probe output above instead of
-disabling it.
+Reboot so that notice does not linger. The curve write is runtime state;
+a reboot without the reporter running returns the EC to the behavior it
+had before 0.5.1. Do not write `0x30`, `0x24`, `0x25`, or `0x35`
+yourself, and do not hand-send a different `0x20` value.
 
 ## Thermal sensors
 

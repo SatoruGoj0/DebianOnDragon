@@ -1,24 +1,31 @@
 #!/bin/bash
-# Report SoC temperature to the IdeaPad EC so its own fan curve can run.
+# Report SoC Tj to the IdeaPad EC and install a fan curve for it.
 #
 # The 83N3 DSDT method "Temp to EC" (\_SB.I2C6._DSM function 1, field FC20)
-# is how Windows feeds die temperature to this controller. Without it the
-# fan curve only sees the EC's board thermistors, which stay near the
-# battery and PMIC (about 30–37 °C) while the SoC is heat-soaked near 60 °C.
-# The same FC20 block is what x1e-ec-tool drives on the Lenovo IdeaCentre
-# 01Q8X10, Yoga Slim 7x and ThinkPad T14s.
+# is how Windows feeds die temperature to this controller. Qualcomm's Hamoa
+# EC driver sends the same report as decidegrees Celsius on sensor 0x01
+# (65.1 °C → 651) and, on a production Hamoa, also programs the fan LUT.
+# Temperature reports alone left this laptop's fan stopped at 72.7 °C.
 #
 # Wire writes, and only these:
-#   0x20 <sensor> 0x02 <deci-°C lo> <deci-°C hi>   temperature report
+#   0x20 0x01 0x02 <deci-°C lo> <deci-°C hi>        SoC Tj report
 #   0x23 <0x00|0x01>                                modern-standby status
-# Sensor 0x01 is the single SoC report that tool sends. Sensor 0x02 is what
-# TZ31 (all Oryon cores) forces, and 0x03 is what TZ32 (GPU) forces.
-# Sensors 0x04 and up are skin and modem zones; they are not written.
-# Temperature is decidegrees Celsius (60.0 °C → 600), capped at 200.0 °C.
+#   0x28 <(profile<<4)|1> 0x01 0x40 <64 bytes>      fan-1 curve, profiles 1–7
+# Sensor 0x02 is skin temperature and 0x03+ are reserved in that driver;
+# they are not written. The value is capped at 200.0 °C. Tenths of Kelvin
+# are not sent: 72.7 °C in that unit would look like 345.9 °C.
 #
-# Never written: fan RPM, the fan profile (0x24), trip points (0x25), the
-# LUT (0x28), debug mode (0x30), or anything qcom-hamoa-ec writes. That
-# driver stays blacklisted. The EC keeps its LUT and its own failsafe.
+# The curve uses the Hamoa breakpoints (25 °C through 105 °C). Speed is
+# off below 52 °C, 1600 rpm at 55 °C, 2800 rpm at 70 °C, and never above
+# 4000 rpm. It is written again once a minute and after resume. Fan 2 is
+# not programmed: its speed read on this laptop is a zero byte count.
+# The selected profile (0x24) is not changed. Hardware was already in
+# profile 0x06 (best performance on AC).
+#
+# Never written: a direct RPM, the fan profile (0x24), trip points (0x25),
+# debug mode (0x30), or EC enable (0x35). qcom-hamoa-ec stays blacklisted.
+# There is no spin-up calibration, because that turns debug mode on.
+# The EC keeps its failsafe.
 #
 # Once reporting has started, silence for more than a couple of minutes can
 # make the EC power the machine off (it treats a missing update as a hung
@@ -46,8 +53,8 @@ Usage: debondragon-fan status|probe|enable|disable
            RPM query (register 0x22). Writes nothing.
   probe    Read fan status, RPM, the EC thermistors, the fan profile and
            the fan curve. Writes nothing. Leave the reporter running.
-  enable   Report SoC temperature to the EC every 2 seconds so its fan
-           curve can run. The EC keeps its own curve and failsafe.
+  enable   Report SoC Tj and install a 4000 rpm fan curve. The EC
+           keeps its failsafe. The selected fan profile is not changed.
   disable  Stop reporting. If it was running, the EC is told the OS is
            suspended first, so the silence is not a hung-OS fault.
            Reboot afterwards.
@@ -167,7 +174,7 @@ ec_read() {
 }
 
 report_temps() {
-	local bus=$1 line milli typ deci lo hi id
+	local bus=$1 line milli typ deci lo hi
 	line=$(hottest) || {
 		echo "debondragon-fan: no cpu/gpu thermal zone" >&2
 		return 1
@@ -183,13 +190,42 @@ report_temps() {
 	if [ "${DEBONDRAGON_FAN_DRY:-}" = 1 ]; then
 		echo "hottest $typ $milli deci $deci"
 	fi
-	# 0x01 aggregate, 0x02 CPU zone TZ31, 0x03 GPU zone TZ32.
-	for id in 0x01 0x02 0x03; do
-		if [ "${DEBONDRAGON_FAN_DRY:-}" = 1 ]; then
-			echo "report 0x20 $id 0x02 $lo $hi"
-		else
-			ec_write "$bus" "w5@0x76" 0x20 "$id" 0x02 "$lo" "$hi" || return 1
-		fi
+	# SoC Tj only. The curve below is programmed for source 0x01.
+	if [ "${DEBONDRAGON_FAN_DRY:-}" = 1 ]; then
+		echo "report 0x20 0x01 0x02 $lo $hi"
+	else
+		ec_write "$bus" "w5@0x76" 0x20 0x01 0x02 "$lo" "$hi" || return 1
+	fi
+}
+
+# Hamoa geometry: 16 steps, 4 bytes each (rpm/100, °C high, °C low, 0).
+# The wire write is 68 bytes, matching the DSDT AttribRawBytes(0x44) set.
+# Low nibble of the id is the fan (1). High nibble is the profile (1–7).
+# Speeds stay at or under 40 (4000 rpm). No step uses debug mode.
+program_curves() {
+	local bus=$1 profile id
+	local -a data=(
+		0x00 0x20 0x19 0x00
+		0x00 0x23 0x20 0x00
+		0x00 0x2a 0x23 0x00
+		0x00 0x2d 0x2a 0x00
+		0x0c 0x34 0x2d 0x00
+		0x10 0x37 0x34 0x00
+		0x14 0x3c 0x37 0x00
+		0x18 0x41 0x3c 0x00
+		0x1c 0x46 0x41 0x00
+		0x20 0x4b 0x46 0x00
+		0x24 0x50 0x4b 0x00
+		0x28 0x55 0x50 0x00
+		0x28 0x5a 0x55 0x00
+		0x28 0x5f 0x5a 0x00
+		0x28 0x64 0x5f 0x00
+		0x28 0x69 0x64 0x00
+	)
+	[ "${#data[@]}" -eq 64 ] || return 1
+	for profile in 1 2 3 4 5 6 7; do
+		id=$(printf '0x%02x' $(((profile << 4) | 1)))
+		ec_write "$bus" w68@0x76 0x28 "$id" 0x01 0x40 "${data[@]}" || return 1
 	done
 }
 
@@ -275,20 +311,39 @@ cmd_run() {
 	# 0x00: not in modern standby. Clears a disable/suspend notice.
 	ms_status "$bus" 0x00 || exit 1
 	if [ "${DEBONDRAGON_FAN_ONCE:-}" = 1 ]; then
+		program_curves "$bus" || echo "debondragon-fan: fan curve was not accepted; temperature report still attempted" >&2
 		report_temps "$bus"
 		exit $?
 	fi
-	local reported_ok=1
+	local reported_ok=1 curve_note=0 loops=0 need_curve=1
 	while true; do
 		if [ -e "$suspend_stamp" ]; then
+			need_curve=1
 			sleep "$interval"
 			continue
+		fi
+		if [ "$need_curve" = 1 ]; then
+			if program_curves "$bus"; then
+				if [ "$curve_note" != 1 ]; then
+					curve_note=1
+					echo "debondragon-fan: programmed fan 1 curve for profiles 1-7, source 0x01, cap 4000 rpm" >&2
+				fi
+			elif [ "$curve_note" != 2 ]; then
+				curve_note=2
+				echo "debondragon-fan: fan curve was not accepted; temperature reports continue" >&2
+			fi
+			need_curve=0
+			loops=0
 		fi
 		if report_temps "$bus"; then
 			reported_ok=1
 		elif [ "$reported_ok" = 1 ]; then
 			reported_ok=0
 			echo "debondragon-fan: temperature report was not acknowledged by the EC" >&2
+		fi
+		loops=$((loops + 1))
+		if [ "$loops" -ge 30 ]; then
+			need_curve=1
 		fi
 		sleep "$interval"
 	done
@@ -324,7 +379,7 @@ cmd_probe() {
 			hi=$(printf '0x%02x' $((deci >> 8)))
 			tk=$(tenths_kelvin "$milli")
 			echo "hottest: $typ $milli deci $deci bytes $lo $hi"
-			echo "reporter sends: 0x20 <0x01|0x02|0x03> 0x02 $lo $hi"
+			echo "reporter sends: 0x20 0x01 0x02 $lo $hi"
 			echo "not sent, tenths of kelvin: $tk"
 		else
 			echo "hottest: $typ $milli (not a temperature the reporter sends)"
@@ -357,17 +412,18 @@ cmd_probe() {
 	ec_read "profile count 0x26 arg 0" w2@0x76 0x26 0x00 r2@0x76
 	ec_read "lut count 0x27 arg 0" w2@0x76 0x27 0x00 r1@0x76
 	ec_read "lut count 0x27 arg 1" w2@0x76 0x27 0x01 r1@0x76
-	# Get LUT: a 5-byte command (0x28, id, index, 0, 0) and a 65-byte read.
-	# Set LUT is a 68-byte write and is not issued here.
-	ec_read "lut 0x28 id 0x00" w5@0x76 0x28 0x00 0x00 0x00 0x00 r65@0x76
-	ec_read "lut 0x28 id 0x10" w5@0x76 0x28 0x10 0x00 0x00 0x00 r65@0x76
-	ec_read "lut 0x28 id 0x01" w5@0x76 0x28 0x01 0x00 0x00 0x00 r65@0x76
+	# Get LUT: 5-byte command (0x28, id, temp source, 0, 0) and a 65-byte
+	# read. The id is (profile << 4) | fan. Fan 1 profile 6, the profile
+	# this laptop reported, is 0x61. This does not issue the 68-byte set.
+	ec_read "lut fan1 profile 6" w5@0x76 0x28 0x61 0x01 0x00 0x00 r65@0x76
+	ec_read "lut fan1 profile 1" w5@0x76 0x28 0x11 0x01 0x00 0x00 r65@0x76
 }
 
 cmd_enable() {
 	rm -f "$disabled"
 	systemctl enable --now debondragon-fan.service
-	echo "SoC temperature is now reported to the EC. The EC keeps its fan curve and its failsafe."
+	echo "SoC Tj is reported to the EC, and a fan curve capped at 4000 rpm is installed."
+	echo "The selected fan profile is not changed. The EC keeps its failsafe."
 	echo "Do not stop this service for long. If reports stop, the EC may power the machine off."
 	echo "To turn it off: sudo debondragon-fan disable, then reboot."
 }

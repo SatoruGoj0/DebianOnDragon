@@ -71,10 +71,14 @@ if [ "$1" = configure ]; then
 	systemctl daemon-reload 2>/dev/null || true
 	systemctl enable debondragon-backlight-save.timer 2>/dev/null || true
 	systemctl --global enable debondragon-volkeys.service 2>/dev/null || true
-	# Fan reporting writes the EC. It stays off until debondragon-fan enable,
-	# including across this upgrade. A disable stamp must survive it.
+	# Fan reporting writes the EC. It stays off until debondragon-fan enable.
+	# A disable stamp must survive the upgrade. If it is already running,
+	# restart it so the new curve is installed; a few seconds of silence
+	# is inside the EC's hung-OS window.
 	if [ -e /etc/debondragon/fan-disabled ]; then
 		systemctl disable --now debondragon-fan.service 2>/dev/null || true
+	elif [ -d /run/systemd/system ] && systemctl is-active --quiet debondragon-fan.service 2>/dev/null; then
+		systemctl restart debondragon-fan.service 2>/dev/null || true
 	fi
 	if [ -d /run/systemd/system ]; then
 		udevadm control --reload 2>/dev/null || true

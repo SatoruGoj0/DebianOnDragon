@@ -208,8 +208,20 @@ sample=$(DEBONDRAGON_FAN_DRY=1 DEBONDRAGON_FAN_SYS="$tmp/thermal" DEBONDRAGON_FA
 	DEBONDRAGON_FAN_ONCE=1 "$fan" run)
 expect "fan report uses the hottest cpu/gpu zone, not the PMIC or battery" \
 	"$(printf '%s\n' "$sample" | grep -c '^hottest cpu0-0-top-thermal 62600 deci 626$')" 1
-expect "fan report is deci-celsius on 0x20 for sensors 0x01 0x02 0x03" \
-	"$(printf '%s\n' "$sample" | grep -c '^report 0x20 0x0[123] 0x02 0x72 0x02$')" 3
+expect "fan report is deci-celsius on 0x20 for sensor 0x01 only" \
+	"$(printf '%s\n' "$sample" | grep -c '^report 0x20 0x01 0x02 0x72 0x02$')" 1
+expect "fan report does not send skin or the reserved sensor" \
+	"$(printf '%s\n' "$sample" | grep -c '^report 0x20 0x0[23] ')" 0
+expect "fan curve targets fan 1 profile 6 at source 0x01" \
+	"$(printf '%s\n' "$sample" | grep -c '^dry 9 w68@0x76 0x28 0x61 0x01 0x40 0x00 0x20 0x19 0x00 ')" 1
+expect "fan curve is installed for profiles 1 through 7" \
+	"$(printf '%s\n' "$sample" | grep -c '^dry 9 w68@0x76 0x28 0x[1-7]1 0x01 0x40 ')" 7
+expect "fan curve caps the top step at 4000 rpm" \
+	"$(printf '%s\n' "$sample" | grep -c '0x28 0x69 0x64 0x00$')" 7
+expect "fan curve does not program fan 2" \
+	"$(printf '%s\n' "$sample" | grep -c '0x28 0x[1-7]2 ')" 0
+expect "fan curve does not write debug mode, the profile, trips, or EC enable" \
+	"$(printf '%s\n' "$sample" | grep -c -E '0x30|w2@0x76 0x24|0x25|0x35')" 0
 expect "fan run clears modern-standby before reporting" \
 	"$(printf '%s\n' "$sample" | grep -c '^report 0x23 0x00$')" 1
 echo 40000 > "$tmp/thermal/thermal_zone0/temp"
@@ -240,10 +252,10 @@ expect "fan probe shows the tenths-of-kelvin value without sending it" \
 	"$(printf '%s\n' "$probe" | grep -c '^not sent, tenths of kelvin: 3358$')" 1
 expect "fan probe reads fan status and the curve" \
 	"$(printf '%s\n' "$probe" | grep -c '^read fan1 status 0x21: w2@0x76 0x21 0x01 r1@0x76$')" 1
-expect "fan probe get-LUT is a short command plus a 65 byte read" \
-	"$(printf '%s\n' "$probe" | grep -c '^read lut 0x28 id 0x00: w5@0x76 0x28 0x00 0x00 0x00 0x00 r65@0x76$')" 1
-expect "fan probe does not write debug mode" \
-	"$(printf '%s\n' "$probe" | grep -c '0x30')" 0
+expect "fan probe reads the fan-1 profile-6 curve" \
+	"$(printf '%s\n' "$probe" | grep -c '^read lut fan1 profile 6: w5@0x76 0x28 0x61 0x01 0x00 0x00 r65@0x76$')" 1
+expect "fan probe does not write debug mode or set the curve" \
+	"$(printf '%s\n' "$probe" | grep -c -E '0x30|w68@')" 0
 expect "fan probe does not write modern-standby or the trip register" \
 	"$(printf '%s\n' "$probe" | grep -c -E '0x23|0x25|0x35')" 0
 expect "fan probe does not send a temperature report" \
