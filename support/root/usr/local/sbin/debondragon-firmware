@@ -3,8 +3,10 @@
 # owner's own Windows installation. These files are signed for this
 # machine and cannot be redistributed, so they are not on the ISO.
 #
-# Without them: no battery status, no USB-C, no GPU acceleration, no audio
-# DSP. Keyboard, touchpad, display, NVMe, USB-A and Wi-Fi do not need them.
+# Without the matching ADSP files: no battery status or audio DSP. The helper
+# also copies CDSP and GPU firmware, but firmware alone cannot fix unsupported
+# USB-C wiring, and GPU acceleration requires the exact 83N3-signed zap file.
+# Keyboard, touchpad, display, NVMe, USB-A and Wi-Fi do not need these files.
 #
 # Usage:
 #   debondragon-firmware                 search unlocked NTFS partitions
@@ -14,7 +16,7 @@ set -euo pipefail
 
 dest=/lib/firmware/qcom/x1p42100/LENOVO/83N3
 files=(qcadsp8380.mbn adsp_dtbs.elf qccdsp8380.mbn cdsp_dtbs.elf qcdxkmsucpurwa.mbn
-       battmgr.jsn adspr.jsn adspua.jsn cdspr.jsn)
+       battmgr.jsn adspr.jsn adsps.jsn adspua.jsn cdspr.jsn)
 required=(qcadsp8380.mbn adsp_dtbs.elf qccdsp8380.mbn cdsp_dtbs.elf qcdxkmsucpurwa.mbn)
 
 [ "$(id -u)" = 0 ] || exec sudo "$0" "$@"
@@ -94,4 +96,4 @@ if [ $missing = 1 ]; then
 	echo "Some required files were not found; the matching hardware will stay off." >&2
 	exit 1
 fi
-echo "Done. Reboot to start the audio/compute DSPs and the GPU with this firmware."
+echo "Done. Reboot, then verify battery, DSP and GPU status; see TO-FIX.md for known gaps."

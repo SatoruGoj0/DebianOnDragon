@@ -15,7 +15,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $store = Join-Path $env:SystemRoot 'System32\DriverStore\FileRepository'
 $files = 'qcadsp8380.mbn', 'adsp_dtbs.elf', 'qccdsp8380.mbn', 'cdsp_dtbs.elf',
-         'qcdxkmsucpurwa.mbn', 'battmgr.jsn', 'adspr.jsn', 'adspua.jsn', 'cdspr.jsn'
+         'qcdxkmsucpurwa.mbn', 'battmgr.jsn', 'adspr.jsn', 'adsps.jsn', 'adspua.jsn', 'cdspr.jsn'
 
 New-Item -ItemType Directory -Force -Path $Destination | Out-Null
 foreach ($name in $files) {

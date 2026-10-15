@@ -2,8 +2,8 @@
 # Behaviour tests for debondragon-support, run against a fake /sys and fake
 # config files (no root, nothing on the running system is touched):
 #   - debondragon-backlight: restore/save rules
-#   - /etc/default/grub.d/debondragon.cfg: kernel command line, GRUB default,
-#     Windows Boot Manager (os-prober) kept
+#   - /etc/default/grub.d/debondragon.cfg: text terminal, kernel command line,
+#     GRUB default, Windows Boot Manager (os-prober) kept
 #   - the UCM long-name file selects the 83N3 profile, which drives speakers
 #     when the amps are bound and headphones in class-AB
 # Usage: scripts/test-support.sh
@@ -31,9 +31,11 @@ echo 204 > "$tmp/sys/backlight/brightness"; bl restore
 expect "no saved level: raised to the 30% default" "$(bri)" 1228
 echo 100 > "$tmp/sys/backlight/brightness"; bl save
 expect "save stores the current level" "$(cat "$tmp/var/backlight-backlight")" 100
-touch -d '2000-01-01' "$tmp/var/backlight-backlight"; bl save
+touch -d '2000-01-01' "$tmp/var/backlight-backlight"
+old_mtime=$(stat -c %Y "$tmp/var/backlight-backlight")
+bl save
 expect "unchanged level is not rewritten" "$(stat -c %Y "$tmp/var/backlight-backlight")" \
-	"$(date -d '2000-01-01' +%s)"
+	"$old_mtime"
 echo 204 > "$tmp/sys/backlight/brightness"; bl restore
 expect "saved low level restored exactly (deliberate setting kept)" "$(bri)" 100
 echo 0 > "$tmp/sys/backlight/brightness"; bl save
@@ -64,6 +66,8 @@ grubvars() { # prints default|cmdline|os-prober for the current $tmp/default
 base="clk_ignore_unused pd_ignore_unused regulator_ignore_unused"
 off="video=HDMI-A-1:d"
 cp "$root/etc/default/debondragon" "$tmp/default"
+expect "GRUB uses the responsive firmware text console" \
+	"$(GRUB_CMDLINE_LINUX=""; . "$tmp/grub.cfg"; echo "$GRUB_TERMINAL")" console
 expect "shipped defaults are DEBONDRAGON_HDMI=auto" "$(grep -c '^DEBONDRAGON_HDMI=auto$' "$tmp/default")" 1
 fakeboot 7.2.0-debondragon-3 7.2.0-debondragon-4
 expect "auto, newest kernel -4: HDMI on, Debian default entry, Windows kept" "$(grubvars)" "0|$base|false"
