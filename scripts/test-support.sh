@@ -189,6 +189,29 @@ expect "pulse refresh leaves a real sink alone" "$out" ""
 # --- volume keys -----------------------------------------------------------
 expect "volume key mapping" \
 	"$(DEBONDRAGON_VOLKEYS_SELFTEST=1 "$root/usr/local/sbin/debondragon-volkeys")" ok
+rule=$root/etc/udev/rules.d/72-debondragon-volkeys.rules
+expect "volume-key udev rule tags uaccess" "$(grep -c 'TAG+="uaccess"' "$rule")" 1
+expect "volume-key udev rule does not assign group input" "$(grep -c 'GROUP=' "$rule")" 0
+expect "volume-key udev rule skips the typing keyboard" \
+	"$(grep -c 'ENV{ID_INPUT_KEYBOARD}!="1"' "$rule")" 1
+expect "volume-key udev rule is limited to the a84000 bus" "$(grep -c 'a84000.i2c' "$rule")" 1
+expect "volume keys are a system service" \
+	"$(grep -c '^WantedBy=multi-user.target$' "$root/usr/lib/systemd/system/debondragon-volkeys.service")" 1
+expect "volume-key user unit is masked" \
+	"$(readlink "$root/etc/systemd/user/debondragon-volkeys.service")" /dev/null
+expect "volume keys have no user service to start" \
+	"$(test ! -e "$root/usr/lib/systemd/user/debondragon-volkeys.service" && echo absent)" absent
+expect "volume keys are not wanted by the user session" \
+	"$(find "$root/etc/systemd/user/default.target.wants" "$root/etc/xdg/autostart" -name '*volkeys*' 2>/dev/null | wc -l)" 0
+expect "volume keys log permission denied without asking for group input" \
+	"$(DEBONDRAGON_VOLKEYS_SELFTEST=1 "$root/usr/local/sbin/debondragon-volkeys" >/dev/null && \
+		grep -c 'Do not add the user to group input' "$root/usr/local/sbin/debondragon-volkeys")" 1
+expect "postinst removes the 0.4.1 user wants link" \
+	"$(grep -c 'rm -f /etc/systemd/user/default.target.wants/debondragon-volkeys.service' \
+		"$here/support/build-support-deb.sh")" 1
+expect "postinst enables the system volume-key service" \
+	"$(grep -c 'systemctl enable debondragon-volkeys.service' \
+		"$here/support/build-support-deb.sh")" 1
 
 # --- fan temperature report (dry: no i2c, nothing written) -----------------
 fan=$root/usr/local/sbin/debondragon-fan

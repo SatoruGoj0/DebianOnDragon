@@ -58,10 +58,12 @@ tests in `docs/hdmi-testing.md` pass.
 ## Upgrade to series 6 (support 0.5.0)
 
 Series 6 is the kernel with CPU/GPU passive trips. Support 0.5.0 is the
-matching userspace: everything in 0.4.1, plus `debondragon-fan`. There is
-no release tag for this yet. v0.4.0 (series 5, support 0.4.1) stays as it
-is. HDMI stays on (`DEBONDRAGON_HDMI=auto` treats series 4 and later as
-HDMI-ok).
+matching userspace: everything in 0.4.1, plus `debondragon-fan`, and the
+mute and volume keys move to a system service. The 0.4.1 user service
+could not open the keyboard node. Do not add your user to group `input`.
+There is no release tag for this yet. v0.4.0 (series 5, support 0.4.1)
+stays as it is. HDMI stays on (`DEBONDRAGON_HDMI=auto` treats series 4
+and later as HDMI-ok).
 
 The fan reporter does not start on install. After the new kernel is the
 one you are booting:
@@ -73,7 +75,8 @@ sudo apt install -o Dpkg::Options::=--force-confold \
 sudo reboot
 ```
 
-Then the tests in docs/hardware-testing.md, "Fan and thermals". Series 5
+Then the tests in docs/hardware-testing.md, "Fan and thermals" and
+"Mute and volume keys". Series 5
 remains bootable from the "DebOnDragon kernels" submenu, without the new
 trips and without the reporter (the reporter is a userspace service; if
 you boot series 5 while it is enabled it still reports, which is safe,

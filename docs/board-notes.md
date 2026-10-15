@@ -278,10 +278,15 @@ the default board, so an old `DEBONDRAGON_DTB` setting still boots.
 On the 83N3 with series 5 and support 0.4.0, the card and the HiFi profile
 come up and Front Left plays. Front Right is silent in Debian and in
 Windows on this unit, which is a failed speaker, not a missing channel.
-The keyboard (QTEC0001, HID vendor 048D) is one I2C HID device. Its second
-collection is a consumer-control device (mute, volume down, volume up).
-Linux exposes that as its own evdev node, and `debondragon-volkeys` in
-support 0.4.1 feeds those keys to PulseAudio.
+The keyboard (QTEC0001, HID vendor 048D, i2c controller `a84000`) is one
+I2C HID device. Windows collection 2 is consumer control (mute, volume
+down, volume up). On the 83N3 those events arrive on the typing-keyboard
+evdev node (`platform-a84000.i2c-event-kbd`), which is mode 660,
+`root:input`. Support 0.4.1's user service could not open it and logged
+nothing. Support 0.5.0 runs `debondragon-volkeys` as root, discards every
+key except mute and volume, and does not put the user in group `input`.
+A udev `uaccess` tag applies only to a consumer-control node on that bus
+that is not the typing keyboard, if the kernel splits one out.
 
 **smb2360 PMICs (v0.2.0 boot log).** The CRD has three smb2360 at SPMI
 SIDs 0x7, 0xa and 0xb, each with the eUSB2 repeater of one USB-C port. On
