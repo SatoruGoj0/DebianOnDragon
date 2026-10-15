@@ -1,10 +1,35 @@
-# Unreleased: kernel 7.2.0-debondragon-12, debondragon-support 0.4.3
+# Unreleased: kernel 7.2.0-debondragon-13, debondragon-support 0.5.0
 
-Not a tagged release. The battery/DSP handoff, Wi-Fi, Bluetooth, touchpad and
-boot were verified on the 83N3. The audio configuration is inherited from the
-hardware-verified series-5 work but has not been rechecked on series 12. It
+Not a tagged release. Kernel series 13 includes the thermal changes from
+series 6 and installs beside the older kernels.
+
+## The fan was not seeing the SoC
+
+On series 5, light use left every SoC thermal zone at 59–63 °C while the
+battery read 30 °C and the PMICs 37 °C. The zones matching each other is
+a fan that is off or barely spinning. Windows feeds die temperature to
+the EC ("Temp to EC", register 0x20). Linux never did, and the CPU zones
+had no passive trip short of a 115 °C shutdown.
+
+Kernel `7.2.0-debondragon-6` adds a 75 °C passive trip on the CPU and
+CPUSS zones (cluster 0 cools cpu0–3, cluster 1 cools cpu4–7) and lowers
+the GPU passive trip from 95 °C to 85 °C. The 115 °C critical trips stay.
+Nothing in the devicetree writes the EC.
+
+`debondragon-support` 0.5.0 adds `debondragon-fan`. It is off until
+`sudo debondragon-fan enable`. It reports SoC temperature (register 0x20,
+decidegrees Celsius, sensors 0x01/0x02/0x03) and tells the EC about
+suspend (register 0x23). It does not set RPM, replace the fan curve, or
+write debug mode. `qcom-hamoa-ec` stays blacklisted: on this EC that
+driver's reads are the wrong protocol and its probe would write debug
+mode. Not confirmed on hardware. Steps and the power-off warning are in
+docs/hardware-testing.md, "Fan and thermals".
+
+The battery/DSP handoff, Wi-Fi, Bluetooth, touchpad and boot were verified on
+the 83N3. The audio configuration is inherited from the
+hardware-verified series-5 work but has not been rechecked on series 13. It
 installs beside the older kernels, which remain the rollback
-(docs/kernel-upgrade.md, "Try kernel series 12").
+(docs/kernel-upgrade.md, "Try kernel series 13").
 
 Kernel series 9 enables SquashFS LZO decompression and extended attributes.
 Ubuntu's Chromium, Firefox and several desktop runtime snaps use
@@ -20,7 +45,7 @@ commit `43899c55d79b`, enables Iris, and selects the device-signed Lenovo
 `qcvss8380.mbn`. The earlier `7.2.2-ideapad-iris1+` experiment used generic
 firmware and the secure monitor rejected it with `-22`. Hardware testing found
 that this 83N3 also rejects the display driver's non-PA image but accepts
-`qcvss8380_pa.mbn`. Support 0.4.3 exports the PA image and installs it at the
+`qcvss8380_pa.mbn`. Support 0.5.0 exports the PA image and installs it at the
 series-10 path. FFmpeg selected the `iris_driver` decoder node (device numbering
 varies between boots) and decoded all
 90 frames of 1280x720 H.264 and HEVC samples, plus all 30 frames of a 640x360
@@ -146,12 +171,12 @@ and the UCM profile stopped using the Debian sequences that this kernel rejects
 notes. Series 4 remains a rollback: its devicetree does not wait for the speaker
 amplifiers.
 
-## Recheck audio on series 12
+## Recheck audio on series 13
 
 `docs/hardware-testing.md`, section "Audio". Short version: install
-support 0.4.3 and `linux-image-7.2.0-debondragon-12` beside series 11, run
+support 0.5.0 and `linux-image-7.2.0-debondragon-13` beside series 11, run
 `sudo debondragon-firmware` (or export the firmware from Windows), reboot
-into series 12, and check `alsaucm -c hw:0 list _verbs` (HiFi),
+into series 13, and check `alsaucm -c hw:0 list _verbs` (HiFi),
 `pactl list short sinks` (Speaker, and Headphones when the jack is
 plugged), then play `hw:0,1` (speakers) and `hw:0,0` (headphones) at a
 moderate volume. Headset mic is `hw:0,2`, internal mics are `hw:0,3`.
@@ -160,7 +185,7 @@ If `/proc/asound/cards` is empty, either the ADSP firmware is missing or
 the amplifiers did not bind. Boot the series-4 submenu entry and report
 `/sys/bus/soundwire/devices` plus `dmesg`.
 
-## Still open on series 12
+## Still open on series 13
 
 - Reconfirm speaker, headphone and microphone behavior after the DSP-handoff
   and Iris changes; series 5 already verified speaker and headphone playback.

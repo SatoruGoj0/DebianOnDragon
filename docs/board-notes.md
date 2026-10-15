@@ -211,11 +211,32 @@ region at address 0x76 with command registers 0x05, 0x20–0x2F, 0x30 (7-byte
 raw), 0x32, 0x34, 0x35, 0x62–0x66, 0x81–0x89, 0x8E, 0x8F. The upstream
 `qcom-hamoa-ec` driver (binding: address 0x76) writes 0x23, 0x30 (+6 bytes)
 and 0x35, and reads 0x05, 0x0E and 0x42. All of its writes exist on this EC
-with matching lengths; 0x0E and 0x42 aren't in the ACPI map, so
-`debondragon-ec-check` tests them read-only. The EC event pin is `_AEI` pin
-0x140 (a wake-encoded number that can't be decoded directly). TLMM 66 is
-inferred: the CRD's EC interrupt, wake-capable (PDC 142), and the only
-nearby pin firmware leaves configured (`in high, no pull`).
+with matching lengths, but they do not mean what that driver thinks: 0x30
+is "Fan Debug Mode" (direct PWM), 0x23 is modern-standby status, and
+0x0E/0x42 are not in the ACPI map. Hardware reads fan count 0 from 0x42.
+The driver stays blacklisted. Enabling it would write debug mode.
+
+Windows does not set RPM. `\_SB.I2C6._DSM` function 1 ("Temp to EC") writes
+register 0x20: sensor id, a 0x02 length, and a 16-bit temperature. TZ31
+(all eight Oryon cores) forces sensor 0x02; TZ32 (GPU) forces 0x03. The
+same FC20 block is what keeps the fan curve alive on other X1 laptops.
+`debondragon-fan` (support 0.5.0, opt-in) sends that report in decidegrees
+Celsius for sensors 0x01 (the aggregate those machines use), 0x02 and
+0x03, and writes 0x23 only to tell the EC about suspend. It does not write
+0x24, 0x25, 0x28 or 0x30. TZ31's ACPI passive trip is 0x0D48 (67 °C);
+TZ31 critical is 0x0E92 (100 °C). The SoC dtsi only had a 115 °C critical
+trip on the CPU zones, so series 6 adds a 75 °C passive trip on each CPU
+and CPUSS zone and lowers the existing GPU passive trip from 95 °C to
+85 °C. Critical trips stay at 115 °C.
+
+On series 5, light use held every SoC zone at 59–63 °C while the battery
+read 30 °C and the PMICs 37 °C. That is the fan curve looking at the EC
+thermistors and not at the die.
+
+The EC event pin is `_AEI` pin 0x140 (a wake-encoded number that can't be
+decoded directly). TLMM 66 is inferred: the CRD's EC interrupt,
+wake-capable (PDC 142), and the only nearby pin firmware leaves configured
+(`in high, no pull`).
 
 **Audio.** Windows uses Qualcomm's CRD audio extension
 (`qcaucd_ext_crd8380.inf`) with two SoundWire slaves (amplifier group on

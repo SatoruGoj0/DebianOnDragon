@@ -1,9 +1,10 @@
 # DebOnDragon follow-up work
 
 Observed on the Lenovo IdeaPad Slim 3 15Q8X10 (83N3), most recently with
-`7.2.0-debondragon-10`. This is the short, actionable backlog for things that
-are broken, unsupported, or still need hardware verification. The README is
-the user-facing support matrix; keep the evidence and likely cause here.
+`7.2.0-debondragon-11`; series 13 is built but not yet boot-tested. This is the
+short, actionable backlog for things that are broken, unsupported, or still
+need hardware verification. The README is the user-facing support matrix;
+keep the evidence and likely cause here.
 
 ## Kernel/config gaps
 
@@ -22,10 +23,11 @@ the user-facing support matrix; keep the evidence and likely cause here.
   Tailscale reached multiple peers and Docker pulled Alpine and fetched HTTPS
   from a NATed container. Tailscale still reports a health warning because its
   reverse-path-filter workaround also needs the omitted `xt_connmark` module.
-- **Series-12 candidate fix:** add `CONFIG_NETFILTER_XT_CONNMARK=m` (which also
-  selects conntrack mark storage), then confirm that the health warning is gone
-  and rerun peer and Docker egress tests. Do not treat a daemon started with its
-  firewall disabled as the final fix.
+- **Series-13 candidate fix:** the combined build includes
+  `CONFIG_NETFILTER_XT_CONNMARK=m` (first built in series 12, which was not
+  boot-tested) and its conntrack mark storage. Confirm that the health warning
+  is gone and rerun peer and Docker egress tests. Do not treat a daemon started
+  with its firewall disabled as the final fix.
 
 ### Linux cannot create or reorder UEFI boot entries
 
@@ -148,15 +150,21 @@ the user-facing support matrix; keep the evidence and likely cause here.
   `/sys/bus/soundwire/devices` and `/proc/asound/cards`, then follow the
   moderate-volume tests in `docs/hardware-testing.md`.
 
-### EC fan reporting/control is unsupported
+### EC temperature reporting is experimental; fan control is unverified
 
 - **Symptom:** `qcom-hamoa-ec` reports an invalid/zero fan count and asks for a
   firmware update; the read-only probe showed that this EC does not implement
   the upstream Hamoa EC command set.
-- **Cause:** protocol mismatch, not evidence that the fan itself is broken;
-  the embedded controller still manages the fan autonomously.
-- **Fix to investigate:** derive the 83N3 protocol from ACPI/Windows behavior
-  before enabling any writes. Keep the driver blacklisted in normal installs.
+- **Cause boundary:** that driver has the wrong protocol and remains
+  blacklisted. Windows instead reports die temperature to register `0x20` and
+  leaves the embedded controller in charge of its own fan curve.
+- **Series-13 candidate mitigation:** CPU/GPU passive thermal trips are present,
+  and support 0.5.0 adds the opt-in `debondragon-fan` temperature reporter. It
+  never writes an RPM target and has not yet been confirmed on hardware.
+- **Fix/validation:** test opt-in reporting under load, suspend/resume and power
+  off as documented in `docs/hardware-testing.md`; derive and review the full
+  83N3 protocol before attempting direct fan control. Keep `qcom-hamoa-ec`
+  blacklisted.
 
 ### Fingerprint reader is unsupported
 

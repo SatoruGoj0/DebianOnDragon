@@ -118,5 +118,25 @@ expect "right speaker prefix" "$(prop $swr0/speaker@0,1 sound-name-prefix)" "Spk
 expect "left speaker port map" "$(fdtget -t u "$dtb" "$swr0/speaker@0,0" qcom,port-mapping 2>/dev/null)" "1 2 3 7 10 13"
 expect "right speaker port map" "$(fdtget -t u "$dtb" "$swr0/speaker@0,1" qcom,port-mapping 2>/dev/null)" "4 5 6 7 11 13"
 expect "headset SoundWire (swr1) on" "$(node_status /soc@0/soundwire@6ad0000)" "okay"
+# Series 6: CPU zones must throttle before the 115 °C critical shutdown.
+# Cluster 0 (cpu0–3) and cluster 1 (cpu4–7) each share one SCMI domain.
+cpu0ph=$(fdtget -t x "$dtb" /cpus/cpu@0 phandle 2>/dev/null)
+cpu4ph=$(fdtget -t x "$dtb" /cpus/cpu@10000 phandle 2>/dev/null)
+c0map=$(fdtget -t x "$dtb" /thermal-zones/cpu0-0-top-thermal/cooling-maps/map0 cooling-device 2>/dev/null)
+c1map=$(fdtget -t x "$dtb" /thermal-zones/cpu1-0-top-thermal/cooling-maps/map0 cooling-device 2>/dev/null)
+expect "cpu0 top passive trip at 75 °C" "$(fdtget -t i "$dtb" /thermal-zones/cpu0-0-top-thermal/trips/passive temperature 2>/dev/null)" "75000"
+expect "cpu0 top passive type" "$(prop /thermal-zones/cpu0-0-top-thermal/trips/passive type)" "passive"
+expect "cpu0 bottom passive trip at 75 °C" "$(fdtget -t i "$dtb" /thermal-zones/cpu0-3-btm-thermal/trips/passive temperature 2>/dev/null)" "75000"
+expect "cluster 0 passive cools cpu0" "${c0map%% *}" "$cpu0ph"
+expect "cluster 0 cooling limit is open" "$(echo "$c0map" | awk '{print $2}')" "ffffffff"
+expect "cpu1 top passive trip at 75 °C" "$(fdtget -t i "$dtb" /thermal-zones/cpu1-0-top-thermal/trips/passive temperature 2>/dev/null)" "75000"
+expect "cluster 1 passive cools cpu4" "${c1map%% *}" "$cpu4ph"
+expect "cpuss0 passive trip at 75 °C" "$(fdtget -t i "$dtb" /thermal-zones/cpuss0-top-thermal/trips/passive temperature 2>/dev/null)" "75000"
+expect "cpuss1 passive trip at 75 °C" "$(fdtget -t i "$dtb" /thermal-zones/cpuss1-btm-thermal/trips/passive temperature 2>/dev/null)" "75000"
+expect "cpu critical trip still 115 °C" "$(fdtget -t i "$dtb" /thermal-zones/cpu0-0-top-thermal/trips/cpu-critical temperature 2>/dev/null)" "115000"
+expect "gpu passive trip lowered to 85 °C" "$(fdtget -t i "$dtb" /thermal-zones/gpuss-0-thermal/trips/trip-point0 temperature 2>/dev/null)" "85000"
+expect "gpu critical trip still 115 °C" "$(fdtget -t i "$dtb" /thermal-zones/gpuss-0-thermal/trips/gpu-critical temperature 2>/dev/null)" "115000"
+# Purwa deletes GPU zones 4–7. Do not describe trips for sensors that are gone.
+expect "no passive trip on deleted gpuss-4" "$(fdtget -t i "$dtb" /thermal-zones/gpuss-4-thermal/trips/trip-point0 temperature 2>/dev/null)" ""
 
 exit $fail

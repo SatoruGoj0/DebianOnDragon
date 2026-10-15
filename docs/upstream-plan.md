@@ -55,13 +55,13 @@ Userspace and packaging (belong outside the kernel):
 | Internal mics | VA macro (`MIC BIAS3` + `VA MIC BIAS1`) | In the profile; not confirmed |
 | Speakers | 2× WSA8845 on swr0 (`SpkrLeft`/`SpkrRight`); swr3 off | Front Left verified on series 5. Front Right is dead on this unit in Windows too (hardware) |
 | Volume keys | QTEC0001 consumer-control collection | Userspace `debondragon-volkeys` (support 0.4.1); not confirmed |
-| Thermal sensors | tsens | Verified |
-| EC / fan | i2c5 0x76 | Protocol unknown; not for upstream |
+| Thermal sensors | tsens | Verified. Series 6 adds 75 °C CPU passive trips and an 85 °C GPU passive trip |
+| EC / fan | i2c5 0x76, "Temp to EC" register 0x20 | Not the Hamoa EC protocol. Userspace reporter is opt-in and unconfirmed; not for upstream yet |
 | Suspend/resume | - | Untested |
 
 ## 3. What an upstream board file must look like
 
-Our DT compiles against linux-next and passes all 43 `check-dtb.sh`
+Our DT compiles against linux-next and passes all 61 `check-dtb.sh`
 assertions there, but it is not in upstreamable form:
 
 - **It includes `x1-crd.dtsi`** (another board) and deletes what the 83N3

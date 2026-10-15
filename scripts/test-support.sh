@@ -206,4 +206,48 @@ expect "pulse refresh leaves a real sink alone" "$out" ""
 expect "volume key mapping" \
 	"$(DEBONDRAGON_VOLKEYS_SELFTEST=1 "$root/usr/local/sbin/debondragon-volkeys")" ok
 
+# --- fan temperature report (dry: no i2c, nothing written) -----------------
+fan=$root/usr/local/sbin/debondragon-fan
+expect "fan help exits 0" "$(DEBONDRAGON_FAN_DRY=1 "$fan" --help >/dev/null; echo $?)" 0
+expect "fan unknown option exits 2" "$(DEBONDRAGON_FAN_DRY=1 "$fan" --nope >/dev/null 2>&1; echo $?)" 2
+mkdir -p "$tmp/thermal/thermal_zone0" "$tmp/thermal/thermal_zone1" \
+	"$tmp/thermal/thermal_zone2" "$tmp/thermal/thermal_zone3"
+echo cpu0-0-top-thermal > "$tmp/thermal/thermal_zone0/type"
+echo 62600 > "$tmp/thermal/thermal_zone0/temp"
+echo gpuss-0-thermal > "$tmp/thermal/thermal_zone1/type"
+echo 59400 > "$tmp/thermal/thermal_zone1/temp"
+echo pm8550_tz > "$tmp/thermal/thermal_zone2/type"
+echo 37000 > "$tmp/thermal/thermal_zone2/temp"
+echo qcom-battmgr-bat > "$tmp/thermal/thermal_zone3/type"
+echo 30200 > "$tmp/thermal/thermal_zone3/temp"
+sample=$(DEBONDRAGON_FAN_DRY=1 DEBONDRAGON_FAN_SYS="$tmp/thermal" DEBONDRAGON_FAN_BUS=9 \
+	DEBONDRAGON_FAN_ONCE=1 "$fan" run)
+expect "fan report uses the hottest cpu/gpu zone, not the PMIC or battery" \
+	"$(printf '%s\n' "$sample" | grep -c '^hottest cpu0-0-top-thermal 62600 deci 626$')" 1
+expect "fan report is deci-celsius on 0x20 for sensors 0x01 0x02 0x03" \
+	"$(printf '%s\n' "$sample" | grep -c '^report 0x20 0x0[123] 0x02 0x72 0x02$')" 3
+expect "fan run clears modern-standby before reporting" \
+	"$(printf '%s\n' "$sample" | grep -c '^report 0x23 0x00$')" 1
+echo 40000 > "$tmp/thermal/thermal_zone0/temp"
+echo 30000 > "$tmp/thermal/thermal_zone1/temp"
+sample=$(DEBONDRAGON_FAN_DRY=1 DEBONDRAGON_FAN_SYS="$tmp/thermal" DEBONDRAGON_FAN_BUS=9 \
+	DEBONDRAGON_FAN_ONCE=1 "$fan" run)
+expect "fan report rounds 40.0 °C to 400 decidegrees" \
+	"$(printf '%s\n' "$sample" | grep -c '^report 0x20 0x01 0x02 0x90 0x01$')" 1
+echo 0 > "$tmp/thermal/thermal_zone0/temp"
+echo 0 > "$tmp/thermal/thermal_zone1/temp"
+sample=$(DEBONDRAGON_FAN_DRY=1 DEBONDRAGON_FAN_SYS="$tmp/thermal" DEBONDRAGON_FAN_BUS=9 \
+	DEBONDRAGON_FAN_ONCE=1 "$fan" run 2>/dev/null)
+expect "fan report refuses a 0 °C reading" "$(printf '%s\n' "$sample" | grep -c '^report 0x20')" 0
+echo 62600 > "$tmp/thermal/thermal_zone0/temp"
+sus=$(DEBONDRAGON_FAN_DRY=1 DEBONDRAGON_FAN_BUS=9 "$fan" suspend)
+expect "fan suspend writes only modern-standby 1" "$sus" "report 0x23 0x01"
+res=$(DEBONDRAGON_FAN_DRY=1 DEBONDRAGON_FAN_BUS=9 "$fan" resume)
+expect "fan resume clears modern-standby" "$res" "report 0x23 0x00"
+st=$(DEBONDRAGON_FAN_DRY=1 DEBONDRAGON_FAN_SYS="$tmp/thermal" "$fan" status)
+expect "fan status names the hottest zone and does not report a write" \
+	"$(printf '%s\n' "$st" | grep -c 'hottest: cpu0-0-top-thermal 62600')" 1
+expect "fan status dry does not claim an RPM write" \
+	"$(printf '%s\n' "$st" | grep -c 'rpm: dry')" 1
+
 exit $fail

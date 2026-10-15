@@ -36,10 +36,10 @@ Working.
 |---|---|---|---|
 | Boot (GRUB, kernel, initramfs, NVMe root) | **Working** | v0.1.4 | Installed system boots; GRUB entry created from Windows (Linux can't write UEFI variables on this machine) |
 | Internal display (eDP, 1920x1200) | **Working** | v0.1.3 | msm DRM drives the panel (`eDP-1 connected`) |
-| GPU acceleration (Adreno X1-45) | **Working** | unreleased (support 0.4.3) | The authenticated `qcdxkmsucpurwa.mbn` from Qualcomm display driver 31.0.133.1 is accepted; Vulkan enumerates Adreno X1-45 with Mesa Turnip |
-| Hardware video decode (Qualcomm Iris) | **Partial** | unreleased (kernel series 10, support 0.4.3) | The 83N3 accepts the display driver's `qcvss8380_pa.mbn`; FFmpeg decoded 90-frame 1280x720 H.264 and HEVC samples and a 30-frame VP9 sample through `/dev/video2`. A 640x360 HEVC sample triggers an Iris firmware session error; see `TO-FIX.md` |
-| Hardware video encode (Qualcomm Iris) | **Partial** | unreleased (kernel series 10, support 0.4.3) | GStreamer encoded and verified 90-frame 1280x720 H.264 and HEVC streams through the Iris encoder. Ubuntu FFmpeg 7.1.1's `h264_v4l2m2m` crashes in its userspace frame-copy path before the first frame; use GStreamer for now and see `TO-FIX.md` |
-| Tailscale and Docker networking | **Working** | unreleased (kernel series 12) | Series 11 restored policy routing, nftables and NAT: Tailscale peer pings and Docker HTTPS egress are verified. Series 12 also supplies `xt_connmark` for Tailscale's reverse-path-filter workaround |
+| GPU acceleration (Adreno X1-45) | **Working** | unreleased (support 0.5.0) | The authenticated `qcdxkmsucpurwa.mbn` from Qualcomm display driver 31.0.133.1 is accepted; Vulkan enumerates Adreno X1-45 with Mesa Turnip |
+| Hardware video decode (Qualcomm Iris) | **Partial** | unreleased (kernel series 10, support 0.5.0) | The 83N3 accepts the display driver's `qcvss8380_pa.mbn`; FFmpeg decoded 90-frame 1280x720 H.264 and HEVC samples and a 30-frame VP9 sample through `/dev/video2`. A 640x360 HEVC sample triggers an Iris firmware session error; see `TO-FIX.md` |
+| Hardware video encode (Qualcomm Iris) | **Partial** | unreleased (kernel series 10, support 0.5.0) | GStreamer encoded and verified 90-frame 1280x720 H.264 and HEVC streams through the Iris encoder. Ubuntu FFmpeg 7.1.1's `h264_v4l2m2m` crashes in its userspace frame-copy path before the first frame; use GStreamer for now and see `TO-FIX.md` |
+| Tailscale and Docker networking | **Working** | unreleased (kernel series 11) | Series 11 restored policy routing, nftables and NAT: Tailscale peer pings and Docker HTTPS egress are verified. Series 12 added `xt_connmark`; the combined series-13 build carries it and awaits a boot test |
 | Keyboard (I2C HID) | **Working** | v0.1.0 | Reported working |
 | Touchscreen (ELAN 04F3:43B8) | **Working** | v0.1.0 | Reported working |
 | Wi-Fi (WCN7850, ath12k) | **Working** | v0.1.0 | Reported working |
@@ -50,8 +50,8 @@ Working.
 | HDMI extended desktop (Hyprland) | **Working** | v0.4.0 | Verified: two monitors, pointer and windows move between them. Layout comes from your own Hyprland monitor rules |
 | HDMI on at boot, hotplug, unplug/replug with active video, long runs | **Not yet verified** | v0.4.0 | support 0.3.0 switches HDMI on automatically for series-4 kernels (`DEBONDRAGON_HDMI=auto`); older kernels keep it off. Earlier kernels reset the laptop on unplug after failed training; tests in docs/hdmi-testing.md |
 | Internal camera (USB 13d3:54bf) | **Working** | v0.2.0 | Reported working on hardware (UVC on usb_2 behind the PTN3222 repeater) |
-| Fan / EC thermal control | **Unsupported, off** | — | `debondragon-ec-check` on hardware: version reads, but fan count and thermal capabilities return 0. Those commands (0x0E, 0x42) aren't in this EC's ACPI command map, so the `qcom-hamoa-ec` protocol doesn't match. Driver stays blacklisted; the EC controls the fan by itself |
-| SoC temperature sensors | **Working** | v0.1.0 | CPU/GPU/PMIC zones read 37–40 °C on hardware |
+| Fan / EC thermal control | **Experimental** | series 6 | `qcom-hamoa-ec` stays blacklisted (wrong protocol; it would write debug mode). Kernel series 6 adds CPU passive trips at 75 °C and lowers the GPU passive trip from 95 °C to 85 °C, so the SoC throttles before the 115 °C critical shutdown. The fan curve itself runs only after `debondragon-fan enable`, which reports die temperature to the EC (register 0x20) and never sets RPM. Not confirmed on hardware |
+| SoC temperature sensors | **Working** | v0.1.0 | Zones read on hardware. Series 5, light use: every SoC zone 59–63 °C while the battery was 30 °C and the PMICs 37 °C |
 | Headphones | **Working** | v0.4.0 | Kernel series 5, support 0.4.0, on the 83N3: the Headphones sink appears and playback works. Class-AB on the WCD9385. Needs the device ADSP firmware |
 | Headset mic, internal mics | **Experimental** | v0.4.0 | The capture PCMs are in the profile (`hw:0,2` headset, `hw:0,3` internal). Not confirmed on hardware yet |
 | Internal speakers | **Working** | v0.4.0 | Kernel series 5 on the 83N3: `speaker-test` plays Front Left. Front Right is silent on this unit in Debian and in Windows, so that speaker is a hardware fault. PA volume is capped at 0 dB; there is no active speaker protection. Keep the volume moderate |
@@ -81,8 +81,10 @@ The detailed, evidence-backed backlog is in [TO-FIX.md](TO-FIX.md).
   SID 0xa that this laptop doesn't have (probably SID 0xb instead,
   unverified); the CRD retimers don't answer, so role switching and DP alt
   mode don't work on either port.
-- **EC fan reporting/control**: the EC doesn't speak the protocol of the
-  upstream driver; driver stays off, the EC runs the fan itself.
+- **Fan**: series 6 throttles the CPUs at 75 °C and the GPU at 85 °C.
+  The fan stays on the EC's own curve, which does not see die temperature
+  until `sudo debondragon-fan enable`. Not confirmed on hardware.
+  `qcom-hamoa-ec` stays off.
 - **Suspend/resume**: untested.
 
 Device-signed firmware (audio/compute DSP, GPU zap shader and Iris video) is
@@ -114,16 +116,32 @@ Any arm64 Debian 13 environment works, including WSL on the laptop itself or Doc
 docker run --rm --privileged -v "$PWD:/src" -w /src debian:trixie ./build.sh
 ```
 
+On an x86-64 machine, the same build works in an emulated ARM64 container if
+Docker has QEMU/binfmt support (Docker Desktop normally does):
+
+```bash
+docker run --rm --privileged --platform linux/arm64 \
+  -v "$PWD:/src" -w /src debian:trixie ./build.sh
+```
+
+This is simple but slow because it compiles the kernel and compresses the ISO
+under CPU emulation. The faster architecture-independent route is the
+repository's **Build ISO** GitHub Actions workflow, which uses a native ARM64
+runner and can be launched for any pushed branch with **Run workflow**. There
+is not yet a native x86-to-ARM64 cross-build entrypoint.
+
 Output in `out/`: the ISO, `linux-image-*.deb`, `linux-headers-*.deb`,
 `debondragon-support_*_all.deb` and `SHA256SUMS`. `PACKAGES_ONLY=1` stops after
 the packages (no ISO); `REBUILD_KERNEL=1` forces a kernel rebuild.
 
 The kernel source tag and every downloaded downstream patch are pinned (patch
 downloads are also SHA-256 checked), so a clean checkout reproduces the same
-kernel source and configuration. The ISO is repeatably buildable, but not
-bit-for-bit reproducible indefinitely: Debian `trixie` and linux-firmware
-`main` continue to move. Device-signed Lenovo firmware is deliberately absent
-from both Git and the ISO; install it afterward with `debondragon-firmware`.
+kernel source and configuration. The resulting packages are not promised to
+be bit-for-bit identical because the build environment and timestamps are not
+fully pinned. The ISO is repeatably buildable, but its Debian `trixie` packages,
+base container and linux-firmware `main` continue to move. Device-signed Lenovo
+firmware is deliberately absent from both Git and the ISO; install it afterward
+with `debondragon-firmware`.
 
 Every kernel build runs these checks and fails on a regression:
 

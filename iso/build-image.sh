@@ -68,5 +68,15 @@ if [ "$size" -ge $((2 * 1024 * 1024 * 1024)) ]; then
 	echo "ISO is too large for a GitHub release asset" >&2
 	exit 1
 fi
-(cd "$out" && sha256sum ./*.iso ./*.deb | sed "s| ./| |" > SHA256SUMS)
+# Hash only the assets produced by this build.  The output directory may also
+# contain rollback kernels or packages from an earlier local build; including
+# those would make SHA256SUMS depend on unrelated pre-existing files.
+assets=("$(basename "$iso")")
+for source in "$work"/kernel-debs/linux-image-*.deb \
+	      "$work"/kernel-debs/linux-headers-*.deb \
+	      "$work"/support-deb/debondragon-support_*_all.deb; do
+	name=$(basename "$source")
+	assets+=("${name//\~/.}")
+done
+(cd "$out" && sha256sum "${assets[@]}" > SHA256SUMS)
 cat "$out/SHA256SUMS"

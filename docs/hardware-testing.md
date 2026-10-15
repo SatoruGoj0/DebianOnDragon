@@ -6,8 +6,9 @@ been seen working on the laptop. This page lists the tests for each
 
 Run every test on the kernel that implements it (`uname -r`). The touchpad
 test is series 3, HDMI is series 4, audio is series 5, the battery test uses
-series 7, and hardware video decode uses series 10 with support 0.4.3. Volume
-keys need support 0.4.1 or later. When done, collect everything with:
+series 7, and hardware video uses series 10. Fan trips need kernel series 6;
+the fan reporter needs support 0.5.0. Volume keys need support 0.4.1 or later.
+When done, collect everything with:
 
 ```bash
 sudo debondragon-report
@@ -79,42 +80,83 @@ crash-safe logging, are in **docs/hdmi-testing.md**.
 3. If `lsusb` doesn't list it, send the report: its USB and `dmesg` sections
    show whether the eUSB2 repeater at i2c5 0x4b answered.
 
-## Fan and EC (opt-in)
+## Fan and thermals (kernel series 6, support 0.5.0)
 
-**Result on the 83N3 (v0.2.0):** firmware version `0x03 0x00 0x18 0x01`,
-thermal caps `0x00 0x00 0x00`, fan count 0. Commands 0x0E/0x42 aren't in
-this EC's ACPI command map, so the protocol doesn't match and the check
-refuses to enable the driver. **Keep it off**; the EC runs the fan itself.
+**What series 5 did.** Light use, laptop warm to the touch: every SoC zone
+(cpu0/cpu1 clusters, cpuss, gpuss, nsp, aoss, mem, video, camera) read
+59.4–62.6 °C, the battery 30.2 °C, and the pm8550/pmc8380 zones 37 °C.
+The SoC zones matching each other means the fan is off or barely moving.
+The EC's own thermistors sit with the battery and the PMICs, not on the
+die. Windows repeatedly sends die temperature to the EC (DSDT "Temp to
+EC", I2C register 0x20). Linux was not sending it, so the fan curve never
+saw 60 °C. The CPU zones also had no passive trip, only a 115 °C critical
+shutdown.
 
-The EC driver writes to the embedded controller when it loads, so it stays
-blacklisted until the EC passes a **read-only** check:
+**Do not enable `qcom-hamoa-ec`.** `debondragon-ec-check` on this machine
+reads firmware `0x03 0x00 0x18 0x01` and thermal caps `0x00 0x00 0x00`
+(fan count 0). Those commands are not this EC's map. The driver would
+write debug mode (register 0x30) on probe. Leave it blacklisted.
 
-```bash
-sudo debondragon-ec-check
-```
-
-- `RESULT: the EC answers like the Hamoa EC`: the protocol matches. Enable
-  the driver with `sudo debondragon-ec-check --enable`, then check
-  `cat /sys/class/thermal/cooling_device*/type` for fan cooling devices.
-- Any other result: leave it off and send the output.
-
-Undo at any time with `sudo debondragon-ec-check --disable`.
-
-Without the driver, the EC still runs the fan on its own. To check that the
-fan responds to load, run a CPU load and listen:
+Series 6 throttles on its own, with no EC write: CPU and CPUSS passive
+trips at 75 °C, GPU passive trip lowered from 95 °C to 85 °C. Critical
+trips stay at 115 °C. Confirm the trips after booting series 6:
 
 ```bash
-for i in $(seq 8); do timeout 120 sh -c 'while :; do :; done' & done; wait
-watch -n2 'cat /sys/class/thermal/thermal_zone*/temp | sort -n | tail -3'
+uname -r    # 7.2.0-debondragon-6
+grep . /sys/class/thermal/thermal_zone*/type /sys/class/thermal/thermal_zone*/trip_point_*_temp /sys/class/thermal/thermal_zone*/trip_point_*_type | grep -E 'passive|75000|85000'
 ```
+
+**Fan reporter (opt-in, writes the EC).** It sends only the temperature
+report (register 0x20, decidegrees Celsius, sensors 0x01 CPU-aggregate,
+0x02 the CPU zone, 0x03 the GPU zone) and, around suspend, modern-standby
+status (register 0x23). It does not set RPM, replace the fan curve, or
+clear any EC failsafe. The EC decides the speed.
+
+Read first. This writes nothing:
+
+```bash
+sudo debondragon-fan status
+```
+
+Then turn reporting on and watch the fan. Stop the load with Ctrl-C; leave
+the reporter running.
+
+```bash
+sudo debondragon-fan enable
+for i in $(seq 8); do timeout 90 sh -c 'while :; do :; done' & done
+watch -n2 'sudo debondragon-fan status'
+```
+
+Send back: `status` before enable (fan RPM at the 60 °C soak), `status`
+after a minute of load (RPM and the hottest zone), and whether you can
+hear the fan. Expected if the report is in the unit the EC's curve uses:
+RPM rises from 0 once the die is warm, and the SoC stops sitting at 60 °C
+with the fan stopped. Not confirmed yet.
+
+**Safety.** After `enable`, do not `systemctl stop debondragon-fan` and
+walk away. If temperature reports stop for more than a couple of minutes,
+this EC can power the machine off; that is its failsafe for a hung OS,
+and it must stay. Suspend is handled (the EC is told first). To turn
+reporting off:
+
+```bash
+sudo debondragon-fan disable
+sudo reboot
+```
+
+`disable` tells the EC the OS is suspended before it stops the updates.
+Reboot so that notice does not linger. If the fan never moves after
+`enable`, disable it and send the `status` output. Do not try other I2C
+writes; a wrong temperature unit can look like an overtemp.
 
 ## Thermal sensors
 
 ```bash
 paste <(cat /sys/class/thermal/thermal_zone*/type) <(cat /sys/class/thermal/thermal_zone*/temp)
 ```
-Temperatures are in millidegrees Celsius. Report whether the values are
-plausible (roughly 30000–60000 at idle).
+Temperatures are in millidegrees Celsius. On series 5 with the fan not
+tracking the die, SoC zones near 60000 at light use and PMIC/battery
+zones near 30000–37000 are the reading that prompted the series 6 trips.
 
 ## Bluetooth
 
@@ -161,7 +203,7 @@ reused.
 
 ## Hardware video decoding
 
-Needs kernel `7.2.0-debondragon-10` (or later), support 0.4.3, the authenticated
+Needs kernel `7.2.0-debondragon-10` (or later), support 0.5.0, the authenticated
 `qcvss8380_pa.mbn` installed by `debondragon-firmware`, `v4l-utils`, and
 `ffmpeg`. The helper copies that PA image to the non-suffixed path requested
 by the series-10 devicetree. The non-PA image is rejected with error `-22`.

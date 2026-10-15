@@ -6,7 +6,7 @@ You never need to reinstall Debian.
 | Package | What it is |
 |---|---|
 | `linux-image-7.2.0-debondragon-N_..._arm64.deb` | The kernel, its modules and its devicetrees |
-| `debondragon-support_X.Y.Z_all.deb` | Boot integration (per-kernel devicetrees, GRUB entries, kernel command line) and tools (`debondragon-firmware`, `-report`, `-ec-check`, `-bootlog`) |
+| `debondragon-support_X.Y.Z_all.deb` | Boot integration (per-kernel devicetrees, GRUB entries, kernel command line) and tools (`debondragon-firmware`, `-report`, `-ec-check`, `-fan`, `-bootlog`) |
 | `linux-headers-...deb` | Optional; only for building out-of-tree modules (DKMS) |
 
 ## How kernels are kept apart
@@ -55,40 +55,66 @@ tests in `docs/hdmi-testing.md` pass.
 4. Run the tests in `docs/hdmi-testing.md`, then make -4 the default as
    described there.
 
-## Try kernel series 12 (battery, audio, Snap, video and VPN support)
+## Try kernel series 13 (battery, audio, thermals, Snap, video and VPN support)
 
-Series 12 contains the verified UEFI-to-Linux DSP handoff needed for battery
+Series 13 contains the verified UEFI-to-Linux DSP handoff needed for battery
 status, the speaker amplifiers on the default devicetree, and SquashFS LZO
 plus extended attributes so Ubuntu's browser and desktop snaps can mount and
 retain their confinement capabilities. It also enables the X1P42100 Iris
 hardware video codec with the Lenovo firmware. Compared with series 10, it
 adds policy routing, nftables, connection tracking and NAT so Tailscale and
 Docker can configure networking; compared with series 11, it adds Tailscale's
-connmark reverse-path-filter support. Support 0.4.3 is the matching
+connmark reverse-path-filter support. It also contains series 6's CPU/GPU
+passive thermal trips. Support 0.5.0 is the matching
 userspace (firmware helper, UCM, topology, `alsa-ucm-conf`, responsive GRUB
-console). Hardware H.264, HEVC (at 720p) and VP9 decoding and Adreno
+console and opt-in EC temperature reporter). Hardware H.264, HEVC (at 720p)
+and VP9 decoding, H.264/HEVC encoding through GStreamer, and Adreno
 acceleration are verified on the 83N3. The audio setup is inherited from the
 hardware-verified series-5 work, but should be rechecked after this upgrade.
-Keep series 11 installed as the rollback while testing series 12.
+Keep series 11 installed as the rollback while testing series 13.
 
-1. Install support 0.4.3 first. `--force-confold` keeps your edited
+1. Install support 0.5.0 first. `--force-confold` keeps your edited
    `/etc/default/debondragon`:
    ```bash
-   sudo apt install -o Dpkg::Options::=--force-confold ./debondragon-support_0.4.3_all.deb
+   sudo apt install -o Dpkg::Options::=--force-confold ./debondragon-support_0.5.0_all.deb
    ```
 2. Pin the kernel you already trust (series 11), install
-   `linux-image-7.2.0-debondragon-12`, and boot it once with `grub-reboot`.
+   `linux-image-7.2.0-debondragon-13`, and boot it once with `grub-reboot`.
    The steps are the next section; use `-11` where that section says `-2`,
-   and `-12` where it says `-3`.
+   and `-13` where it says `-3`.
 3. Copy the device firmware if you have not already (`sudo debondragon-firmware`)
    and verify battery status before running the audio tests. HDMI video stays
-   on for series 12
+   on for series 13
    (`DEBONDRAGON_HDMI=auto` treats series 4 and later as HDMI-ok). HDMI
    audio does not play.
 4. Check `tailscale status`, `iptables -L`, `sudo nft list ruleset`, and a
-   Docker container with outbound networking. Make series 12 the default after
+   Docker container with outbound networking. Make series 13 the default after
    battery, Snap applications, audio, hardware video decoding and networking
    work. If it regresses, the series-11 submenu entry is the rollback.
+
+## Upgrade to series 6 (support 0.5.0)
+
+Series 6 is the kernel with CPU/GPU passive trips. Support 0.5.0 is the
+matching userspace: everything in 0.4.1, plus `debondragon-fan`. There is
+no release tag for this yet. v0.4.0 (series 5, support 0.4.1) stays as it
+is. HDMI stays on (`DEBONDRAGON_HDMI=auto` treats series 4 and later as
+HDMI-ok).
+
+The fan reporter does not start on install. After the new kernel is the
+one you are booting:
+
+```bash
+sudo apt install -o Dpkg::Options::=--force-confold \
+  ./debondragon-support_0.5.0_all.deb \
+  ./linux-image-7.2.0-debondragon-6_*_arm64.deb
+sudo reboot
+```
+
+Then the tests in docs/hardware-testing.md, "Fan and thermals". Series 5
+remains bootable from the "DebOnDragon kernels" submenu, without the new
+trips and without the reporter (the reporter is a userspace service; if
+you boot series 5 while it is enabled it still reports, which is safe,
+and the series 5 devicetree simply has no 75 °C trip).
 
 ## Upgrade to v0.4.0 (kernel series 5, support 0.4.1)
 
