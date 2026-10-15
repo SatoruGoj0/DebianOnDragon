@@ -73,8 +73,17 @@ sudo apt install -o Dpkg::Options::=--force-confold \
 sudo reboot
 ```
 
-Then the tests in docs/hardware-testing.md, "Fan and thermals". Series 5
-remains bootable from the "DebOnDragon kernels" submenu, without the new
+Then the tests in docs/hardware-testing.md, "Fan and thermals". Support
+0.5.1 is the same kernel with a read-only `debondragon-fan probe` added,
+for the case where the reporter is running and the fan still does not
+spin. Install that package on its own; no new kernel and no reboot:
+
+```bash
+sudo apt install -o Dpkg::Options::=--force-confold ./debondragon-support_0.5.1_all.deb
+sudo debondragon-fan probe
+```
+
+Series 5 remains bootable from the "DebOnDragon kernels" submenu, without the new
 trips and without the reporter (the reporter is a userspace service; if
 you boot series 5 while it is enabled it still reports, which is safe,
 and the series 5 devicetree simply has no 75 °C trip).

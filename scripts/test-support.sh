@@ -233,5 +233,20 @@ expect "fan status names the hottest zone and does not report a write" \
 	"$(printf '%s\n' "$st" | grep -c 'hottest: cpu0-0-top-thermal 62600')" 1
 expect "fan status dry does not claim an RPM write" \
 	"$(printf '%s\n' "$st" | grep -c 'rpm: dry')" 1
+probe=$(DEBONDRAGON_FAN_DRY=1 DEBONDRAGON_FAN_SYS="$tmp/thermal" DEBONDRAGON_FAN_BUS=9 "$fan" probe)
+expect "fan probe names the decidegree bytes it is already sending" \
+	"$(printf '%s\n' "$probe" | grep -c '^hottest: cpu0-0-top-thermal 62600 deci 626 bytes 0x72 0x02$')" 1
+expect "fan probe shows the tenths-of-kelvin value without sending it" \
+	"$(printf '%s\n' "$probe" | grep -c '^not sent, tenths of kelvin: 3358$')" 1
+expect "fan probe reads fan status and the curve" \
+	"$(printf '%s\n' "$probe" | grep -c '^read fan1 status 0x21: w2@0x76 0x21 0x01 r1@0x76$')" 1
+expect "fan probe get-LUT is a short command plus a 65 byte read" \
+	"$(printf '%s\n' "$probe" | grep -c '^read lut 0x28 id 0x00: w5@0x76 0x28 0x00 0x00 0x00 0x00 r65@0x76$')" 1
+expect "fan probe does not write debug mode" \
+	"$(printf '%s\n' "$probe" | grep -c '0x30')" 0
+expect "fan probe does not write modern-standby or the trip register" \
+	"$(printf '%s\n' "$probe" | grep -c -E '0x23|0x25|0x35')" 0
+expect "fan probe does not send a temperature report" \
+	"$(printf '%s\n' "$probe" | grep -c 'w5@0x76 0x20')" 0
 
 exit $fail

@@ -52,7 +52,7 @@ Userspace and packaging (belong outside the kernel):
 | Speakers | 2× WSA8845 on swr0 (`SpkrLeft`/`SpkrRight`); swr3 off | Front Left verified on series 5. Front Right is dead on this unit in Windows too (hardware) |
 | Volume keys | QTEC0001 consumer-control collection | Userspace `debondragon-volkeys` (support 0.4.1); not confirmed |
 | Thermal sensors | tsens | Verified. Series 6 adds 75 °C CPU passive trips and an 85 °C GPU passive trip |
-| EC / fan | i2c5 0x76, "Temp to EC" register 0x20 | Not the Hamoa EC protocol. Userspace reporter is opt-in and unconfirmed; not for upstream yet |
+| EC / fan | i2c5 0x76, "Temp to EC" register 0x20 | Reporter ran on series 6; fan stayed stopped at 72.7 °C. Read-only curve probe in support 0.5.1. Not for upstream yet |
 | Suspend/resume | - | Untested |
 
 ## 3. What an upstream board file must look like

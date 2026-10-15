@@ -126,11 +126,58 @@ for i in $(seq 8); do timeout 90 sh -c 'while :; do :; done' & done
 watch -n2 'sudo debondragon-fan status'
 ```
 
-Send back: `status` before enable (fan RPM at the 60 °C soak), `status`
-after a minute of load (RPM and the hottest zone), and whether you can
-hear the fan. Expected if the report is in the unit the EC's curve uses:
-RPM rises from 0 once the die is warm, and the SoC stops sitting at 60 °C
-with the fan stopped. Not confirmed yet.
+**Series 6, support 0.5.0, on this laptop.** The reporter was running.
+Idle SoC zones were 48–50 °C and both fans were at 0 rpm. After 90
+seconds of all-core load the hottest zone was 72.7 °C, fan 1 still
+answered `0x02 0x00 0x00` (0 rpm), and the fan made no sound and moved
+no air. That 0 rpm is real. 72.7 °C is already above the DSDT's active
+trip for the SoC fan zone (about 66 °C), so the curve is not treating
+the value we send as "hot". Leave the reporter running and collect the
+reads below. Do not `debondragon-fan disable` for this; that writes the
+suspend notice and the reads need to happen while reports are still
+going out.
+
+Support 0.5.1 wraps the same reads in `sudo debondragon-fan probe`. On
+0.5.0, run them directly. Nothing here writes a register. Paste the
+whole output back.
+
+```bash
+journalctl -u debondragon-fan -b --no-pager | tail -n 40
+BUS=$(for a in /sys/bus/i2c/devices/i2c-*; do
+	case $(readlink -f "$a/of_node" 2>/dev/null) in
+	*i2c@b94000) echo "${a##*/i2c-}" ;;
+	esac
+done)
+echo "bus $BUS"
+echo "--- zones ---"
+paste <(cat /sys/class/thermal/thermal_zone*/type) <(cat /sys/class/thermal/thermal_zone*/temp)
+echo "--- fan status 0x21, speed 0x22 ---"
+sudo i2ctransfer -f -y "$BUS" w2@0x76 0x21 0x01 r1
+sudo i2ctransfer -f -y "$BUS" w2@0x76 0x21 0x02 r1
+sudo i2ctransfer -f -y "$BUS" w2@0x76 0x22 0x01 r3
+sudo i2ctransfer -f -y "$BUS" w2@0x76 0x22 0x02 r3
+echo "--- EC thermistors 0x29-0x2d, integer °C ---"
+sudo i2ctransfer -f -y "$BUS" w1@0x76 0x29 r1
+sudo i2ctransfer -f -y "$BUS" w1@0x76 0x2a r1
+sudo i2ctransfer -f -y "$BUS" w1@0x76 0x2b r1
+sudo i2ctransfer -f -y "$BUS" w1@0x76 0x2c r1
+sudo i2ctransfer -f -y "$BUS" w1@0x76 0x2d r1
+echo "--- profile 0x24, profile count 0x26, lut count 0x27 ---"
+sudo i2ctransfer -f -y "$BUS" w1@0x76 0x24 r1
+sudo i2ctransfer -f -y "$BUS" w2@0x76 0x26 0x00 r2
+sudo i2ctransfer -f -y "$BUS" w2@0x76 0x27 0x00 r1
+sudo i2ctransfer -f -y "$BUS" w2@0x76 0x27 0x01 r1
+echo "--- fan curve, get only (65 bytes). A NACK is fine, paste it ---"
+sudo i2ctransfer -f -y "$BUS" w5@0x76 0x28 0x00 0x00 0x00 0x00 r65
+sudo i2ctransfer -f -y "$BUS" w5@0x76 0x28 0x10 0x00 0x00 0x00 r65
+sudo i2ctransfer -f -y "$BUS" w5@0x76 0x28 0x01 0x00 0x00 0x00 r65
+```
+
+Do not write any other register. In particular do not write `0x30`
+(debug mode), `0x24` (profile), `0x25` (trip points), `0x28` as a long
+write (that would replace the curve), or `0x35`. A wrong temperature
+unit can look like an overtemp, so do not hand-send a different `0x20`
+value either. The curve dump says which unit is safe.
 
 **Safety.** After `enable`, do not `systemctl stop debondragon-fan` and
 walk away. If temperature reports stop for more than a couple of minutes,
@@ -144,9 +191,9 @@ sudo reboot
 ```
 
 `disable` tells the EC the OS is suspended before it stops the updates.
-Reboot so that notice does not linger. If the fan never moves after
-`enable`, disable it and send the `status` output. Do not try other I2C
-writes; a wrong temperature unit can look like an overtemp.
+Reboot so that notice does not linger. While the fan is still stopped,
+leave the reporter enabled and send the probe output above instead of
+disabling it.
 
 ## Thermal sensors
 

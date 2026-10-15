@@ -1,4 +1,4 @@
-# Unreleased (kernel series 6, support 0.5.0)
+# Unreleased (kernel series 6, support 0.5.1)
 
 Not a tagged release. v0.4.0 stays on kernel series 5 and support 0.4.1.
 Series 6 installs beside it.
@@ -22,8 +22,27 @@ decidegrees Celsius, sensors 0x01/0x02/0x03) and tells the EC about
 suspend (register 0x23). It does not set RPM, replace the fan curve, or
 write debug mode. `qcom-hamoa-ec` stays blacklisted: on this EC that
 driver's reads are the wrong protocol and its probe would write debug
-mode. Not confirmed on hardware. Steps and the power-off warning are in
+mode. Steps and the power-off warning are in
 docs/hardware-testing.md, "Fan and thermals".
+
+## The fan stayed off at 72.7 °C
+
+On series 6 with support 0.5.0 the reporter was running and the writes
+were the decidegree `0x20` reports above. Idle SoC zones were 48–50 °C.
+After 90 seconds of all-core load the hottest zone was `cpu0-0-btm` at
+72.7 °C. Fan 1 answered `0x02 0x00 0x00` (0 rpm) and fan 2 answered
+`0x00 0x00 0x00`. The fan was physically stopped: no sound, no airflow.
+The 0 rpm decode is right. 72.7 °C is already above the DSDT active trip
+for the SoC fan zone (0x0D3E, about 66 °C).
+
+Support 0.5.1 adds `debondragon-fan probe`. It only reads: fan status
+(`0x21`), fan speed (`0x22`), the five EC thermistors (`0x29`–`0x2d`,
+integer °C), the current profile (`0x24`), and the fan curve (`0x28`,
+the get-LUT read). It does not write RPM, the profile, the curve, trip
+points, or debug mode (`0x30`). A failed temperature report is now logged
+once. The unit of the `0x20` report is not changed until that curve is
+seen: sending tenths of Kelvin by guess would look like 346 °C if the
+curve is actually in decidegrees. Not confirmed on hardware.
 
 ---
 

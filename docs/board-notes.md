@@ -231,7 +231,13 @@ and CPUSS zone and lowers the existing GPU passive trip from 95 °C to
 
 On series 5, light use held every SoC zone at 59–63 °C while the battery
 read 30 °C and the PMICs 37 °C. That is the fan curve looking at the EC
-thermistors and not at the die.
+thermistors and not at the die. On series 6 with the reporter running,
+72.7 °C under load still left both fans at 0 rpm, and the fan was
+physically stopped. The DSDT's SoC fan zone (`TZ98`, "SoCTj Thermal-zone
+for Fan Control") engages active cooling at 0x0D3E, about 66 °C, on this
+board. `debondragon-fan probe` (support 0.5.1) reads the curve and the
+EC thermistors and does not change the unit of the `0x20` report until
+that curve shows which unit it is.
 
 The EC event pin is `_AEI` pin 0x140 (a wake-encoded number that can't be
 decoded directly). TLMM 66 is inferred: the CRD's EC interrupt,

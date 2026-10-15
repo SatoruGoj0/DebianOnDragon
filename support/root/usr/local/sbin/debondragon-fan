@@ -26,6 +26,8 @@
 # same suspend notice instead of just stopping the updates.
 #
 #   sudo debondragon-fan status     read zones and fan RPM; writes nothing
+#   sudo debondragon-fan probe      read the fan curve and EC thermistors;
+#                                   writes nothing
 #   sudo debondragon-fan enable     start the reporter
 #   sudo debondragon-fan disable    stop it, and tell the EC first
 set -u
@@ -38,10 +40,12 @@ interval=${DEBONDRAGON_FAN_INTERVAL:-2}
 
 usage() {
 	cat <<'EOF'
-Usage: debondragon-fan status|enable|disable
+Usage: debondragon-fan status|probe|enable|disable
 
   status   Print the hottest CPU/GPU zone and, as root, a read-only fan
            RPM query (register 0x22). Writes nothing.
+  probe    Read fan status, RPM, the EC thermistors, the fan profile and
+           the fan curve. Writes nothing. Leave the reporter running.
   enable   Report SoC temperature to the EC every 2 seconds so its fan
            curve can run. The EC keeps its own curve and failsafe.
   disable  Stop reporting. If it was running, the EC is told the OS is
@@ -135,6 +139,31 @@ ec_write() {
 		return 0
 	fi
 	i2ctransfer -f -y "$bus" "$@" >/dev/null
+}
+
+# millidegrees Celsius -> tenths of Kelvin, rounded.
+# 72.7 °C is 3459. The reporter does not send this. It is printed so a
+# dumped fan curve can be compared with both units.
+tenths_kelvin() {
+	echo $(( ($1 + 273150 + 50) / 100 ))
+}
+
+# Read-only transfer. $1 is a label. The rest is the i2ctransfer message
+# (a short write of a command, then a read). Dry mode prints that message
+# and does not touch the bus.
+ec_read() {
+	local label=$1 bus raw
+	shift
+	if [ "${DEBONDRAGON_FAN_DRY:-}" = 1 ]; then
+		echo "read $label: $*"
+		return 0
+	fi
+	bus=$(find_bus) || return 1
+	if raw=$(i2ctransfer -f -y "$bus" "$@" 2>/dev/null); then
+		echo "read $label: $raw"
+	else
+		echo "read $label: no answer"
+	fi
 }
 
 report_temps() {
@@ -249,12 +278,18 @@ cmd_run() {
 		report_temps "$bus"
 		exit $?
 	fi
+	local reported_ok=1
 	while true; do
 		if [ -e "$suspend_stamp" ]; then
 			sleep "$interval"
 			continue
 		fi
-		report_temps "$bus" || true
+		if report_temps "$bus"; then
+			reported_ok=1
+		elif [ "$reported_ok" = 1 ]; then
+			reported_ok=0
+			echo "debondragon-fan: temperature report was not acknowledged by the EC" >&2
+		fi
 		sleep "$interval"
 	done
 }
@@ -275,6 +310,58 @@ cmd_resume() {
 	bus=$(find_bus) || exit 1
 	ms_status "$bus" 0x00 || return 1
 	rm -f "$suspend_stamp"
+}
+
+cmd_probe() {
+	local line milli typ deci lo hi tk reg
+	echo "probe: read-only. Does not set RPM, the profile, the curve, trip points, or debug mode."
+	echo "Leave the reporter running if it is already enabled."
+	if line=$(hottest); then
+		milli=${line%% *}
+		typ=${line#* }
+		if deci=$(deci_of "$milli"); then
+			lo=$(printf '0x%02x' $((deci & 255)))
+			hi=$(printf '0x%02x' $((deci >> 8)))
+			tk=$(tenths_kelvin "$milli")
+			echo "hottest: $typ $milli deci $deci bytes $lo $hi"
+			echo "reporter sends: 0x20 <0x01|0x02|0x03> 0x02 $lo $hi"
+			echo "not sent, tenths of kelvin: $tk"
+		else
+			echo "hottest: $typ $milli (not a temperature the reporter sends)"
+		fi
+	else
+		echo "hottest: none"
+	fi
+	if [ "${DEBONDRAGON_FAN_DRY:-}" != 1 ]; then
+		if [ "$(id -u)" != 0 ]; then
+			echo "EC was not read (needs root). Nothing was written."
+			return 0
+		fi
+		command -v i2ctransfer >/dev/null || die "i2ctransfer missing: sudo apt install i2c-tools"
+		modprobe i2c-dev 2>/dev/null || true
+	fi
+	# DSDT "Query Fan status": write 0x21 and the fan id, read 1 byte.
+	ec_read "fan1 status 0x21" w2@0x76 0x21 0x01 r1@0x76
+	ec_read "fan2 status 0x21" w2@0x76 0x21 0x02 r1@0x76
+	# DSDT "Query Fan speed": write 0x22 and the fan id, read 3 bytes.
+	# RPM is byte1 + (byte2 << 8). Byte 0 is not the speed.
+	ec_read "fan1 speed 0x22" w2@0x76 0x22 0x01 r3@0x76
+	ec_read "fan2 speed 0x22" w2@0x76 0x22 0x02 r3@0x76
+	# EC thermistors. Each is one byte, integer °C, then the DSDT adds
+	# 273 and scales to tenths of Kelvin for ACPI. Read only.
+	for reg in 0x29 0x2a 0x2b 0x2c 0x2d; do
+		ec_read "thermistor $reg" w1@0x76 "$reg" r1@0x76
+	done
+	# Current fan profile. AttribByte read of register 0x24. Not a write.
+	ec_read "fan profile 0x24" w1@0x76 0x24 r1@0x76
+	ec_read "profile count 0x26 arg 0" w2@0x76 0x26 0x00 r2@0x76
+	ec_read "lut count 0x27 arg 0" w2@0x76 0x27 0x00 r1@0x76
+	ec_read "lut count 0x27 arg 1" w2@0x76 0x27 0x01 r1@0x76
+	# Get LUT: a 5-byte command (0x28, id, index, 0, 0) and a 65-byte read.
+	# Set LUT is a 68-byte write and is not issued here.
+	ec_read "lut 0x28 id 0x00" w5@0x76 0x28 0x00 0x00 0x00 0x00 r65@0x76
+	ec_read "lut 0x28 id 0x10" w5@0x76 0x28 0x10 0x00 0x00 0x00 r65@0x76
+	ec_read "lut 0x28 id 0x01" w5@0x76 0x28 0x01 0x00 0x00 0x00 r65@0x76
 }
 
 cmd_enable() {
@@ -307,6 +394,9 @@ case $mode in
 	;;
 status)
 	cmd_status
+	;;
+probe)
+	cmd_probe
 	;;
 enable|disable|run|suspend|resume)
 	if [ "${DEBONDRAGON_FAN_DRY:-}" != 1 ]; then
