@@ -1,91 +1,62 @@
-# Unreleased: kernel 7.2.0-debondragon-5, debondragon-support 0.4.0
+# DebOnDragon v0.4.0
 
-Not a tagged release, and **not verified on the 83N3**. Status stays
-Experimental until someone hears sound. Installs beside series 4; series 4
-remains the rollback (docs/kernel-upgrade.md, "Try kernel series 5").
+Kernel `7.2.0-debondragon-5` (Linux v7.2) and `debondragon-support` 0.4.1.
+Series 5 is the default. It installs beside earlier kernels
+(docs/kernel-upgrade.md, "Upgrade to v0.4.0").
 
-## Why the laptop was silent
+## Audio works
 
-The sound card, the WCD9385 and the DSP already came up on hardware, and
-support 0.2.1 made PulseAudio show a Headphones sink. Nothing played:
+Verified on the 83N3 with series 5 and support 0.4.0: the sound card and
+the HiFi profile come up, PulseAudio lists Speaker and Headphones, and
+`speaker-test` plays Front Left. Front Right is silent on this unit in
+Debian and in Windows, so that speaker is a hardware fault. Headset and
+internal microphones are not confirmed yet. HDMI audio stays silent (the
+topology has no DisplayPort graphs). HDMI video stays on.
 
-- The default devicetree left the speaker amplifiers off and deleted the
-  speaker playback link. The only playback device was Headphones, and that
-  device is gated on the jack. With nothing plugged in there is no output.
-- Turning the CRD's four-amp link back on would not have fixed it. That
-  link also waits for a second amplifier pair on SoundWire 3. Those parts
-  are not on this board (Windows' audio INF comments that group out), so
-  the whole card, headphones included, would wait forever.
-- Debian's two-speaker enable sequence sets `SpkrLeft`/`SpkrRight PA Volume`
-  to 12. This kernel rejects anything above 6 (0 dB), and a rejected write
-  aborts the sequence.
-- Debian's WSA-macro init writes digital volume 84 on the unprefixed
-  control. The control that exists is `WSA WSA_RX0/RX1 Digital Volume`,
-  and the kernel limit is 81 (−3 dB).
-- The headphone path included Debian's RX-macro enable sequence, which
-  forces the ultra-low-power class-H mode. That mode does not drive the
-  WCD9385 headphone outputs on these laptops. Class-AB (`CLS_AB_LOHIFI`)
-  does.
-- The internal microphones were powered from the WCD bias only. The
-  VA-macro DMICs also need `VA MIC BIAS1`.
-- The image did not install `alsa-ucm-conf`, `pulseaudio` or `alsa-utils`
-  by name. The codec sequences the profile includes come from
-  `alsa-ucm-conf`.
+The PA volume is capped at 0 dB. There is no active speaker protection.
+Keep the volume moderate.
 
-The device-signed ADSP firmware is still required. It cannot be shipped.
-Without `qcadsp8380.mbn` (and the matching DTBs) under
-`/lib/firmware/qcom/x1p42100/LENOVO/83N3/`, the card never probes.
+## After boot, PulseAudio stayed on auto_null
 
-## What changed
+PulseAudio starts at login. The sound card appears only once the ADSP
+firmware has loaded, which is later, and PulseAudio then kept `auto_null`
+until `systemctl --user restart pulseaudio`. Support 0.4.1 restarts it
+once a playback PCM shows up, and only if the sinks are still `auto_null`.
 
-Kernel series 5, default board (the `-speakers` file is the same hardware,
-so an old `DEBONDRAGON_DTB` still boots):
+## debondragon-firmware
 
-- Two WSA8845 on SoundWire 0, prefixes `SpkrLeft` and `SpkrRight`, CRD
-  port maps kept. SoundWire 3 stays off. The playback link lists only
-  those two amplifiers.
-- Internal mics: `VA DMIC0/1` to WCD `MIC BIAS3` and `VA MIC BIAS1`.
-- DisplayPort audio links stay deleted. HDMI audio is unsupported.
+`debondragon-firmware` with no arguments failed with "No Windows
+DriverStore or firmware folder found" when the Windows NTFS partition was
+already mounted at `/mnt/windows` (mounting it again fails, and the
+existing mount was ignored). It now uses an NTFS filesystem that is
+already mounted. `--help` prints the usage; it used to be treated as a
+folder path. Passing the FileRepository path still works.
 
-`debondragon-support` 0.4.0:
+The device-signed ADSP firmware is still not in the image. Copy it with
+`debondragon-firmware` or `windows/Export-Firmware.ps1`.
 
-- UCM enables speakers at PA volume 6 and WSA digital volume 81, and
-  headphones in class-AB. Speaker controls are written only when they
-  exist, so this package still loads headphones on a series-4 kernel.
-- Depends on `alsa-ucm-conf` (>= 1.2.14). Recommends PulseAudio (or
-  PipeWire's Pulse compatibility) and `alsa-utils`. The ISO installs
-  those packages.
-- The redistributable T14s topology is still installed under the card
-  name. That file has no DisplayPort graphs.
+## Mute and volume keys
 
-`DEBONDRAGON_HDMI=auto` already treats series 4 and later as HDMI-ok, so
-series 5 keeps HDMI video on.
+F1, F2 and F3 (mute, volume down, volume up) did nothing. The ITE
+keyboard (ACPI QTEC0001) reports them on a consumer-control evdev node,
+separate from the typing keys. X does not open that node, and Hyprland
+has no binding for it, so the events never reached PulseAudio. Support
+0.4.1 runs `debondragon-volkeys`, which calls `pactl` for `KEY_MUTE`,
+`KEY_VOLUMEDOWN` and `KEY_VOLUMEUP`. Not confirmed on hardware yet. Steps:
+docs/hardware-testing.md, "Mute and volume keys".
 
-## How to test
+## Why series 5 had to describe the speakers
 
-`docs/hardware-testing.md`, section "Audio". Short version: install
-support 0.4.0 and `linux-image-7.2.0-debondragon-5` beside series 4, run
-`sudo debondragon-firmware` (or export the firmware from Windows), reboot
-into series 5, and check `alsaucm -c hw:0 list _verbs` (HiFi),
-`pactl list short sinks` (Speaker, and Headphones when the jack is
-plugged), then play `hw:0,1` (speakers) and `hw:0,0` (headphones) at a
-moderate volume. Headset mic is `hw:0,2`, internal mics are `hw:0,3`.
-
-If `/proc/asound/cards` is empty, either the ADSP firmware is missing or
-the amplifiers did not bind. Boot the series-4 submenu entry and report
-`/sys/bus/soundwire/devices` plus `dmesg`.
-
-## Still open
-
-- No hardware confirmation that the amplifiers are WSA8845, or that any
-  output is audible.
-- No active speaker protection. The PA is capped at 0 dB; keep the volume
-  moderate.
-- HDMI audio stays silent.
+Support 0.2.1 already made PulseAudio show a Headphones sink. Nothing
+played until the default devicetree enabled the two WSA8845 on SoundWire
+0 and the UCM profile stopped using the Debian sequences that this kernel
+rejects (PA volume 12, digital volume 84, class-H headphones). Details
+are in the board notes. Series 4 remains a rollback: its devicetree does
+not wait for the speaker amplifiers.
 
 ---
 
-# DebOnDragon v0.4.0
+## HDMI video (kernel series 4, support 0.3.0)
 
 Kernel `7.2.0-debondragon-4` (Linux v7.2) and `debondragon-support` 0.3.0.
 Installs beside earlier kernels; don't reinstall Debian

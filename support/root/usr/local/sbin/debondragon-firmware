@@ -7,21 +7,51 @@
 # DSP. Keyboard, touchpad, display, NVMe, USB-A and Wi-Fi do not need them.
 #
 # Usage:
-#   debondragon-firmware                 search unlocked NTFS partitions
+#   debondragon-firmware                 search NTFS partitions, including
+#                                        ones that are already mounted
 #   debondragon-firmware <dir>           use a folder, e.g. one made by
 #                                        windows/Export-Firmware.ps1
+#   debondragon-firmware --help
 set -euo pipefail
+
+usage() {
+	cat <<'EOF'
+Usage: debondragon-firmware [--help] [directory]
+
+With no directory, search for a Windows DriverStore. An NTFS partition
+that is already mounted (for example at /mnt/windows) is used as it is.
+A partition that is not mounted is mounted read-only for the copy.
+
+With a directory, copy from that tree. Point it at the FileRepository
+folder or at the folder windows/Export-Firmware.ps1 created.
+EOF
+}
 
 dest=/lib/firmware/qcom/x1p42100/LENOVO/83N3
 files=(qcadsp8380.mbn adsp_dtbs.elf qccdsp8380.mbn cdsp_dtbs.elf qcdxkmsucpurwa.mbn
        battmgr.jsn adspr.jsn adspua.jsn cdspr.jsn)
 required=(qcadsp8380.mbn adsp_dtbs.elf qccdsp8380.mbn cdsp_dtbs.elf qcdxkmsucpurwa.mbn)
+dry=${DEBONDRAGON_FIRMWARE_DRY:-0}
 
-[ "$(id -u)" = 0 ] || exec sudo "$0" "$@"
+case ${1:-} in
+-h|--help)
+	usage
+	exit 0
+	;;
+-*)
+	echo "unknown option: $1" >&2
+	usage >&2
+	exit 2
+	;;
+esac
+
+if [ "$dry" != 1 ] && [ "$(id -u)" != 0 ]; then
+	exec sudo "$0" "$@"
+fi
 
 mounted=()
 cleanup() {
-	for m in "${mounted[@]}"; do umount "$m" 2>/dev/null || true; rmdir "$m" 2>/dev/null || true; done
+	for m in "${mounted[@]+"${mounted[@]}"}"; do umount "$m" 2>/dev/null || true; rmdir "$m" 2>/dev/null || true; done
 }
 trap cleanup EXIT
 
@@ -32,17 +62,51 @@ newest() {
 }
 
 sources=()
+add_source() {
+	local s=$1 x
+	[ -d "$s" ] || return 0
+	for x in "${sources[@]+"${sources[@]}"}"; do
+		[ "$x" = "$s" ] && return 0
+	done
+	sources+=("$s")
+}
+
+# Windows root (the directory that contains Windows/System32/...).
+add_windows_root() {
+	local root=$1
+	local store=$root/Windows/System32/DriverStore/FileRepository
+	[ -d "$store" ] && add_source "$store"
+}
+
+# Where this block device is already mounted, if anywhere.
+mountpoint_of() {
+	findmnt -nro TARGET -S "$1" 2>/dev/null | head -1
+}
+
 if [ $# -ge 1 ]; then
 	sources=("$1")
 else
+	# Already-mounted NTFS (ntfs3, ntfs-3g, or a fuse mount of the same
+	# volume). Mounting again fails with "already mounted", which used to
+	# hide a Windows tree sitting at /mnt/windows.
+	while read -r target fstype; do
+		case $fstype in
+		ntfs|ntfs3|fuseblk|ntfs-3g) add_windows_root "$target" ;;
+		esac
+	done < <(findmnt -rno TARGET,FSTYPE 2>/dev/null || true)
+
 	while read -r dev fstype; do
 		case $fstype in
 		ntfs)
+			have=$(mountpoint_of "$dev" || true)
+			if [ -n "$have" ]; then
+				add_windows_root "$have"
+				continue
+			fi
 			m=$(mktemp -d /tmp/debondragon-win.XXXX)
 			if mount -o ro -t ntfs3 "$dev" "$m" 2>/dev/null || mount -o ro -t ntfs-3g "$dev" "$m" 2>/dev/null; then
 				mounted+=("$m")
-				store=$m/Windows/System32/DriverStore/FileRepository
-				[ -d "$store" ] && sources+=("$store")
+				add_windows_root "$m"
 			else
 				rmdir "$m"
 			fi
@@ -56,12 +120,17 @@ else
 	done < <(lsblk -rpno NAME,FSTYPE | awk 'NF == 2')
 	# Partitions unlocked with cryptsetup appear under /dev/mapper.
 	for dev in /dev/mapper/*; do
+		[ -e "$dev" ] || continue
 		[ "$(lsblk -no FSTYPE "$dev" 2>/dev/null)" = ntfs ] || continue
+		have=$(mountpoint_of "$dev" || true)
+		if [ -n "$have" ]; then
+			add_windows_root "$have"
+			continue
+		fi
 		m=$(mktemp -d /tmp/debondragon-win.XXXX)
 		if mount -o ro -t ntfs3 "$dev" "$m" 2>/dev/null; then
 			mounted+=("$m")
-			store=$m/Windows/System32/DriverStore/FileRepository
-			[ -d "$store" ] && sources+=("$store")
+			add_windows_root "$m"
 		else
 			rmdir "$m"
 		fi
@@ -73,7 +142,13 @@ if [ ${#sources[@]} -eq 0 ]; then
 	exit 1
 fi
 
-mkdir -p "$dest"
+if [ "$dry" = 1 ]; then
+	for s in "${sources[@]}"; do
+		echo "source $s"
+	done
+fi
+
+[ "$dry" = 1 ] || mkdir -p "$dest"
 missing=0
 for f in "${files[@]}"; do
 	found=""
@@ -82,8 +157,12 @@ for f in "${files[@]}"; do
 		[ -n "$found" ] && break
 	done
 	if [ -n "$found" ]; then
-		install -m 0644 "$found" "$dest/$f"
-		echo "installed $f"
+		if [ "$dry" = 1 ]; then
+			echo "would-install $f"
+		else
+			install -m 0644 "$found" "$dest/$f"
+			echo "installed $f"
+		fi
 	elif printf '%s\n' "${required[@]}" | grep -qx "$f"; then
 		echo "MISSING   $f" >&2
 		missing=1
@@ -94,4 +173,8 @@ if [ $missing = 1 ]; then
 	echo "Some required files were not found; the matching hardware will stay off." >&2
 	exit 1
 fi
-echo "Done. Reboot to start the audio/compute DSPs and the GPU with this firmware."
+if [ "$dry" = 1 ]; then
+	echo "dry-run done"
+else
+	echo "Done. Reboot to start the audio/compute DSPs and the GPU with this firmware."
+fi

@@ -10,13 +10,21 @@ mapfile -t files < <(
 		ls support/root/usr/local/sbin/* support/root/etc/grub.d/* \
 		   support/root/etc/kernel/*/*
 	} 2>/dev/null | sort -u)
+shell_files=()
 for f in "${files[@]}"; do
+	[ -f "$f" ] || continue
 	if grep -q $'\r' "$f"; then echo "CRLF line endings: $f"; fail=1; fi
+	# sbin/ also holds the volume-key helper, which is Python.
+	case $(head -1 "$f") in
+	*bash|*/sh) ;;
+	*) continue ;;
+	esac
+	shell_files+=("$f")
 	shell="bash"
 	head -1 "$f" | grep -q '/bin/sh' && shell="sh"
 	if ! $shell -n "$f"; then echo "syntax error: $f"; fail=1; fi
 done
 # SC2154: variables provided by grub-mkconfig_lib; SC1091: sourced at runtime.
-shellcheck -S warning -e SC2154,SC1091 "${files[@]}" || fail=1
+shellcheck -S warning -e SC2154,SC1091 "${shell_files[@]}" || fail=1
 echo "checked ${#files[@]} scripts"
 exit $fail

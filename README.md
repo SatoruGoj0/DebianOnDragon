@@ -49,8 +49,10 @@ Working.
 | Internal camera (USB 13d3:54bf) | **Working** | v0.2.0 | Reported working on hardware (UVC on usb_2 behind the PTN3222 repeater) |
 | Fan / EC thermal control | **Unsupported, off** | — | `debondragon-ec-check` on hardware: version reads, but fan count and thermal capabilities return 0. Those commands (0x0E, 0x42) aren't in this EC's ACPI command map, so the `qcom-hamoa-ec` protocol doesn't match. Driver stays blacklisted; the EC controls the fan by itself |
 | SoC temperature sensors | **Working** | v0.1.0 | CPU/GPU/PMIC zones read 37–40 °C on hardware |
-| Headphones, headset mic, internal mics | **Experimental** | v0.3.0 | Card, codecs and DSP come up on hardware, and support 0.2.1 made the UCM profile load. Kernel series 5 keeps that card and drives the headphone jack in class-AB (the Debian class-H sequence does not drive a WCD9385). Internal mics get the VA-macro bias. Sound output is not yet confirmed on hardware |
-| Internal speakers | **Experimental** | unreleased (kernel series 5) | Default board: two WSA8845 on SoundWire 0 (Windows INF, ThinkBook/T14s layout). The kernel caps PA volume at 0 dB. There is no active speaker-protection algorithm. Not yet tested on hardware; keep the volume moderate |
+| Headphones | **Working** | v0.4.0 | Kernel series 5, support 0.4.0, on the 83N3: the Headphones sink appears and playback works. Class-AB on the WCD9385. Needs the device ADSP firmware |
+| Headset mic, internal mics | **Experimental** | v0.4.0 | The capture PCMs are in the profile (`hw:0,2` headset, `hw:0,3` internal). Not confirmed on hardware yet |
+| Internal speakers | **Working** | v0.4.0 | Kernel series 5 on the 83N3: `speaker-test` plays Front Left. Front Right is silent on this unit in Debian and in Windows, so that speaker is a hardware fault. PA volume is capped at 0 dB; there is no active speaker protection. Keep the volume moderate |
+| Mute, volume down, volume up (F1/F2/F3) | **Experimental** | v0.4.0 | The ITE keyboard reports these on a separate consumer-control evdev node, which the desktop does not open. `debondragon-volkeys` (support 0.4.1) handles them. Not confirmed on hardware yet |
 | USB-A ports (2, multiport controller) | **Working** | v0.1.0 | Both ports used on hardware (mouse, install stick); USB 3 lanes enabled, speed not yet measured |
 | USB-C ports (2, `usb_1_ss0/ss1`) | **Untested** | v0.1.0 | First port's controller (`usb_1_ss0`) comes up. The second (`usb_1_ss1`) never probes: the CRD puts its eUSB2 repeater in a PMIC (SPMI SID 0xa) that this laptop doesn't have (board notes). The CRD retimers don't answer, so role switching / alt mode don't work |
 | Third USB controller (`usb_1_ss2`) | **N/A** | v0.2.0 | Disabled in this laptop's ACPI; its PHY carries HDMI |
@@ -62,14 +64,14 @@ Working.
 
 ## Remaining hardware (after v0.4.0)
 
-- **Audio** (kernel series 5, support 0.4.0, not yet tested on hardware):
-  speakers, headphones and mics are on the default board. The device-signed
-  ADSP firmware still has to be copied with `debondragon-firmware` (or
-  `windows/Export-Firmware.ps1`); without it the sound card never probes.
-  HDMI audio stays silent: the T14s topology has no DisplayPort graphs.
-  Keep speaker volume moderate; the PA is capped at 0 dB, and there is no
-  active speaker protection. If the card never appears, boot kernel series 4
-  and report `/sys/bus/soundwire/devices`.
+- **Microphones**: headset mic and internal mics are in the profile and
+  have not been confirmed on hardware.
+- **Mute and volume keys**: support 0.4.1 listens for the keyboard's
+  consumer-control events. Confirm with the steps in
+  docs/hardware-testing.md.
+- **HDMI audio** stays silent: the T14s topology has no DisplayPort graphs.
+- **This unit's right speaker** is dead in Windows as well. That is a
+  hardware fault, not a missing channel in the driver.
 - **USB-C, second port**: its USB 2.0 repeater sits in an smb2360 at SPMI
   SID 0xa that this laptop doesn't have (probably SID 0xb instead,
   unverified); the CRD retimers don't answer, so role switching and DP alt

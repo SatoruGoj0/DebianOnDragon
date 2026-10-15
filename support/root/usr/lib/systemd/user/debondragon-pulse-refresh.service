@@ -1,0 +1,7 @@
+[Unit]
+Description=Reload PulseAudio once the IdeaPad sound card has playback devices
+After=pulseaudio.service pipewire-pulse.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/debondragon-pulse-refresh

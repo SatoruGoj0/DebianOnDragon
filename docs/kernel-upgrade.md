@@ -27,6 +27,9 @@ GRUB uses them like this:
 
 ## Upgrade from v0.3.0 (HDMI)
 
+Superseded by "Upgrade to v0.4.0" below. These steps install only kernel -4
+and support 0.3.0.
+
 You have kernel -3 (maybe also -4 from testing) and support 0.2.1, with
 `DEBONDRAGON_DEFAULT_KERNEL` pinned. Keep -3 as the default until the HDMI
 tests in `docs/hdmi-testing.md` pass.
@@ -52,29 +55,34 @@ tests in `docs/hdmi-testing.md` pass.
 4. Run the tests in `docs/hdmi-testing.md`, then make -4 the default as
    described there.
 
-## Try kernel series 5 (audio)
+## Upgrade to v0.4.0 (kernel series 5, support 0.4.1)
 
-Series 5 puts the speaker amplifiers on the default devicetree. Support
-0.4.0 is the matching userspace (UCM, topology, `alsa-ucm-conf`). Neither
-has been confirmed audible on the 83N3. Keep series 4 installed and pinned
-until the tests in `docs/hardware-testing.md` ("Audio") pass.
+Series 5 is the default kernel. Speakers and headphones are verified on
+the 83N3. Support 0.4.1 is the matching userspace: the audio profile,
+reloading PulseAudio when the card appears, the mute and volume keys, and
+the firmware finder. HDMI video stays on (`DEBONDRAGON_HDMI=auto` treats
+series 4 and later as HDMI-ok). HDMI audio does not play.
 
-1. Install support 0.4.0 first. `--force-confold` keeps your edited
-   `/etc/default/debondragon`:
-   ```bash
-   sudo apt install -o Dpkg::Options::=--force-confold ./debondragon-support_0.4.0_all.deb
-   ```
-2. Pin the kernel you already trust (series 4 if HDMI is in use), install
-   `linux-image-7.2.0-debondragon-5`, and boot it once with `grub-reboot`.
-   The steps are the next section; use `-4` where that section says `-2`,
-   and `-5` where it says `-3`.
-3. Copy the device firmware if you have not already (`sudo debondragon-firmware`)
-   and run the audio tests. HDMI video stays on for series 5
-   (`DEBONDRAGON_HDMI=auto` treats series 4 and later as HDMI-ok). HDMI
-   audio does not play.
-4. Make series 5 the default only after speakers or headphones are audible.
-   If the sound card never appears, the series-4 submenu entry is the
-   rollback: its devicetree does not wait for the speaker amplifiers.
+From a system that already runs series 5 and support 0.4.0, install
+0.4.1 on its own and reboot (or log out and back in for the volume keys):
+
+```bash
+sudo apt install -o Dpkg::Options::=--force-confold ./debondragon-support_0.4.1_all.deb
+```
+
+From v0.3.0 (kernel -3, support 0.2.1), install both and reboot:
+
+```bash
+sudo apt install -o Dpkg::Options::=--force-confold \
+  ./debondragon-support_0.4.1_all.deb \
+  ./linux-image-7.2.0-debondragon-5_*_arm64.deb
+```
+
+`--force-confold` keeps your edited `/etc/default/debondragon`. Series 4
+stays installed as the rollback if you still have it: its devicetree does
+not wait on the speaker amplifiers. Copy the device firmware if you have
+not already (`sudo debondragon-firmware`). Audio checks are in
+`docs/hardware-testing.md`.
 
 ## Test a new kernel once, keeping the current one as default (recommended)
 

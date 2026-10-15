@@ -1,0 +1,46 @@
+#!/bin/bash
+# PulseAudio starts at login. On this machine the sound card appears only
+# after the ADSP firmware has loaded, which is often later, and PulseAudio
+# then stays on the auto_null sink until it is restarted. udev starts this
+# once a playback PCM exists.
+#
+# One successful look is remembered for the login (XDG_RUNTIME_DIR), so the
+# several PCMs on the Qualcomm card do not restart Pulse in a loop.
+set -euo pipefail
+
+run=${XDG_RUNTIME_DIR:-/run/user/$(id -u)}
+mkdir -p "$run"
+exec 9>"$run/debondragon-pulse-refresh.lock"
+flock -n 9 || exit 0
+stamp=$run/debondragon-pulse-refreshed
+[ -e "$stamp" ] && exit 0
+
+delay=${DEBONDRAGON_PULSE_REFRESH_DELAY:-2}
+sleep "$delay"
+
+if ! pactl info >/dev/null 2>&1; then
+	# The card arrived before the session started Pulse. The initial scan
+	# will see it; there is nothing to restart yet.
+	exit 0
+fi
+
+list=$(pactl list short sinks 2>/dev/null || true)
+# A real sink's line does not contain auto_null. Restart only when every
+# sink is auto_null, or Pulse has no sink at all.
+if [ -n "$list" ] && printf '%s\n' "$list" | grep -qv 'auto_null'; then
+	touch "$stamp"
+	exit 0
+fi
+
+if [ "${DEBONDRAGON_PULSE_REFRESH_DRY:-}" = 1 ]; then
+	echo restart
+	touch "$stamp"
+	exit 0
+fi
+
+if systemctl --user is-active --quiet pulseaudio.service; then
+	systemctl --user try-restart pulseaudio.service
+elif systemctl --user is-active --quiet pipewire-pulse.service; then
+	systemctl --user try-restart wireplumber.service pipewire.service pipewire-pulse.service
+fi
+touch "$stamp"

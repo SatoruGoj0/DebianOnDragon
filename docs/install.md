@@ -74,8 +74,9 @@ sudo debondragon-firmware
 
 Reboot. This enables battery status, USB-C, GPU acceleration and the DSPs.
 The audio DSP is one of those files: without it the sound card never
-appears. Playback itself still has to be confirmed on this laptop
-(docs/hardware-testing.md, "Audio").
+appears. `debondragon-firmware` with no arguments finds a Windows
+partition that is already mounted. `debondragon-firmware --help` prints
+the usage.
 
 ## If something doesn't work
 

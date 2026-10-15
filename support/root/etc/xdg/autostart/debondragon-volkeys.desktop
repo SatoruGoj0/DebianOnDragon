@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=DebOnDragon volume keys
+Comment=Mute and volume keys for the IdeaPad keyboard
+Exec=/usr/local/sbin/debondragon-volkeys
+NoDisplay=true
+X-GNOME-Autostart-enabled=true
