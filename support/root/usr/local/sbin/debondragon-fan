@@ -1,0 +1,327 @@
+#!/bin/bash
+# Report SoC temperature to the IdeaPad EC so its own fan curve can run.
+#
+# The 83N3 DSDT method "Temp to EC" (\_SB.I2C6._DSM function 1, field FC20)
+# is how Windows feeds die temperature to this controller. Without it the
+# fan curve only sees the EC's board thermistors, which stay near the
+# battery and PMIC (about 30–37 °C) while the SoC is heat-soaked near 60 °C.
+# The same FC20 block is what x1e-ec-tool drives on the Lenovo IdeaCentre
+# 01Q8X10, Yoga Slim 7x and ThinkPad T14s.
+#
+# Wire writes, and only these:
+#   0x20 <sensor> 0x02 <deci-°C lo> <deci-°C hi>   temperature report
+#   0x23 <0x00|0x01>                                modern-standby status
+# Sensor 0x01 is the single SoC report that tool sends. Sensor 0x02 is what
+# TZ31 (all Oryon cores) forces, and 0x03 is what TZ32 (GPU) forces.
+# Sensors 0x04 and up are skin and modem zones; they are not written.
+# Temperature is decidegrees Celsius (60.0 °C → 600), capped at 200.0 °C.
+#
+# Never written: fan RPM, the fan profile (0x24), trip points (0x25), the
+# LUT (0x28), debug mode (0x30), or anything qcom-hamoa-ec writes. That
+# driver stays blacklisted. The EC keeps its LUT and its own failsafe.
+#
+# Once reporting has started, silence for more than a couple of minutes can
+# make the EC power the machine off (it treats a missing update as a hung
+# OS). Suspend tells the EC first (0x23 = 1). Disable parks the EC in that
+# same suspend notice instead of just stopping the updates.
+#
+#   sudo debondragon-fan status     read zones and fan RPM; writes nothing
+#   sudo debondragon-fan enable     start the reporter
+#   sudo debondragon-fan disable    stop it, and tell the EC first
+set -u
+set -o pipefail
+
+sys=${DEBONDRAGON_FAN_SYS:-/sys/class/thermal}
+disabled=/etc/debondragon/fan-disabled
+suspend_stamp=/run/debondragon/fan.suspend
+interval=${DEBONDRAGON_FAN_INTERVAL:-2}
+
+usage() {
+	cat <<'EOF'
+Usage: debondragon-fan status|enable|disable
+
+  status   Print the hottest CPU/GPU zone and, as root, a read-only fan
+           RPM query (register 0x22). Writes nothing.
+  enable   Report SoC temperature to the EC every 2 seconds so its fan
+           curve can run. The EC keeps its own curve and failsafe.
+  disable  Stop reporting. If it was running, the EC is told the OS is
+           suspended first, so the silence is not a hung-OS fault.
+           Reboot afterwards.
+
+Do not stop the service with systemctl once it has been reporting. If
+updates stop for more than a couple of minutes, the EC may power the
+machine off. That power-off is the EC's own failsafe.
+EOF
+}
+
+die() {
+	echo "debondragon-fan: $*" >&2
+	exit 1
+}
+
+need_root() {
+	if [ "$(id -u)" != 0 ]; then
+		exec sudo --preserve-env=DEBONDRAGON_FAN_DRY,DEBONDRAGON_FAN_SYS,DEBONDRAGON_FAN_BUS,DEBONDRAGON_FAN_ONCE,DEBONDRAGON_FAN_INTERVAL \
+			"$0" "$@"
+	fi
+}
+
+find_bus() {
+	local adapter bus
+	if [ -n "${DEBONDRAGON_FAN_BUS:-}" ]; then
+		echo "$DEBONDRAGON_FAN_BUS"
+		return 0
+	fi
+	bus=""
+	for adapter in /sys/bus/i2c/devices/i2c-*; do
+		case $(readlink -f "$adapter/of_node" 2>/dev/null) in
+		*i2c@b94000) bus=${adapter##*/i2c-} ;;
+		esac
+	done
+	[ -n "$bus" ] || die "i2c bus for 0xb94000 (i2c5) not found; is this the DebOnDragon kernel?"
+	echo "$bus"
+}
+
+# Hottest CPU/GPU/CPUSS zone: "millidegrees type", or failure if none.
+hottest() {
+	local zone type milli best besttype
+	best=-1
+	besttype=""
+	for zone in "$sys"/thermal_zone*; do
+		[ -r "$zone/type" ] && [ -r "$zone/temp" ] || continue
+		type=$(cat "$zone/type")
+		case $type in
+		cpu[0-9]*-thermal|cpuss*-thermal|gpuss*-thermal) ;;
+		*) continue ;;
+		esac
+		milli=$(cat "$zone/temp")
+		case $milli in
+		''|*[!0-9-]*) continue ;;
+		esac
+		if [ "$milli" -gt "$best" ]; then
+			best=$milli
+			besttype=$type
+		fi
+	done
+	[ "$best" -ge 0 ] || return 1
+	echo "$best $besttype"
+}
+
+# Decidegrees Celsius, or failure when the reading is not a die temperature
+# we should hand the EC. 1 °C .. 150 °C. The EC still has its thermistors.
+deci_of() {
+	local milli=$1 deci
+	if [ "$milli" -lt 1000 ] || [ "$milli" -gt 150000 ]; then
+		return 1
+	fi
+	deci=$(((milli + 50) / 100))
+	if [ "$deci" -gt 2000 ]; then
+		deci=2000
+	fi
+	echo "$deci"
+}
+
+hamoa_loaded() {
+	[ "${DEBONDRAGON_FAN_DRY:-}" = 1 ] && return 1
+	grep -q '^qcom_hamoa_ec ' /proc/modules 2>/dev/null
+}
+
+# $1 bus, $2.. i2ctransfer arguments after -f -y BUS
+ec_write() {
+	local bus=$1
+	shift
+	if [ "${DEBONDRAGON_FAN_DRY:-}" = 1 ]; then
+		echo "dry $bus $*"
+		return 0
+	fi
+	i2ctransfer -f -y "$bus" "$@" >/dev/null
+}
+
+report_temps() {
+	local bus=$1 line milli typ deci lo hi id
+	line=$(hottest) || {
+		echo "debondragon-fan: no cpu/gpu thermal zone" >&2
+		return 1
+	}
+	milli=${line%% *}
+	typ=${line#* }
+	deci=$(deci_of "$milli") || {
+		echo "debondragon-fan: not reporting implausible $typ (${milli} m°C)" >&2
+		return 1
+	}
+	lo=$(printf '0x%02x' $((deci & 255)))
+	hi=$(printf '0x%02x' $((deci >> 8)))
+	if [ "${DEBONDRAGON_FAN_DRY:-}" = 1 ]; then
+		echo "hottest $typ $milli deci $deci"
+	fi
+	# 0x01 aggregate, 0x02 CPU zone TZ31, 0x03 GPU zone TZ32.
+	for id in 0x01 0x02 0x03; do
+		if [ "${DEBONDRAGON_FAN_DRY:-}" = 1 ]; then
+			echo "report 0x20 $id 0x02 $lo $hi"
+		else
+			ec_write "$bus" "w5@0x76" 0x20 "$id" 0x02 "$lo" "$hi" || return 1
+		fi
+	done
+}
+
+ms_status() {
+	local bus=$1 mode=$2
+	if [ "${DEBONDRAGON_FAN_DRY:-}" = 1 ]; then
+		echo "report 0x23 $mode"
+		return 0
+	fi
+	ec_write "$bus" "w2@0x76" 0x23 "$mode"
+}
+
+cmd_status() {
+	local line milli typ shown=0 zone type temp bus raw b1 b2 rpm
+	echo "CPU / GPU / CPUSS zones (millidegrees Celsius):"
+	for zone in "$sys"/thermal_zone*; do
+		[ -r "$zone/type" ] && [ -r "$zone/temp" ] || continue
+		type=$(cat "$zone/type")
+		case $type in
+		cpu[0-9]*-thermal|cpuss*-thermal|gpuss*-thermal)
+			temp=$(cat "$zone/temp")
+			printf '  %s %s\n' "$type" "$temp"
+			shown=1
+			;;
+		esac
+	done
+	[ "$shown" = 1 ] || echo "  (none)"
+	if line=$(hottest); then
+		milli=${line%% *}
+		typ=${line#* }
+		echo "hottest: $typ $milli"
+	fi
+	if [ "${DEBONDRAGON_FAN_DRY:-}" = 1 ]; then
+		echo "rpm: dry (not read)"
+		return 0
+	fi
+	if [ "$(id -u)" != 0 ]; then
+		echo "Fan RPM was not read (needs root; this command writes nothing)."
+		return 0
+	fi
+	command -v i2ctransfer >/dev/null || die "i2ctransfer missing: sudo apt install i2c-tools"
+	modprobe i2c-dev 2>/dev/null || true
+	bus=$(find_bus) || return 1
+	# Register 0x22, fan index. Read-only: command byte plus fan id, then
+	# 3 bytes. RPM is the little-endian word in bytes 1 and 2. Fan 2 is
+	# absent on the 83N3 unless the EC says otherwise; a failure is printed.
+	for id in 1 2; do
+		if raw=$(i2ctransfer -f -y "$bus" w2@0x76 0x22 "$id" r3@0x76 2>/dev/null); then
+			# shellcheck disable=SC2086
+			set -- $raw
+			b1=${2:-}; b2=${3:-}
+			echo "fan$id raw: $raw"
+			if [ -n "$b1" ] && [ -n "$b2" ]; then
+				rpm=$((b1 + (b2 << 8)))
+				echo "fan$id rpm: $rpm"
+			fi
+		else
+			echo "fan$id: no answer"
+		fi
+	done
+	if [ -e "$disabled" ]; then
+		echo "reporter: disabled (/etc/debondragon/fan-disabled)"
+	elif systemctl is-active --quiet debondragon-fan.service 2>/dev/null; then
+		echo "reporter: running"
+	else
+		echo "reporter: installed, not started (sudo debondragon-fan enable)"
+	fi
+}
+
+cmd_run() {
+	local bus
+	if hamoa_loaded; then
+		echo "debondragon-fan: qcom_hamoa_ec is loaded. That driver writes debug" >&2
+		echo "mode (register 0x30). Unload it and leave it blacklisted; this" >&2
+		echo "reporter will not write while it is loaded." >&2
+		exit 0
+	fi
+	if [ "${DEBONDRAGON_FAN_DRY:-}" != 1 ]; then
+		command -v i2ctransfer >/dev/null || die "i2ctransfer missing: sudo apt install i2c-tools"
+		modprobe i2c-dev 2>/dev/null || true
+	fi
+	bus=$(find_bus) || exit 1
+	# 0x00: not in modern standby. Clears a disable/suspend notice.
+	ms_status "$bus" 0x00 || exit 1
+	if [ "${DEBONDRAGON_FAN_ONCE:-}" = 1 ]; then
+		report_temps "$bus"
+		exit $?
+	fi
+	while true; do
+		if [ -e "$suspend_stamp" ]; then
+			sleep "$interval"
+			continue
+		fi
+		report_temps "$bus" || true
+		sleep "$interval"
+	done
+}
+
+cmd_suspend() {
+	local bus
+	if [ "${DEBONDRAGON_FAN_DRY:-}" != 1 ]; then
+		mkdir -p /run/debondragon
+		touch "$suspend_stamp"
+		sleep 0.3
+	fi
+	bus=$(find_bus) || exit 1
+	ms_status "$bus" 0x01
+}
+
+cmd_resume() {
+	local bus
+	bus=$(find_bus) || exit 1
+	ms_status "$bus" 0x00 || return 1
+	rm -f "$suspend_stamp"
+}
+
+cmd_enable() {
+	rm -f "$disabled"
+	systemctl enable --now debondragon-fan.service
+	echo "SoC temperature is now reported to the EC. The EC keeps its fan curve and its failsafe."
+	echo "Do not stop this service for long. If reports stop, the EC may power the machine off."
+	echo "To turn it off: sudo debondragon-fan disable, then reboot."
+}
+
+cmd_disable() {
+	mkdir -p /etc/debondragon
+	touch "$disabled"
+	if systemctl is-active --quiet debondragon-fan.service 2>/dev/null; then
+		cmd_suspend || true
+		systemctl disable --now debondragon-fan.service
+		echo "Reporter stopped. The EC was told the OS is suspended, so it should not"
+		echo "treat the silence as a hung OS. Reboot to clear that notice."
+	else
+		systemctl disable debondragon-fan.service 2>/dev/null || true
+		echo "Fan reporter will not start. It was not running, so the EC was not written."
+	fi
+}
+
+mode=${1:-status}
+case $mode in
+-h|--help|help)
+	usage
+	exit 0
+	;;
+status)
+	cmd_status
+	;;
+enable|disable|run|suspend|resume)
+	if [ "${DEBONDRAGON_FAN_DRY:-}" != 1 ]; then
+		need_root "$@"
+	fi
+	case $mode in
+	enable) cmd_enable ;;
+	disable) cmd_disable ;;
+	run) cmd_run ;;
+	suspend) cmd_suspend ;;
+	resume) cmd_resume ;;
+	esac
+	;;
+*)
+	usage >&2
+	exit 2
+	;;
+esac

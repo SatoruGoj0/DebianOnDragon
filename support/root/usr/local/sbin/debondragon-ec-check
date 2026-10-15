@@ -64,7 +64,11 @@ esac
 if [ $fans -lt 1 ] || [ $fans -gt 2 ] || [ $plausible = no ]; then
 	echo
 	echo "RESULT: answers don't look like the Hamoa EC protocol (expected 1-2 fans"
-	echo "and a non-blank firmware version). Leave the driver disabled and report this."
+	echo "and a non-blank firmware version). Leave qcom_hamoa_ec disabled."
+	echo "Its probe writes debug mode (register 0x30). This EC's fan curve is"
+	echo "driven by SoC temperature reports instead (register 0x20):"
+	echo "  sudo debondragon-fan status"
+	echo "  sudo debondragon-fan enable"
 	exit 3
 fi
 

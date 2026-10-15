@@ -47,8 +47,8 @@ Working.
 | HDMI extended desktop (Hyprland) | **Working** | v0.4.0 | Verified: two monitors, pointer and windows move between them. Layout comes from your own Hyprland monitor rules |
 | HDMI on at boot, hotplug, unplug/replug with active video, long runs | **Not yet verified** | v0.4.0 | support 0.3.0 switches HDMI on automatically for series-4 kernels (`DEBONDRAGON_HDMI=auto`); older kernels keep it off. Earlier kernels reset the laptop on unplug after failed training; tests in docs/hdmi-testing.md |
 | Internal camera (USB 13d3:54bf) | **Working** | v0.2.0 | Reported working on hardware (UVC on usb_2 behind the PTN3222 repeater) |
-| Fan / EC thermal control | **Unsupported, off** | — | `debondragon-ec-check` on hardware: version reads, but fan count and thermal capabilities return 0. Those commands (0x0E, 0x42) aren't in this EC's ACPI command map, so the `qcom-hamoa-ec` protocol doesn't match. Driver stays blacklisted; the EC controls the fan by itself |
-| SoC temperature sensors | **Working** | v0.1.0 | CPU/GPU/PMIC zones read 37–40 °C on hardware |
+| Fan / EC thermal control | **Experimental** | series 6 | `qcom-hamoa-ec` stays blacklisted (wrong protocol; it would write debug mode). Kernel series 6 adds CPU passive trips at 75 °C and lowers the GPU passive trip from 95 °C to 85 °C, so the SoC throttles before the 115 °C critical shutdown. The fan curve itself runs only after `debondragon-fan enable`, which reports die temperature to the EC (register 0x20) and never sets RPM. Not confirmed on hardware |
+| SoC temperature sensors | **Working** | v0.1.0 | Zones read on hardware. Series 5, light use: every SoC zone 59–63 °C while the battery was 30 °C and the PMICs 37 °C |
 | Headphones | **Working** | v0.4.0 | Kernel series 5, support 0.4.0, on the 83N3: the Headphones sink appears and playback works. Class-AB on the WCD9385. Needs the device ADSP firmware |
 | Headset mic, internal mics | **Experimental** | v0.4.0 | The capture PCMs are in the profile (`hw:0,2` headset, `hw:0,3` internal). Not confirmed on hardware yet |
 | Internal speakers | **Working** | v0.4.0 | Kernel series 5 on the 83N3: `speaker-test` plays Front Left. Front Right is silent on this unit in Debian and in Windows, so that speaker is a hardware fault. PA volume is capped at 0 dB; there is no active speaker protection. Keep the volume moderate |
@@ -76,8 +76,10 @@ Working.
   SID 0xa that this laptop doesn't have (probably SID 0xb instead,
   unverified); the CRD retimers don't answer, so role switching and DP alt
   mode don't work on either port.
-- **EC fan reporting/control**: the EC doesn't speak the protocol of the
-  upstream driver; driver stays off, the EC runs the fan itself.
+- **Fan**: series 6 throttles the CPUs at 75 °C and the GPU at 85 °C.
+  The fan stays on the EC's own curve, which does not see die temperature
+  until `sudo debondragon-fan enable`. Not confirmed on hardware.
+  `qcom-hamoa-ec` stays off.
 - **Suspend/resume**: untested.
 
 Device-signed firmware (audio/compute DSP, GPU zap shader) is signed for this

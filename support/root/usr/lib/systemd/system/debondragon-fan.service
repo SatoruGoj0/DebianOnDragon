@@ -1,0 +1,13 @@
+[Unit]
+Description=Report SoC temperature to the IdeaPad EC fan controller
+After=systemd-modules-load.service
+ConditionPathExists=!/etc/debondragon/fan-disabled
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/debondragon-fan run
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

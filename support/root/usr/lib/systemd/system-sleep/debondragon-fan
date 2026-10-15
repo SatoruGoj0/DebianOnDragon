@@ -1,0 +1,13 @@
+#!/bin/sh
+# Before suspend, tell the EC the OS is going to sleep so a pause in
+# temperature reports is not a hung-OS fault. After resume, clear it.
+# No-op unless the reporter is actually running: a machine that never
+# opted in must not have register 0x23 written.
+set -u
+if ! systemctl is-active --quiet debondragon-fan.service; then
+	exit 0
+fi
+case "${1:-}" in
+pre) /usr/local/sbin/debondragon-fan suspend ;;
+post) /usr/local/sbin/debondragon-fan resume ;;
+esac

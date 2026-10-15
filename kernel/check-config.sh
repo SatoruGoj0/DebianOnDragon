@@ -64,7 +64,7 @@ need CONFIG_SND_SOC_LPASS_WSA_MACRO m "speaker path (-speakers)"
 need CONFIG_SND_SOC_WSA884X      m "speaker amps (-speakers)"
 # Thermal and fan
 need CONFIG_QCOM_TSENS           y "SoC temperature sensors"
-need CONFIG_EC_QCOM_HAMOA        m "EC at i2c5 0x76 (fan)"
+need CONFIG_EC_QCOM_HAMOA        m "built but blacklisted; 83N3 fan path is debondragon-fan"
 # Phone USB tethering
 need CONFIG_USB_NET_RNDIS_HOST   m "Android USB tethering"
 need CONFIG_USB_IPHETH           m "iPhone USB tethering"

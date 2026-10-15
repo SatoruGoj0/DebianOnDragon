@@ -8,7 +8,8 @@ mapfile -t files < <(
 	{
 		ls build.sh kernel/*.sh iso/*.sh scripts/*.sh support/*.sh
 		ls support/root/usr/local/sbin/* support/root/etc/grub.d/* \
-		   support/root/etc/kernel/*/*
+		   support/root/etc/kernel/*/* \
+		   support/root/usr/lib/systemd/system-sleep/*
 	} 2>/dev/null | sort -u)
 shell_files=()
 for f in "${files[@]}"; do
