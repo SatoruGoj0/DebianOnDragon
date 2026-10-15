@@ -1,7 +1,7 @@
 # DebOnDragon follow-up work
 
 Observed on the Lenovo IdeaPad Slim 3 15Q8X10 (83N3), most recently with
-`7.2.0-debondragon-8`. This is the short, actionable backlog for things that
+`7.2.0-debondragon-10`. This is the short, actionable backlog for things that
 are broken, unsupported, or still need hardware verification. The README is
 the user-facing support matrix; keep the evidence and likely cause here.
 
@@ -21,23 +21,6 @@ the user-facing support matrix; keep the evidence and likely cause here.
   networking. Do not treat a daemon started with `--iptables=false` as the
   final fix.
 
-### Verify the series-9 Snap/browser fix
-
-- **Symptom:** Chromium is reported as a broken snap, installing Firefox fails
-  while mounting its snap, and the mount units report a bad filesystem. The
-  kernel log gives the decisive error: `Filesystem uses "lzo" compression.
-  This is not supported`.
-- **Cause:** series 7 lacked `CONFIG_SQUASHFS_LZO`, so it could not mount the
-  LZO-compressed Chromium and GNOME runtime images. Series 8 enabled LZO and
-  mounts every installed Snap, but lacks `CONFIG_SQUASHFS_XATTR`: the kernel
-  discards the `security.capability` metadata on snapd's `snap-confine`, which
-  then exits before launching strict Snaps. This is separate from the GPU
-  firmware failure; a browser may still need software rendering afterward.
-- **Fix queued for series 9:** enable and assert both
-  `CONFIG_SQUASHFS_LZO=y` and `CONFIG_SQUASHFS_XATTR=y`. Install and boot
-  series 9, verify Chromium/Firefox launch with software rendering, then test
-  hardware acceleration. Remove this entry once that works on hardware.
-
 ### Linux cannot create or reorder UEFI boot entries
 
 - **Symptom:** installation needs the Windows `Add-DebianBootEntry.ps1`
@@ -50,43 +33,24 @@ the user-facing support matrix; keep the evidence and likely cause here.
 
 ## Firmware and accelerator gaps
 
-### Verify the series-10 hardware video decoder
+### Low-resolution HEVC can fault the Iris firmware session
 
-- **Symptom:** `/dev/video0` and `/dev/video1` are only the integrated UVC
-  camera; no Qualcomm Iris mem2mem decoder is registered, so browsers and
-  GStreamer cannot use the SoC video decoder. The older experimental
-  `7.2.2-ideapad-iris1+` kernel did register the block but repeatedly logged
-  `error -22 initializing firmware qcom/vpu/vpu30_p1_s7.mbn`.
-- **Cause:** the kernel already builds `CONFIG_VIDEO_QCOM_IRIS=m`, recognizes
-  `qcom,x1p42100-iris`, and has the Lenovo `qcvss8380.mbn` video firmware. The
-  board devicetree still inherits a disabled Hamoa Iris node and the wrong
-  `qcom,x1e80100-videocc` description. It does not supply the X1P42100 BSE
-  clock required by the four-clock Iris binding. The older experiment used
-  the generic VPU firmware, which this machine's secure monitor rejected.
-- **Fix queued for series 10:** override videoCC as
-  `qcom,x1p42100-videocc`, describe
-  Iris as `qcom,x1p42100-iris` with its `iface`, `core`, `vcodec0_core` and
-  `vcodec0_bse` clocks, select the Lenovo `qcvss8380.mbn`, and enable the
-  node. Series 10 carries the X1P clocks and operating points from upstream
-  commit `43899c55d79b`; series 9 remains the rollback. Verify decoder
-  registration and H.264/HEVC/VP9 decode with V4L2/GStreamer before enabling
-  browser hardware video decoding. Support 0.4.2 exports and installs the
-  device-signed video firmware reproducibly. Remove this entry only after
-  real decode succeeds.
-
-### GPU acceleration fails with the firmware currently installed
-
-- **Symptom:** `/dev/dri` exists, but the boot log repeatedly reports
-  `error -22 initializing firmware .../qcdxkmsucpurwa.mbn` and
-  `gpu hw init failed: -22`.
-- **Cause:** the installed file is the generic X1P `gen71500_zap.mbn` copied
-  under the Lenovo filename. The secure monitor rejects it; the 83N3 needs
-  its exact signed `qcdxkmsucpurwa.mbn` from the Windows Qualcomm display
-  driver package.
-- **Fix:** obtain the exact file from this model's Windows DriverStore (or the
-  matching official driver package), install it with `debondragon-firmware`,
-  rebuild the initramfs and reboot. Verify with `dmesg`, `glxinfo -B` or
-  `vulkaninfo`; merely having a render node is not sufficient.
+- **Working:** forced V4L2 mem2mem tests decode all 90 frames of 1280x720
+  H.264 and HEVC samples, and all 30 frames of a 640x360 VP9 sample, through
+  `iris_driver` on `/dev/video2`.
+- **Symptom:** a 640x360 8-bit HEVC Main sample produces one corrupt frame,
+  then the kernel logs `session error received 0x4000003: fatal error`. Iris
+  should be unloaded/reloaded after this failure. The same codec and encoder
+  settings work for all 90 frames at 1280x720 after a clean reload.
+- **Likely cause:** an Iris firmware/driver buffer constraint at smaller HEVC
+  resolutions. Linux 7.2 already contains the upstream increase of
+  `H265D_MAX_SLICE` from 1200 to 3600 (commit `3e0b20537516`), so that known
+  scratch-buffer fix is not sufficient here.
+- **Fix to investigate:** find the minimum failing dimensions, reproduce with
+  GStreamer and direct `v4l2-ctl`, compare the firmware buffer requirements
+  with current upstream Iris, and report the exact stream plus error upstream.
+  AV1 is advertised by the driver but this FFmpeg build has no
+  `av1_v4l2m2m` wrapper, so it is also unverified.
 
 ### CDSP is not available
 
@@ -151,6 +115,11 @@ the user-facing support matrix; keep the evidence and likely cause here.
   whether a libfprint-supported driver exists.
 
 ## Verification still needed
+
+- **Browser use of Iris:** direct V4L2 H.264 decode is verified with FFmpeg,
+  and Chromium launches after reconnecting its stale `gpu-2404` snap content
+  mount. Confirm a browser video actually selects `/dev/video2`; this is a
+  browser/userspace integration check, not a missing kernel codec driver.
 
 - **Suspend/resume:** test suspend, wake, repeated cycles, Wi-Fi reconnect,
   audio, battery updates and display recovery. Collect `debondragon-report`

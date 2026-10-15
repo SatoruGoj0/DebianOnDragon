@@ -129,9 +129,13 @@ expect "speakers are skipped when the amp controls are absent" \
 
 # --- Device-signed firmware helpers ----------------------------------------
 firmware=$root/usr/local/sbin/debondragon-firmware
-expect "Linux firmware helper requires the Iris firmware" \
-	"$(sed -n '/^required=(/,/)/p' "$firmware" | grep -c 'qcvss8380.mbn')" 1
-expect "Windows helper exports the Iris firmware" \
-	"$(grep -c "'qcvss8380.mbn'" "$here/windows/Export-Firmware.ps1")" 1
+expect "Linux firmware helper requires the authenticated Iris PA firmware" \
+	"$(sed -n '/^required=(/,/)/p' "$firmware" | grep -c 'qcvss8380_pa.mbn')" 1
+expect "Linux firmware helper selects PA image at the series-10 path" \
+	"$(grep -c 'install -m 0644.*qcvss8380_pa.mbn.*qcvss8380.mbn' "$firmware")" 1
+expect "Windows helper exports the authenticated Iris PA firmware" \
+	"$(grep -c "'qcvss8380_pa.mbn'" "$here/windows/Export-Firmware.ps1")" 1
+expect "Windows helper does not export the rejected non-PA Iris image" \
+	"$(grep -c "'qcvss8380.mbn'" "$here/windows/Export-Firmware.ps1" || true)" 0
 
 exit $fail

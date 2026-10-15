@@ -58,15 +58,16 @@ Series 10 contains the verified UEFI-to-Linux DSP handoff needed for battery
 status, the speaker amplifiers on the default devicetree, and SquashFS LZO
 plus extended attributes so Ubuntu's browser and desktop snaps can mount and
 retain their confinement capabilities. It also enables the X1P42100 Iris
-hardware video codec with the Lenovo firmware. Support 0.4.2 is the matching
+hardware video codec with the Lenovo firmware. Support 0.4.3 is the matching
 userspace (firmware helper, UCM, topology, `alsa-ucm-conf`, responsive GRUB
-console). Audio playback and hardware video decoding have not been confirmed
-on the 83N3. Keep series 9 installed as the rollback while testing series 10.
+console). Hardware H.264, HEVC (at 720p) and VP9 decoding and Adreno
+acceleration are verified on the 83N3; audio playback is still experimental.
+Keep series 9 installed as the rollback while testing series 10.
 
-1. Install support 0.4.2 first. `--force-confold` keeps your edited
+1. Install support 0.4.3 first. `--force-confold` keeps your edited
    `/etc/default/debondragon`:
    ```bash
-   sudo apt install -o Dpkg::Options::=--force-confold ./debondragon-support_0.4.2_all.deb
+   sudo apt install -o Dpkg::Options::=--force-confold ./debondragon-support_0.4.3_all.deb
    ```
 2. Pin the kernel you already trust (series 9), install
    `linux-image-7.2.0-debondragon-10`, and boot it once with `grub-reboot`.

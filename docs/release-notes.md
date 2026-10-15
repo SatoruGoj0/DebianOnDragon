@@ -1,4 +1,4 @@
-# Unreleased: kernel 7.2.0-debondragon-10, debondragon-support 0.4.2
+# Unreleased: kernel 7.2.0-debondragon-10, debondragon-support 0.4.3
 
 Not a tagged release. The battery/DSP handoff, Wi-Fi, Bluetooth, touchpad and
 boot were verified on the 83N3. The audio changes remain Experimental until
@@ -17,9 +17,18 @@ already contains the X1P42100 Iris and video clock drivers, but its
 now carries the X1P clock and operating-point override merged upstream in
 commit `43899c55d79b`, enables Iris, and selects the device-signed Lenovo
 `qcvss8380.mbn`. The earlier `7.2.2-ideapad-iris1+` experiment used generic
-firmware and the secure monitor rejected it with `-22`; support 0.4.2 now
-exports and installs the Lenovo video firmware. Series 9 remains installed as
-the no-Iris rollback until hardware decoding is verified.
+firmware and the secure monitor rejected it with `-22`. Hardware testing found
+that this 83N3 also rejects the display driver's non-PA image but accepts
+`qcvss8380_pa.mbn`. Support 0.4.3 exports the PA image and installs it at the
+series-10 path. FFmpeg selected `iris_driver` on `/dev/video2` and decoded all
+90 frames of 1280x720 H.264 and HEVC samples, plus all 30 frames of a 640x360
+VP9 sample. Low-resolution HEVC still triggers a firmware session error and is
+tracked in `TO-FIX.md`.
+
+The same Qualcomm display driver 31.0.133.1 supplies an authenticated
+`qcdxkmsucpurwa.mbn`. With that file, Mesa Turnip enumerates Adreno X1-45 and
+Vulkan initializes successfully. The rejected firmware files are not part of
+the repository or support package; device-signed files remain user-supplied.
 
 ## Battery status and the UEFI DSP handoff
 
@@ -86,7 +95,7 @@ so an old `DEBONDRAGON_DTB` still boots):
 - Internal mics: `VA DMIC0/1` to WCD `MIC BIAS3` and `VA MIC BIAS1`.
 - DisplayPort audio links stay deleted. HDMI audio is unsupported.
 
-`debondragon-support` 0.4.2:
+`debondragon-support` 0.4.3:
 
 - UCM enables speakers at PA volume 6 and WSA digital volume 81, and
   headphones in class-AB. Speaker controls are written only when they
@@ -96,8 +105,8 @@ so an old `DEBONDRAGON_DTB` still boots):
   those packages.
 - The redistributable T14s topology is still installed under the card
   name. That file has no DisplayPort graphs.
-- The Windows and Linux firmware helpers include the device-signed Iris
-  `qcvss8380.mbn`; the optional `qcvss8380_pa.mbn` is copied when present.
+- The Windows and Linux firmware helpers require the device-signed Iris
+  `qcvss8380_pa.mbn` and install it at the series-10 non-suffixed path.
 
 `DEBONDRAGON_HDMI=auto` already treats series 4 and later as HDMI-ok, so
 series 10 keeps HDMI video on.
@@ -105,7 +114,7 @@ series 10 keeps HDMI video on.
 ## How to test
 
 `docs/hardware-testing.md`, section "Audio". Short version: install
-support 0.4.2 and `linux-image-7.2.0-debondragon-10` beside series 9, run
+support 0.4.3 and `linux-image-7.2.0-debondragon-10` beside series 9, run
 `sudo debondragon-firmware` (or export the firmware from Windows), reboot
 into series 10, and check `alsaucm -c hw:0 list _verbs` (HiFi),
 `pactl list short sinks` (Speaker, and Headphones when the jack is

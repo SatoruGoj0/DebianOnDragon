@@ -6,7 +6,7 @@ been seen working on the laptop. This page lists the tests for each
 
 Run every test on the kernel that implements it (`uname -r`). The touchpad
 test is series 3, HDMI is series 4, the battery/audio tests use series 7,
-and hardware video decode uses series 10 with support 0.4.2. When done,
+and hardware video decode uses series 10 with support 0.4.3. When done,
 collect everything with:
 
 ```bash
@@ -140,10 +140,31 @@ status, voltage, current energy and full energy. If the devices are absent,
 check `systemctl status pd-mapper` and the `remoteproc`/`pmic_glink` lines in
 `sudo dmesg`.
 
+## GPU acceleration
+
+Support 0.4.3 exports the Qualcomm display driver's platform-authenticated
+`qcdxkmsucpurwa.mbn` and rebuilds the installed initramfs images. After a
+reboot, verify that the secure monitor accepts it and Mesa selects Turnip:
+
+```bash
+sudo dmesg | grep -Ei 'adreno|gpu hw init|qcdxkms'
+vulkaninfo --summary
+```
+
+**Verified on the 83N3 (2026-10-15):** display driver 31.0.133.1's INF lists
+the machine's `ACPI\\VEN_QCOM&DEV_0D17&SUBSYS_CRD08380&REV_002F` ID. Its
+`qcdxkmsucpurwa.mbn` (SHA-256
+`2dc2883e76a8649f2b73c8c5f55f600ef6b1423acbbf30478c2d6e32a28af3a3`)
+was accepted, and `vulkaninfo` enumerated `Adreno X1-45` with the Mesa Turnip
+driver. An older cross-vendor copy was rejected with `-22` and must not be
+reused.
+
 ## Hardware video decoding
 
-Needs kernel `7.2.0-debondragon-10` (or later), support 0.4.2, the Lenovo
-`qcvss8380.mbn` installed by `debondragon-firmware`, `v4l-utils`, and `ffmpeg`.
+Needs kernel `7.2.0-debondragon-10` (or later), support 0.4.3, the authenticated
+`qcvss8380_pa.mbn` installed by `debondragon-firmware`, `v4l-utils`, and
+`ffmpeg`. The helper copies that PA image to the non-suffixed path requested
+by the series-10 devicetree. The non-PA image is rejected with error `-22`.
 The older `7.2.2-ideapad-iris1+` experiment selected the generic
 `qcom/vpu/vpu30_p1_s7.mbn`; the secure monitor rejected it with error `-22`.
 
@@ -166,6 +187,15 @@ The older `7.2.2-ideapad-iris1+` experiment selected the generic
 3. Send `sudo dmesg` plus the exact FFmpeg output if firmware authentication,
    format negotiation, or decode fails. Browser acceleration comes only after
    this direct test passes.
+
+**Verified on the 83N3 (2026-10-15):** Qualcomm display driver 31.0.133.1's
+`qcvss8380_pa.mbn` (SHA-256
+`725711497ca962d76f62c4f3309dff51cf9f18b499bc252feb17588b9de3cfb1`)
+registered Iris Decoder and Iris Encoder nodes. FFmpeg selected `/dev/video2`
+with `iris_driver` and decoded all 90 frames of 1280x720 H.264 (15.5x
+realtime) and HEVC (21.8x) samples, plus all 30 frames of a 640x360 VP9
+sample. A 640x360 HEVC sample instead triggers firmware session error
+`0x4000003`; that known gap is tracked in `TO-FIX.md`.
 
 ## Untested items
 

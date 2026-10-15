@@ -17,10 +17,10 @@ set -euo pipefail
 
 dest=/lib/firmware/qcom/x1p42100/LENOVO/83N3
 files=(qcadsp8380.mbn adsp_dtbs.elf qccdsp8380.mbn cdsp_dtbs.elf qcdxkmsucpurwa.mbn
-       qcvss8380.mbn qcvss8380_pa.mbn
+       qcvss8380_pa.mbn
        battmgr.jsn adspr.jsn adsps.jsn adspua.jsn cdspr.jsn)
 required=(qcadsp8380.mbn adsp_dtbs.elf qccdsp8380.mbn cdsp_dtbs.elf qcdxkmsucpurwa.mbn
-          qcvss8380.mbn)
+          qcvss8380_pa.mbn)
 
 [ "$(id -u)" = 0 ] || exec sudo "$0" "$@"
 
@@ -80,6 +80,7 @@ fi
 
 mkdir -p "$dest"
 missing=0
+iris_pa_installed=0
 for f in "${files[@]}"; do
 	found=""
 	for s in "${sources[@]}"; do
@@ -89,14 +90,29 @@ for f in "${files[@]}"; do
 	if [ -n "$found" ]; then
 		install -m 0644 "$found" "$dest/$f"
 		echo "installed $f"
+		[ "$f" != qcvss8380_pa.mbn ] || iris_pa_installed=1
 	elif printf '%s\n' "${required[@]}" | grep -qx "$f"; then
 		echo "MISSING   $f" >&2
 		missing=1
 	fi
 done
 
+# The 83N3 secure monitor rejects qcvss8380.mbn, including the copy from the
+# same display-driver package, with -EINVAL during PAS metadata validation.
+# It accepts qcvss8380_pa.mbn.  Kernel series 10 predates that discovery and
+# requests the non-suffixed Linux path, so install the authenticated PA image
+# there as well.  Keeping the original name also makes the source auditable.
+if [ "$iris_pa_installed" = 1 ]; then
+	install -m 0644 "$dest/qcvss8380_pa.mbn" "$dest/qcvss8380.mbn"
+	echo "selected qcvss8380_pa.mbn as qcvss8380.mbn for Iris"
+fi
+
 if [ $missing = 1 ]; then
 	echo "Some required files were not found; the matching hardware will stay off." >&2
 	exit 1
+fi
+if command -v update-initramfs >/dev/null; then
+	echo "Updating installed initramfs images..."
+	update-initramfs -u -k all
 fi
 echo "Done. Reboot, then verify battery, DSP, GPU and Iris video status; see TO-FIX.md for known gaps."

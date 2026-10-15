@@ -36,8 +36,8 @@ Working.
 |---|---|---|---|
 | Boot (GRUB, kernel, initramfs, NVMe root) | **Working** | v0.1.4 | Installed system boots; GRUB entry created from Windows (Linux can't write UEFI variables on this machine) |
 | Internal display (eDP, 1920x1200) | **Working** | v0.1.3 | msm DRM drives the panel (`eDP-1 connected`) |
-| GPU acceleration (Adreno X1-45) | **Blocked** | — | Display works, but the available generic zap shader is rejected by the secure monitor (`-22`), leaving software rendering. Needs the exact signed 83N3 `qcdxkmsucpurwa.mbn` from its Windows display driver; see `TO-FIX.md` |
-| Hardware video decode (Qualcomm Iris) | **Experimental** | unreleased (kernel series 10) | X1P42100 Iris, videoCC, clocks and OPPs enabled with the Lenovo-signed `qcvss8380.mbn`; direct H.264/HEVC/VP9 decode still needs hardware verification |
+| GPU acceleration (Adreno X1-45) | **Working** | unreleased (support 0.4.3) | The authenticated `qcdxkmsucpurwa.mbn` from Qualcomm display driver 31.0.133.1 is accepted; Vulkan enumerates Adreno X1-45 with Mesa Turnip |
+| Hardware video decode (Qualcomm Iris) | **Partial** | unreleased (kernel series 10, support 0.4.3) | The 83N3 accepts the display driver's `qcvss8380_pa.mbn`; FFmpeg decoded 90-frame 1280x720 H.264 and HEVC samples and a 30-frame VP9 sample through `/dev/video2`. A 640x360 HEVC sample triggers an Iris firmware session error; see `TO-FIX.md` |
 | Keyboard (I2C HID) | **Working** | v0.1.0 | Reported working |
 | Touchscreen (ELAN 04F3:43B8) | **Working** | v0.1.0 | Reported working |
 | Wi-Fi (WCN7850, ath12k) | **Working** | v0.1.0 | Reported working |
@@ -65,7 +65,7 @@ Working.
 
 The detailed, evidence-backed backlog is in [TO-FIX.md](TO-FIX.md).
 
-- **Audio** (kernel series 7, support 0.4.2, not yet tested on hardware):
+- **Audio** (kernel series 7, support 0.4.3, not yet tested on hardware):
   speakers, headphones and mics are on the default board. The device-signed
   ADSP firmware still has to be copied with `debondragon-firmware` (or
   `windows/Export-Firmware.ps1`); without it the sound card never probes.
@@ -73,9 +73,6 @@ The detailed, evidence-backed backlog is in [TO-FIX.md](TO-FIX.md).
   Keep speaker volume moderate; the PA is capped at 0 dB, and there is no
   active speaker protection. If the card never appears, boot kernel series 4
   and report `/sys/bus/soundwire/devices`.
-- **Hardware video decode** (kernel series 10, support 0.4.2): Iris now uses
-  the X1P42100 clocks/OPPs and Lenovo-signed firmware. Verify direct V4L2
-  mem2mem decoding before enabling it in a browser; see the hardware test.
 - **USB-C, second port**: its USB 2.0 repeater sits in an smb2360 at SPMI
   SID 0xa that this laptop doesn't have (probably SID 0xb instead,
   unverified); the CRD retimers don't answer, so role switching and DP alt
@@ -86,7 +83,9 @@ The detailed, evidence-backed backlog is in [TO-FIX.md](TO-FIX.md).
 
 Device-signed firmware (audio/compute DSP, GPU zap shader and Iris video) is
 signed for this machine and can't be redistributed. `debondragon-firmware`
-copies it from your Windows partition.
+copies it from your Windows partition. Support 0.4.3 deliberately installs
+the Iris `_pa` image at the series-10 firmware path; the non-PA image is
+rejected by this machine's secure monitor.
 
 ## Repository layout
 
