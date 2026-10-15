@@ -1,7 +1,7 @@
 # DebOnDragon follow-up work
 
 Observed on the Lenovo IdeaPad Slim 3 15Q8X10 (83N3), most recently with
-`7.2.0-debondragon-7`. This is the short, actionable backlog for things that
+`7.2.0-debondragon-8`. This is the short, actionable backlog for things that
 are broken, unsupported, or still need hardware verification. The README is
 the user-facing support matrix; keep the evidence and likely cause here.
 
@@ -21,22 +21,22 @@ the user-facing support matrix; keep the evidence and likely cause here.
   networking. Do not treat a daemon started with `--iptables=false` as the
   final fix.
 
-### Verify the series-8 Snap/browser fix
+### Verify the series-9 Snap/browser fix
 
 - **Symptom:** Chromium is reported as a broken snap, installing Firefox fails
   while mounting its snap, and the mount units report a bad filesystem. The
   kernel log gives the decisive error: `Filesystem uses "lzo" compression.
   This is not supported`.
-- **Cause:** the kernel enables SquashFS with XZ and Zstd, but not
-  `CONFIG_SQUASHFS_LZO`. Several installed Ubuntu snap images are
-  LZO-compressed, so snapd cannot mount them. This is separate from the GPU
-  firmware failure; a browser may still need software rendering after it can
-  be mounted.
-- **Fix queued for series 8:** `CONFIG_SQUASHFS_LZO=y` is enabled and asserted
-  by the build. Install and boot series 8, then reload systemd and refresh or
-  reinstall the broken snaps. Verify Chromium/Firefox launch with software
-  rendering before testing hardware acceleration; remove this entry once that
-  works on hardware.
+- **Cause:** series 7 lacked `CONFIG_SQUASHFS_LZO`, so it could not mount the
+  LZO-compressed Chromium and GNOME runtime images. Series 8 enabled LZO and
+  mounts every installed Snap, but lacks `CONFIG_SQUASHFS_XATTR`: the kernel
+  discards the `security.capability` metadata on snapd's `snap-confine`, which
+  then exits before launching strict Snaps. This is separate from the GPU
+  firmware failure; a browser may still need software rendering afterward.
+- **Fix queued for series 9:** enable and assert both
+  `CONFIG_SQUASHFS_LZO=y` and `CONFIG_SQUASHFS_XATTR=y`. Install and boot
+  series 9, verify Chromium/Firefox launch with software rendering, then test
+  hardware acceleration. Remove this entry once that works on hardware.
 
 ### Linux cannot create or reorder UEFI boot entries
 
@@ -49,6 +49,23 @@ the user-facing support matrix; keep the evidence and likely cause here.
   helper until writes are proven safe.
 
 ## Firmware and accelerator gaps
+
+### Hardware video decoding is not exposed
+
+- **Symptom:** `/dev/video0` and `/dev/video1` are only the integrated UVC
+  camera; no Qualcomm Iris mem2mem decoder is registered, so browsers and
+  GStreamer cannot use the SoC video decoder.
+- **Cause:** the kernel already builds `CONFIG_VIDEO_QCOM_IRIS=m`, recognizes
+  `qcom,x1p42100-iris`, and has the Lenovo `qcvss8380.mbn` video firmware. The
+  board devicetree still inherits a disabled Hamoa Iris node and the wrong
+  `qcom,x1e80100-videocc` description. It does not supply the X1P42100 BSE
+  clock required by the four-clock Iris binding.
+- **Fix to implement:** override videoCC as `qcom,x1p42100-videocc`, describe
+  Iris as `qcom,x1p42100-iris` with its `iface`, `core`, `vcodec0_core` and
+  `vcodec0_bse` clocks, select the Lenovo `qcvss8380.mbn`, and enable the
+  node. First ship this as a separate experimental kernel/DTB so series 9
+  remains a rollback. Verify decoder registration and H.264/HEVC/VP9 decode
+  with V4L2/GStreamer before enabling browser hardware video decoding.
 
 ### GPU acceleration fails with the firmware currently installed
 

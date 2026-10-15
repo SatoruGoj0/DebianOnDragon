@@ -1,14 +1,15 @@
-# Unreleased: kernel 7.2.0-debondragon-8, debondragon-support 0.4.1
+# Unreleased: kernel 7.2.0-debondragon-9, debondragon-support 0.4.1
 
 Not a tagged release. The battery/DSP handoff, Wi-Fi, Bluetooth, touchpad and
 boot were verified on the 83N3. The audio changes remain Experimental until
 someone hears sound. It installs beside the older kernels, which remain the
-rollback (docs/kernel-upgrade.md, "Try kernel series 8").
+rollback (docs/kernel-upgrade.md, "Try kernel series 9").
 
-Kernel series 8 also enables SquashFS LZO decompression. Ubuntu's Chromium,
-Firefox and several desktop runtime snaps use LZO-compressed SquashFS images;
-series 7 could not mount them and reported `Filesystem uses "lzo" compression.
-This is not supported`. Series 7 remains available as the tested rollback.
+Kernel series 9 enables SquashFS LZO decompression and extended attributes.
+Ubuntu's Chromium, Firefox and several desktop runtime snaps use
+LZO-compressed SquashFS images; series 7 could not mount them. Series 8 could
+mount them, but discarded the file capabilities that strict Snap confinement
+requires. Series 8 remains available as the tested hardware rollback.
 
 ## Battery status and the UEFI DSP handoff
 
@@ -87,14 +88,14 @@ so an old `DEBONDRAGON_DTB` still boots):
   name. That file has no DisplayPort graphs.
 
 `DEBONDRAGON_HDMI=auto` already treats series 4 and later as HDMI-ok, so
-series 8 keeps HDMI video on.
+series 9 keeps HDMI video on.
 
 ## How to test
 
 `docs/hardware-testing.md`, section "Audio". Short version: install
-support 0.4.1 and `linux-image-7.2.0-debondragon-8` beside series 7, run
+support 0.4.1 and `linux-image-7.2.0-debondragon-9` beside series 8, run
 `sudo debondragon-firmware` (or export the firmware from Windows), reboot
-into series 8, and check `alsaucm -c hw:0 list _verbs` (HiFi),
+into series 9, and check `alsaucm -c hw:0 list _verbs` (HiFi),
 `pactl list short sinks` (Speaker, and Headphones when the jack is
 plugged), then play `hw:0,1` (speakers) and `hw:0,0` (headphones) at a
 moderate volume. Headset mic is `hw:0,2`, internal mics are `hw:0,3`.
