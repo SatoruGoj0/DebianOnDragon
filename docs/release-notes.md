@@ -4,7 +4,12 @@ Not a tagged release. Kernel series 13 includes the thermal changes from
 series 6 and installs beside the older kernels. It boots on the 83N3; battery,
 Wi-Fi, Bluetooth, eDP, GPU/Vulkan, Snap, Iris video, Tailscale and Docker were
 regression-tested, and the keyboard/touchpad enumerate. Series 11 remains the
-configured fallback.
+installed rollback.
+
+When `DEBONDRAGON_DEFAULT_KERNEL` is set, support 0.5.0 now puts that kernel
+first in GRUB's top-level menu, makes it the persistent default, and loads its
+matching devicetree. The complete per-kernel submenu remains available for
+rollback and HDMI-off entries.
 
 ## The fan was not seeing the SoC
 

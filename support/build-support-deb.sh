@@ -43,9 +43,10 @@ Priority: optional
 Depends: grub-common, dpkg (>= 1.17), alsa-ucm-conf (>= 1.2.12), python3, i2c-tools
 Recommends: usbutils, pciutils, pulseaudio | pipewire-pulse, alsa-utils, v4l-utils, ffmpeg
 Description: Lenovo IdeaPad Slim 3 15Q8X10 (83N3) boot integration and tools
- Keeps one devicetree per DebOnDragon kernel in /boot/dtb, loads it from
- GRUB (default entries use the newest kernel's devicetree; a "DebOnDragon
- kernels" submenu boots any installed kernel with its own), sets the kernel
+ Keeps one devicetree per DebOnDragon kernel in /boot/dtb, loads the pinned
+ kernel with its own devicetree from the first GRUB entry, and provides a
+ "DebOnDragon kernels" submenu for booting any installed kernel with its own.
+ It also sets the kernel
  command line the 83N3 needs, keeps the panel brightness across boots and
  hard resets, selects the 83N3 audio profile (speakers, headphones, mics)
  and its DSP topology, reloads PulseAudio when the sound card appears,

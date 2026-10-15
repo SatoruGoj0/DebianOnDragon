@@ -20,6 +20,8 @@ to the old one: the old kernel, its modules and its devicetree stay installed.
 
 GRUB uses them like this:
 
+- If `DEBONDRAGON_DEFAULT_KERNEL` is set, the first top-level entry boots that
+  kernel with its own devicetree. It is also GRUB's persistent default.
 - **Debian GNU/Linux** and **Advanced options** (Debian's normal entries) load
   `debondragon.dtb`, i.e. the newest devicetree, for whichever kernel you pick.
 - **DebOnDragon kernels (each with its own devicetree)**: one entry per
@@ -167,7 +169,9 @@ default. Needs `debondragon-support` 0.2.1 or later.
    ```bash
    sudo grep -m1 'set default=' /boot/grub/grub.cfg
    ```
-   It shows `debondragon-kernels>debondragon-7.2.0-debondragon-2`.
+   With current support it shows `debondragon-default`, the first top-level
+   menu entry. Support 0.2.1 through 0.4.1 instead show
+   `debondragon-kernels>debondragon-7.2.0-debondragon-2`.
 3. **Install the new kernel** (it installs beside the old one):
    ```bash
    sudo apt install ./linux-image-7.2.0-debondragon-3_*_arm64.deb
@@ -195,7 +199,8 @@ default. Needs `debondragon-support` 0.2.1 or later.
    sudo sed -i 's/^DEBONDRAGON_DEFAULT_KERNEL=.*/DEBONDRAGON_DEFAULT_KERNEL=7.2.0-debondragon-3/' /etc/default/debondragon
    sudo update-grub
    ```
-   Keep -2 installed as the rollback.
+   The new default appears first in GRUB. Keep -2 installed in the
+   "DebOnDragon kernels" submenu as the rollback.
 
 ## Upgrade
 

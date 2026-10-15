@@ -1,0 +1,54 @@
+#!/bin/sh
+# Put the pinned DebOnDragon kernel first in the top-level menu, loading the
+# devicetree that was installed with it. The complete per-kernel rollback menu
+# is still generated later by 42_debondragon_kernels.
+set -e
+. /usr/share/grub/grub-mkconfig_lib
+[ -r /etc/default/debondragon ] && . /etc/default/debondragon
+[ "${DEBONDRAGON_DTB:-none}" = none ] && exit 0
+
+release=${DEBONDRAGON_DEFAULT_KERNEL:-}
+[ -n "$release" ] || exit 0
+kernel=/boot/vmlinuz-$release
+initrd=/boot/initrd.img-$release
+dtb=/boot/dtb/debondragon-$release.dtb
+if [ ! -f "$kernel" ] || [ ! -f "$initrd" ] || [ ! -f "$dtb" ]; then
+	echo "WARNING: DEBONDRAGON_DEFAULT_KERNEL=$release is not fully installed; no top-level DebOnDragon entry added" >&2
+	exit 0
+fi
+
+if [ -n "${GRUB_DEVICE_UUID:-}" ] && [ "${GRUB_DISABLE_LINUX_UUID:-}" != true ]; then
+	root="UUID=$GRUB_DEVICE_UUID"
+else
+	root=$GRUB_DEVICE
+fi
+boot_device=$(${grub_probe} --target=device /boot)
+
+hdmi_off=video=HDMI-A-1:d
+# debondragon.cfg may have added the switch for Debian's normal entries. Strip
+# it here and decide from the pinned kernel's own devicetree generation.
+cmdline=$(echo " $GRUB_CMDLINE_LINUX " | sed "s| $hdmi_off | |g; s|^ *||; s| *$||")
+case ${DEBONDRAGON_HDMI:-auto} in
+on) extra= ;;
+off) extra=$hdmi_off ;;
+*)
+	case $release in
+	*-debondragon-[0-9]*)
+		if [ "${release##*-debondragon-}" -ge 4 ] 2>/dev/null; then
+			extra=
+		else
+			extra=$hdmi_off
+		fi
+		;;
+	*) extra=$hdmi_off ;;
+	esac
+	;;
+esac
+
+echo "Adding top-level DebOnDragon default: $release" >&2
+echo "menuentry 'Debian, Linux $release + its devicetree (DebOnDragon default)' --id debondragon-default {"
+prepare_grub_to_access_device "$boot_device" | sed 's/^/\t/'
+echo "\tdevicetree $(make_system_path_relative_to_its_root "$dtb")"
+echo "\tlinux $(make_system_path_relative_to_its_root "$kernel") root=$root ro $cmdline${extra:+ $extra} $GRUB_CMDLINE_LINUX_DEFAULT"
+echo "\tinitrd $(make_system_path_relative_to_its_root "$initrd")"
+echo "}"

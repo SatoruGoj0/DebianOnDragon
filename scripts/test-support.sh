@@ -2,8 +2,8 @@
 # Behaviour tests for debondragon-support, run against a fake /sys and fake
 # config files (no root, nothing on the running system is touched):
 #   - debondragon-backlight: restore/save rules
-#   - /etc/default/grub.d/debondragon.cfg: text terminal, kernel command line,
-#     GRUB default, Windows Boot Manager (os-prober) kept
+#   - /etc/default/grub.d/debondragon.cfg and 02_debondragon_default: text
+#     terminal, kernel command line, first/default entry, Windows kept
 #   - the UCM long-name file selects the 83N3 profile, which drives speakers
 #     when the amps are bound and headphones in class-AB
 # Usage: scripts/test-support.sh
@@ -80,12 +80,32 @@ expect "DEBONDRAGON_HDMI=off: HDMI off even with -4" "$(grubvars)" "0|$base $off
 echo DEBONDRAGON_HDMI=on >> "$tmp/default"; fakeboot 7.2.0-debondragon-3
 expect "DEBONDRAGON_HDMI=on: no video= even with -3" "$(grubvars)" "0|$base|false"
 printf 'DEBONDRAGON_DEFAULT_KERNEL=7.2.0-debondragon-3\n' > "$tmp/default"; fakeboot 7.2.0-debondragon-3 7.2.0-debondragon-4
-expect "DEBONDRAGON_DEFAULT_KERNEL pins the submenu entry" "$(grubvars)" \
-	"debondragon-kernels>debondragon-7.2.0-debondragon-3|$base|false"
+expect "DEBONDRAGON_DEFAULT_KERNEL pins the first top-level entry" "$(grubvars)" \
+	"debondragon-default|$base|false"
 rm "$tmp/default"
 expect "no defaults file: auto" "$(grubvars)" "0|$base|false"
 
-# Kernel submenu, with grub-mkconfig_lib stubbed out.
+# First/default entry and kernel submenu, with grub-mkconfig_lib stubbed out.
+sed -e "s|/etc/default/debondragon|$tmp/default|g" -e "s|/boot/|$tmp/boot/|g" \
+    -e 's|^\. /usr/share/grub/grub-mkconfig_lib$|prepare_grub_to_access_device() { :; }; make_system_path_relative_to_its_root() { echo "$1"; }|' \
+    "$root/etc/grub.d/02_debondragon_default" > "$tmp/02"
+default_entry() {
+	GRUB_DEVICE_UUID=u GRUB_CMDLINE_LINUX="$base $off" GRUB_CMDLINE_LINUX_DEFAULT=quiet \
+		grub_probe="echo x #" sh "$tmp/02" 2>/dev/null
+}
+fakeboot 7.2.0-debondragon-3 7.2.0-debondragon-4
+printf 'DEBONDRAGON_DTB=x.dtb\nDEBONDRAGON_HDMI=auto\nDEBONDRAGON_DEFAULT_KERNEL=7.2.0-debondragon-4\n' > "$tmp/default"
+first=$(default_entry)
+expect "top-level default has the stable GRUB id" \
+	"$(printf '%s\n' "$first" | grep -c -- '--id debondragon-default')" 1
+expect "top-level default loads the pinned kernel and its DTB" \
+	"$(printf '%s\n' "$first" | grep -Ec 'vmlinuz-7\.2\.0-debondragon-4|debondragon-7\.2\.0-debondragon-4\.dtb')" 2
+expect "top-level series 4 default enables HDMI" \
+	"$(printf '%s\n' "$first" | grep -c "$off" || true)" 0
+printf 'DEBONDRAGON_DTB=x.dtb\nDEBONDRAGON_DEFAULT_KERNEL=7.2.0-debondragon-99\n' > "$tmp/default"
+expect "missing pinned kernel does not create a broken top-level entry" \
+	"$(default_entry | wc -l)" 0
+
 sed -e "s|/etc/default/debondragon|$tmp/default|g" -e "s|/boot/|$tmp/boot/|g" \
     -e 's|^\. /usr/share/grub/grub-mkconfig_lib$|prepare_grub_to_access_device() { :; }; make_system_path_relative_to_its_root() { echo "$1"; }|' \
     "$root/etc/grub.d/42_debondragon_kernels" > "$tmp/42"
@@ -100,7 +120,7 @@ expect "submenu auto: -4 on, -4 fallback off, -3 off" "$(submenu auto | tr '\n' 
 	"debondragon-7.2.0-debondragon-4: on debondragon-7.2.0-debondragon-4-hdmi-off: off debondragon-7.2.0-debondragon-3: off "
 expect "submenu off: every entry off" "$(submenu off | tr '\n' ' ')" \
 	"debondragon-7.2.0-debondragon-4: off debondragon-7.2.0-debondragon-3: off "
-expect "submenu has the id GRUB_DEFAULT uses" \
+expect "rollback submenu has a stable GRUB id" \
 	"$(grep -c -- "--id debondragon-kernels" "$root/etc/grub.d/42_debondragon_kernels")" 1
 
 # --- UCM -------------------------------------------------------------------
