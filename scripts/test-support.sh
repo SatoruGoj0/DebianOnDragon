@@ -127,4 +127,11 @@ expect "no DisplayPort mixer writes (absent from the T14s topology)" \
 expect "speakers are skipped when the amp controls are absent" \
 	"$(grepc "Control \"name='SpkrLeft PA Volume'\"" "$hifi" "$card")" 2
 
+# --- Device-signed firmware helpers ----------------------------------------
+firmware=$root/usr/local/sbin/debondragon-firmware
+expect "Linux firmware helper requires the Iris firmware" \
+	"$(sed -n '/^required=(/,/)/p' "$firmware" | grep -c 'qcvss8380.mbn')" 1
+expect "Windows helper exports the Iris firmware" \
+	"$(grep -c "'qcvss8380.mbn'" "$here/windows/Export-Firmware.ps1")" 1
+
 exit $fail

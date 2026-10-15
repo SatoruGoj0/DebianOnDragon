@@ -54,6 +54,9 @@ need CONFIG_I2C_QCOM_GENI        m "I2C buses"
 need CONFIG_USB_DWC3_QCOM        m "usb_2 controller"
 need CONFIG_PHY_NXP_PTN3222      m "camera eUSB2 repeater"
 need CONFIG_USB_VIDEO_CLASS      m "UVC camera 13d3:54bf"
+# Hardware video codec
+need CONFIG_VIDEO_QCOM_IRIS      m "X1P42100 hardware video codec"
+need CONFIG_CLK_X1P42100_VIDEOCC m "X1P42100 video clocks"
 # Audio (headset + mics by default; speaker amps on the -speakers board)
 need CONFIG_SND_SOC_X1E80100     m "sound card"
 need CONFIG_SND_SOC_QDSP6_APM    m "AudioReach DSP audio"

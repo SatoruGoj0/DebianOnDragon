@@ -74,10 +74,10 @@ sudo debondragon-firmware
 
 Reboot. The matching ADSP firmware enables the verified battery status path
 and is required for audio; without it the sound card never appears. The
-helper also installs the CDSP and GPU files when Windows provides them, but
-firmware alone does not fix the outstanding USB-C wiring or GPU-signature
-issues listed in `TO-FIX.md`. Audio playback itself still has to be confirmed
-on this laptop (docs/hardware-testing.md, "Audio").
+helper also installs the CDSP, GPU and Iris video files when Windows provides
+them. Firmware alone does not fix the outstanding USB-C wiring or GPU-signature
+issues listed in `TO-FIX.md`. Audio playback and Iris video decoding still
+have to be confirmed on this laptop (docs/hardware-testing.md).
 
 ## If something doesn't work
 

@@ -90,6 +90,8 @@ alsa-utils
 # Hardware bring-up and debugging
 pciutils
 usbutils
+v4l-utils
+ffmpeg
 lshw
 dmidecode
 i2c-tools

@@ -16,8 +16,11 @@
 #include "purwa.dtsi"
 #include "x1-crd.dtsi"
 
+#include <dt-bindings/clock/qcom,x1p42100-videocc.h>
+
 /delete-node/ &pmc8380_6;
 /delete-node/ &pmc8380_6_thermal;
+/delete-node/ &iris_opp_table;
 
 /*
  * The CRD's third USB-C port does not exist here: ACPI URS2 (usb_1_ss2)
@@ -313,6 +316,67 @@
 /* Device-specific signed firmware, copied from Windows by debondragon-firmware. */
 &gpu_zap_shader {
 	firmware-name = "qcom/x1p42100/LENOVO/83N3/qcdxkmsucpurwa.mbn";
+};
+
+/*
+ * Linux 7.2 contains the X1P Iris and videoCC drivers, but purwa.dtsi did not
+ * gain the matching clocks and OPPs until upstream commit 43899c55d79b
+ * (Linux 7.3). Keep this override equivalent to that upstream description.
+ */
+&iris {
+	compatible = "qcom,x1p42100-iris";
+
+	clocks = <&gcc GCC_VIDEO_AXI0_CLK>,
+		 <&videocc VIDEO_CC_MVS0C_CLK>,
+		 <&videocc VIDEO_CC_MVS0_CLK>,
+		 <&videocc VIDEO_CC_MVS0_BSE_CLK>;
+	clock-names = "iface",
+		      "core",
+		      "vcodec0_core",
+		      "vcodec0_bse";
+
+	firmware-name = "qcom/x1p42100/LENOVO/83N3/qcvss8380.mbn";
+	operating-points-v2 = <&iris_opp_table_x1p42100>;
+
+	status = "okay";
+
+	iris_opp_table_x1p42100: opp-table {
+		compatible = "operating-points-v2";
+
+		opp-210000000 {
+			opp-hz = /bits/ 64 <210000000 105000000>;
+			required-opps = <&rpmhpd_opp_low_svs_d1>,
+					<&rpmhpd_opp_low_svs>;
+		};
+
+		opp-300000000 {
+			opp-hz = /bits/ 64 <300000000 150000000>;
+			required-opps = <&rpmhpd_opp_low_svs_d1>,
+					<&rpmhpd_opp_svs>;
+		};
+
+		opp-335000000 {
+			opp-hz = /bits/ 64 <335000000 167500000>;
+			required-opps = <&rpmhpd_opp_svs>,
+					<&rpmhpd_opp_svs_l1>;
+		};
+
+		opp-424000000 {
+			opp-hz = /bits/ 64 <424000000 212000000>;
+			required-opps = <&rpmhpd_opp_svs>,
+					<&rpmhpd_opp_nom>;
+		};
+
+		opp-500000000 {
+			opp-hz = /bits/ 64 <500000000 250000000>;
+			required-opps = <&rpmhpd_opp_svs>,
+					<&rpmhpd_opp_turbo>;
+		};
+	};
+};
+
+&videocc {
+	compatible = "qcom,x1p42100-videocc";
 };
 
 &remoteproc_adsp {

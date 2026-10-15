@@ -1,15 +1,25 @@
-# Unreleased: kernel 7.2.0-debondragon-9, debondragon-support 0.4.1
+# Unreleased: kernel 7.2.0-debondragon-10, debondragon-support 0.4.2
 
 Not a tagged release. The battery/DSP handoff, Wi-Fi, Bluetooth, touchpad and
 boot were verified on the 83N3. The audio changes remain Experimental until
 someone hears sound. It installs beside the older kernels, which remain the
-rollback (docs/kernel-upgrade.md, "Try kernel series 9").
+rollback (docs/kernel-upgrade.md, "Try kernel series 10").
 
 Kernel series 9 enables SquashFS LZO decompression and extended attributes.
 Ubuntu's Chromium, Firefox and several desktop runtime snaps use
 LZO-compressed SquashFS images; series 7 could not mount them. Series 8 could
 mount them, but discarded the file capabilities that strict Snap confinement
 requires. Series 8 remains available as the tested hardware rollback.
+
+Kernel series 10 enables the Qualcomm Iris hardware video codec. Linux 7.2
+already contains the X1P42100 Iris and video clock drivers, but its
+`purwa.dtsi` still inherits X1E80100 clocks and leaves Iris disabled. The board
+now carries the X1P clock and operating-point override merged upstream in
+commit `43899c55d79b`, enables Iris, and selects the device-signed Lenovo
+`qcvss8380.mbn`. The earlier `7.2.2-ideapad-iris1+` experiment used generic
+firmware and the secure monitor rejected it with `-22`; support 0.4.2 now
+exports and installs the Lenovo video firmware. Series 9 remains installed as
+the no-Iris rollback until hardware decoding is verified.
 
 ## Battery status and the UEFI DSP handoff
 
@@ -29,9 +39,9 @@ and Linux install helpers now include `adsps.jsn` with the other service maps.
 After `debondragon-firmware` and a reboot, the kernel attaches to ADSP and the
 battery power-supply devices appear.
 
-Support 0.4.1 also selects GRUB's firmware text console because graphical GRUB
-input is severely delayed by this laptop's GOP. This affects the boot menu only,
-not Linux graphics.
+Support 0.4.1 and later also select GRUB's firmware text console because
+graphical GRUB input is severely delayed by this laptop's GOP. This affects
+the boot menu only, not Linux graphics.
 
 ## Why the laptop was silent
 
@@ -76,7 +86,7 @@ so an old `DEBONDRAGON_DTB` still boots):
 - Internal mics: `VA DMIC0/1` to WCD `MIC BIAS3` and `VA MIC BIAS1`.
 - DisplayPort audio links stay deleted. HDMI audio is unsupported.
 
-`debondragon-support` 0.4.1:
+`debondragon-support` 0.4.2:
 
 - UCM enables speakers at PA volume 6 and WSA digital volume 81, and
   headphones in class-AB. Speaker controls are written only when they
@@ -86,16 +96,18 @@ so an old `DEBONDRAGON_DTB` still boots):
   those packages.
 - The redistributable T14s topology is still installed under the card
   name. That file has no DisplayPort graphs.
+- The Windows and Linux firmware helpers include the device-signed Iris
+  `qcvss8380.mbn`; the optional `qcvss8380_pa.mbn` is copied when present.
 
 `DEBONDRAGON_HDMI=auto` already treats series 4 and later as HDMI-ok, so
-series 9 keeps HDMI video on.
+series 10 keeps HDMI video on.
 
 ## How to test
 
 `docs/hardware-testing.md`, section "Audio". Short version: install
-support 0.4.1 and `linux-image-7.2.0-debondragon-9` beside series 8, run
+support 0.4.2 and `linux-image-7.2.0-debondragon-10` beside series 9, run
 `sudo debondragon-firmware` (or export the firmware from Windows), reboot
-into series 9, and check `alsaucm -c hw:0 list _verbs` (HiFi),
+into series 10, and check `alsaucm -c hw:0 list _verbs` (HiFi),
 `pactl list short sinks` (Speaker, and Headphones when the jack is
 plugged), then play `hw:0,1` (speakers) and `hw:0,0` (headphones) at a
 moderate volume. Headset mic is `hw:0,2`, internal mics are `hw:0,3`.

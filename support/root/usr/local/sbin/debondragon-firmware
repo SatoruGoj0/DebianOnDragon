@@ -4,8 +4,9 @@
 # machine and cannot be redistributed, so they are not on the ISO.
 #
 # Without the matching ADSP files: no battery status or audio DSP. The helper
-# also copies CDSP and GPU firmware, but firmware alone cannot fix unsupported
-# USB-C wiring, and GPU acceleration requires the exact 83N3-signed zap file.
+# also copies CDSP, GPU and Iris video firmware, but firmware alone cannot fix
+# unsupported USB-C wiring, and GPU acceleration requires the exact
+# 83N3-signed zap file.
 # Keyboard, touchpad, display, NVMe, USB-A and Wi-Fi do not need these files.
 #
 # Usage:
@@ -16,8 +17,10 @@ set -euo pipefail
 
 dest=/lib/firmware/qcom/x1p42100/LENOVO/83N3
 files=(qcadsp8380.mbn adsp_dtbs.elf qccdsp8380.mbn cdsp_dtbs.elf qcdxkmsucpurwa.mbn
+       qcvss8380.mbn qcvss8380_pa.mbn
        battmgr.jsn adspr.jsn adsps.jsn adspua.jsn cdspr.jsn)
-required=(qcadsp8380.mbn adsp_dtbs.elf qccdsp8380.mbn cdsp_dtbs.elf qcdxkmsucpurwa.mbn)
+required=(qcadsp8380.mbn adsp_dtbs.elf qccdsp8380.mbn cdsp_dtbs.elf qcdxkmsucpurwa.mbn
+          qcvss8380.mbn)
 
 [ "$(id -u)" = 0 ] || exec sudo "$0" "$@"
 
@@ -96,4 +99,4 @@ if [ $missing = 1 ]; then
 	echo "Some required files were not found; the matching hardware will stay off." >&2
 	exit 1
 fi
-echo "Done. Reboot, then verify battery, DSP and GPU status; see TO-FIX.md for known gaps."
+echo "Done. Reboot, then verify battery, DSP, GPU and Iris video status; see TO-FIX.md for known gaps."

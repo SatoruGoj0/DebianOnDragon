@@ -50,22 +50,29 @@ the user-facing support matrix; keep the evidence and likely cause here.
 
 ## Firmware and accelerator gaps
 
-### Hardware video decoding is not exposed
+### Verify the series-10 hardware video decoder
 
 - **Symptom:** `/dev/video0` and `/dev/video1` are only the integrated UVC
   camera; no Qualcomm Iris mem2mem decoder is registered, so browsers and
-  GStreamer cannot use the SoC video decoder.
+  GStreamer cannot use the SoC video decoder. The older experimental
+  `7.2.2-ideapad-iris1+` kernel did register the block but repeatedly logged
+  `error -22 initializing firmware qcom/vpu/vpu30_p1_s7.mbn`.
 - **Cause:** the kernel already builds `CONFIG_VIDEO_QCOM_IRIS=m`, recognizes
   `qcom,x1p42100-iris`, and has the Lenovo `qcvss8380.mbn` video firmware. The
   board devicetree still inherits a disabled Hamoa Iris node and the wrong
   `qcom,x1e80100-videocc` description. It does not supply the X1P42100 BSE
-  clock required by the four-clock Iris binding.
-- **Fix to implement:** override videoCC as `qcom,x1p42100-videocc`, describe
+  clock required by the four-clock Iris binding. The older experiment used
+  the generic VPU firmware, which this machine's secure monitor rejected.
+- **Fix queued for series 10:** override videoCC as
+  `qcom,x1p42100-videocc`, describe
   Iris as `qcom,x1p42100-iris` with its `iface`, `core`, `vcodec0_core` and
   `vcodec0_bse` clocks, select the Lenovo `qcvss8380.mbn`, and enable the
-  node. First ship this as a separate experimental kernel/DTB so series 9
-  remains a rollback. Verify decoder registration and H.264/HEVC/VP9 decode
-  with V4L2/GStreamer before enabling browser hardware video decoding.
+  node. Series 10 carries the X1P clocks and operating points from upstream
+  commit `43899c55d79b`; series 9 remains the rollback. Verify decoder
+  registration and H.264/HEVC/VP9 decode with V4L2/GStreamer before enabling
+  browser hardware video decoding. Support 0.4.2 exports and installs the
+  device-signed video firmware reproducibly. Remove this entry only after
+  real decode succeeds.
 
 ### GPU acceleration fails with the firmware currently installed
 

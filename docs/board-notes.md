@@ -240,7 +240,7 @@ Internal mics are the two VA-macro DMICs. They need both WCD `MIC BIAS3`
 and `VA MIC BIAS1`. The CRD's extra DMIC2/DMIC3 route to `MIC BIAS1` is
 not this laptop.
 
-`debondragon-support` 0.4.1 installs the T14s AudioReach topology under
+`debondragon-support` 0.4.2 installs the T14s AudioReach topology under
 the card name and a UCM profile that drives speakers, headphones, the
 headset mic and the internal mics. It does not include Debian's speaker
 sequence (that writes PA volume 12, which this kernel rejects; the limit

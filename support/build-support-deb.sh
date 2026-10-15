@@ -40,7 +40,7 @@ Maintainer: DebOnDragon <noreply@users.noreply.github.com>
 Section: admin
 Priority: optional
 Depends: grub-common, dpkg (>= 1.17), alsa-ucm-conf (>= 1.2.12)
-Recommends: i2c-tools, usbutils, pciutils, pulseaudio | pipewire-pulse, alsa-utils
+Recommends: i2c-tools, usbutils, pciutils, pulseaudio | pipewire-pulse, alsa-utils, v4l-utils, ffmpeg
 Description: Lenovo IdeaPad Slim 3 15Q8X10 (83N3) boot integration and tools
  Keeps one devicetree per DebOnDragon kernel in /boot/dtb, loads it from
  GRUB (default entries use the newest kernel's devicetree; a "DebOnDragon

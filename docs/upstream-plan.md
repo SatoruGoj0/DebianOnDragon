@@ -31,7 +31,7 @@ Userspace and packaging (belong outside the kernel):
 |---|---|
 | UCM profile (HiFi: speakers, headphones, headset mic, DMICs) | alsa-ucm-conf (`ucm2/Qualcomm/x1e80100/`, DMI match in `x1e80100.conf`) |
 | DSP topology (`...-tplg.bin`, today a renamed T14s topology) | linux-firmware (`qcom/x1e80100/LENOVO/83N3/`) |
-| Device-signed ADSP/CDSP/GPU firmware | Not redistributable; stays in the user's Windows partition (`debondragon-firmware`) |
+| Device-signed ADSP/CDSP/GPU/Iris firmware | Not redistributable; stays in the user's Windows partition (`debondragon-firmware`) |
 | GRUB devicetree entries, per-kernel DTB sync, HDMI switch, brightness save/restore | Distribution integration (Debian: DTB handling in GRUB / flash-kernel); DebOnDragon-only meanwhile |
 
 ## 2. Hardware status per DT node (DebOnDragon kernel -4)
@@ -47,6 +47,7 @@ Userspace and packaging (belong outside the kernel):
 | Camera | usb_2 + PTN3222 (i2c5 0x4b, reset TLMM 7) | Verified |
 | Wi-Fi / Bluetooth | WCN7850 pcie4 / uart14 | Verified |
 | Battery / AC | ADSP PMIC GLINK (`qcom-battmgr`) | Verified on series 7 with device firmware |
+| Hardware video codec | Iris `video-codec@aa00000`, X1P42100 videoCC | Series 10; direct decode not yet verified |
 | USB-A | usb_mp | Verified |
 | USB-C port 1 | usb_1_ss0, smb2360 SID 0x7 | Controller up; retimers absent, role switch/alt mode broken |
 | USB-C port 2 | usb_1_ss1 | Never probes (repeater PMIC SID 0xa absent; 0xb suspected) |

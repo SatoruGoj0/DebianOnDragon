@@ -46,6 +46,18 @@ expect "USB-C 1 controller (usb_1_ss0) enabled" "$(node_status /soc@0/usb@a60000
 expect "camera controller (usb_2) enabled" "$(node_status /soc@0/usb@a200000)" "okay"
 expect "USB-A controller (multiport) enabled" "$(node_status /soc@0/usb@a400000)" "okay"
 expect "GPU enabled" "$(node_status /soc@0/gpu@3d00000)" "okay"
+# Hardware video decoder. Linux 7.2's purwa.dtsi still has the inherited
+# X1E node; this board must carry the X1P clock/OPP override added upstream
+# for Linux 7.3, plus its device-signed Lenovo firmware path.
+iris=/soc@0/video-codec@aa00000
+videocc=/soc@0/clock-controller@aaf0000
+expect "Iris video codec enabled" "$(node_status $iris)" "okay"
+expect "Iris uses X1P42100 hardware data" "$(prop $iris compatible)" "qcom,x1p42100-iris"
+expect "Iris uses all four X1P clocks" "$(prop $iris clock-names)" "iface core vcodec0_core vcodec0_bse"
+expect "Iris uses 83N3 firmware" "$(prop $iris firmware-name)" \
+	"qcom/x1p42100/LENOVO/83N3/qcvss8380.mbn"
+expect "Iris has five X1P operating points" "$(fdtget -l "$dtb" "$iris/opp-table" 2>/dev/null | grep -c '^opp-')" "5"
+expect "videoCC uses X1P42100 clocks" "$(prop $videocc compatible)" "qcom,x1p42100-videocc"
 # UEFI starts the DSPs before Linux.  The 83N3 secure monitor rejects a PAS
 # reset from bare metal, so Linux must preserve SMP2P and attach instead.
 adsp=/soc@0/remoteproc@6800000

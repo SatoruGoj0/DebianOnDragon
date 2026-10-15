@@ -5,8 +5,9 @@ been seen working on the laptop. This page lists the tests for each
 **Experimental** item and what to send back.
 
 Run every test on the kernel that implements it (`uname -r`). The touchpad
-test is series 3, HDMI is series 4, and the battery/audio tests use series 7
-with support 0.4.1. When done, collect everything with:
+test is series 3, HDMI is series 4, the battery/audio tests use series 7,
+and hardware video decode uses series 10 with support 0.4.2. When done,
+collect everything with:
 
 ```bash
 sudo debondragon-report
@@ -139,6 +140,33 @@ status, voltage, current energy and full energy. If the devices are absent,
 check `systemctl status pd-mapper` and the `remoteproc`/`pmic_glink` lines in
 `sudo dmesg`.
 
+## Hardware video decoding
+
+Needs kernel `7.2.0-debondragon-10` (or later), support 0.4.2, the Lenovo
+`qcvss8380.mbn` installed by `debondragon-firmware`, `v4l-utils`, and `ffmpeg`.
+The older `7.2.2-ideapad-iris1+` experiment selected the generic
+`qcom/vpu/vpu30_p1_s7.mbn`; the secure monitor rejected it with error `-22`.
+
+1. Confirm the Iris driver loaded without a firmware/authentication error and
+   identify its V4L2 mem2mem nodes:
+   ```bash
+   sudo dmesg | grep -Ei 'qcom-iris|video-codec|qcvss|videocc'
+   v4l2-ctl --list-devices
+   for d in /dev/video*; do echo "=== $d ==="; v4l2-ctl -d "$d" --all 2>/dev/null | head -20; done
+   ```
+   The integrated UVC camera is not the decoder. Iris should appear as a
+   separate Qualcomm codec with both compressed input and raw capture formats.
+2. Decode a local H.264 file explicitly through V4L2 mem2mem:
+   ```bash
+   ffmpeg -benchmark -c:v h264_v4l2m2m -i sample-h264.mp4 -an -f null -
+   ```
+   Repeat with `hevc_v4l2m2m` or `vp9_v4l2m2m` and a matching sample. The log
+   must name the V4L2 mem2mem decoder and finish without falling back to the
+   software decoder.
+3. Send `sudo dmesg` plus the exact FFmpeg output if firmware authentication,
+   format negotiation, or decode fails. Browser acceleration comes only after
+   this direct test passes.
+
 ## Untested items
 
 These are compiled but nobody has tested them yet. Any results help:
@@ -151,7 +179,7 @@ These are compiled but nobody has tested them yet. Any results help:
 ## Audio: speakers, headphones, microphones
 
 Needs kernel `7.2.0-debondragon-7` (or later) and `debondragon-support`
-0.4.1. Speakers, the headphone jack and the microphones are on the default
+0.4.2. Speakers, the headphone jack and the microphones are on the default
 devicetree. Install the packages beside the kernel you already trust and
 boot series 7 once (`docs/kernel-upgrade.md`, "Test a new kernel once").
 Series 4 stays the rollback: it has headphones and mics, and no speaker
