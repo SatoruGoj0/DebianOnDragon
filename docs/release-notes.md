@@ -1,10 +1,10 @@
-# Unreleased: kernel 7.2.0-debondragon-10, debondragon-support 0.4.3
+# Unreleased: kernel 7.2.0-debondragon-11, debondragon-support 0.4.3
 
 Not a tagged release. The battery/DSP handoff, Wi-Fi, Bluetooth, touchpad and
 boot were verified on the 83N3. The audio configuration is inherited from the
-hardware-verified series-5 work but has not been rechecked on series 10. It
+hardware-verified series-5 work but has not been rechecked on series 11. It
 installs beside the older kernels, which remain the rollback
-(docs/kernel-upgrade.md, "Try kernel series 10").
+(docs/kernel-upgrade.md, "Try kernel series 11").
 
 Kernel series 9 enables SquashFS LZO decompression and extended attributes.
 Ubuntu's Chromium, Firefox and several desktop runtime snaps use
@@ -26,6 +26,12 @@ varies between boots) and decoded all
 90 frames of 1280x720 H.264 and HEVC samples, plus all 30 frames of a 640x360
 VP9 sample. Low-resolution HEVC still triggers a firmware session error and is
 tracked in `TO-FIX.md`.
+
+Kernel series 11 also enables IPv4 and IPv6 policy routing plus the nftables,
+connection-tracking, NAT and masquerading modules required by Tailscale and
+Docker. Series 10 had a working TUN device, bridge and veth support, but
+Tailscale still failed because policy routing returned `EOPNOTSUPP` and
+Debian's iptables nft backend could not open its netfilter socket.
 
 Moonlight 6.1.0 exposed a separate userspace crash after successful Iris HEVC
 decode: Ubuntu's libplacebo 7.349 called an unavailable Vulkan host-pointer
@@ -129,12 +135,12 @@ and the UCM profile stopped using the Debian sequences that this kernel rejects
 notes. Series 4 remains a rollback: its devicetree does not wait for the speaker
 amplifiers.
 
-## Recheck audio on series 10
+## Recheck audio on series 11
 
 `docs/hardware-testing.md`, section "Audio". Short version: install
-support 0.4.3 and `linux-image-7.2.0-debondragon-10` beside series 9, run
+support 0.4.3 and `linux-image-7.2.0-debondragon-11` beside series 10, run
 `sudo debondragon-firmware` (or export the firmware from Windows), reboot
-into series 10, and check `alsaucm -c hw:0 list _verbs` (HiFi),
+into series 11, and check `alsaucm -c hw:0 list _verbs` (HiFi),
 `pactl list short sinks` (Speaker, and Headphones when the jack is
 plugged), then play `hw:0,1` (speakers) and `hw:0,0` (headphones) at a
 moderate volume. Headset mic is `hw:0,2`, internal mics are `hw:0,3`.
@@ -143,7 +149,7 @@ If `/proc/asound/cards` is empty, either the ADSP firmware is missing or
 the amplifiers did not bind. Boot the series-4 submenu entry and report
 `/sys/bus/soundwire/devices` plus `dmesg`.
 
-## Still open on series 10
+## Still open on series 11
 
 - Reconfirm speaker, headphone and microphone behavior after the DSP-handoff
   and Iris changes; series 5 already verified speaker and headphone playback.

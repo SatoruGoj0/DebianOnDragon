@@ -55,37 +55,39 @@ tests in `docs/hdmi-testing.md` pass.
 4. Run the tests in `docs/hdmi-testing.md`, then make -4 the default as
    described there.
 
-## Try kernel series 10 (battery, audio, Snap and video-decode support)
+## Try kernel series 11 (battery, audio, Snap, video and VPN support)
 
-Series 10 contains the verified UEFI-to-Linux DSP handoff needed for battery
+Series 11 contains the verified UEFI-to-Linux DSP handoff needed for battery
 status, the speaker amplifiers on the default devicetree, and SquashFS LZO
 plus extended attributes so Ubuntu's browser and desktop snaps can mount and
 retain their confinement capabilities. It also enables the X1P42100 Iris
-hardware video codec with the Lenovo firmware. Support 0.4.3 is the matching
+hardware video codec with the Lenovo firmware. Compared with series 10, it
+adds policy routing, nftables, connection tracking and NAT so Tailscale and
+Docker can configure networking. Support 0.4.3 is the matching
 userspace (firmware helper, UCM, topology, `alsa-ucm-conf`, responsive GRUB
 console). Hardware H.264, HEVC (at 720p) and VP9 decoding and Adreno
 acceleration are verified on the 83N3. The audio setup is inherited from the
 hardware-verified series-5 work, but should be rechecked after this upgrade.
-Keep series 9 installed as the rollback while testing series 10.
+Keep series 10 installed as the rollback while testing series 11.
 
 1. Install support 0.4.3 first. `--force-confold` keeps your edited
    `/etc/default/debondragon`:
    ```bash
    sudo apt install -o Dpkg::Options::=--force-confold ./debondragon-support_0.4.3_all.deb
    ```
-2. Pin the kernel you already trust (series 9), install
-   `linux-image-7.2.0-debondragon-10`, and boot it once with `grub-reboot`.
-   The steps are the next section; use `-9` where that section says `-2`,
-   and `-10` where it says `-3`.
+2. Pin the kernel you already trust (series 10), install
+   `linux-image-7.2.0-debondragon-11`, and boot it once with `grub-reboot`.
+   The steps are the next section; use `-10` where that section says `-2`,
+   and `-11` where it says `-3`.
 3. Copy the device firmware if you have not already (`sudo debondragon-firmware`)
    and verify battery status before running the audio tests. HDMI video stays
-   on for series 10
+   on for series 11
    (`DEBONDRAGON_HDMI=auto` treats series 4 and later as HDMI-ok). HDMI
    audio does not play.
-4. Make series 10 the default after battery, Snap applications, audio and
-   hardware video decoding work. If it regresses, the
-   series-9 submenu entry is the rollback: its devicetree does not enable the
-   video decoder.
+4. Check `tailscale status`, `iptables -L`, `sudo nft list ruleset`, and a
+   Docker container with outbound networking. Make series 11 the default after
+   battery, Snap applications, audio, hardware video decoding and networking
+   work. If it regresses, the series-10 submenu entry is the rollback.
 
 ## Upgrade to v0.4.0 (kernel series 5, support 0.4.1)
 

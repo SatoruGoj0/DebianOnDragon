@@ -7,19 +7,22 @@ the user-facing support matrix; keep the evidence and likely cause here.
 
 ## Kernel/config gaps
 
-### Docker networking cannot start
+### Tailscale and Docker networking cannot start on series 10
 
-- **Symptom:** `docker.service` exits while creating its `DOCKER` NAT chain:
-  `iptables: Failed to initialize nft: Protocol not supported`.
+- **Symptom:** `tailscaled.service` exits while creating `tailscale0`, and
+  `docker.service` exits while creating its `DOCKER` NAT chain. Both report
+  `iptables: Failed to initialize nft: Protocol not supported`; Tailscale also
+  reports that the kernel may lack `IP_MULTIPLE_TABLES`.
 - **Cause:** the kernel has containers' basic requirements (`CGROUPS`,
   namespaces, seccomp, bridge, veth and overlayfs), but has
   `CONFIG_NF_TABLES=n` and `CONFIG_NF_NAT=n`. Debian's `iptables` uses the nft
   backend, so Docker cannot create its bridge/NAT rules.
-- **Fix to try:** enable `CONFIG_NF_TABLES`, `CONFIG_NF_NAT` and the relevant
-  nftables NAT/masquerade modules in `kernel/debondragon.config`; add them to
-  `kernel/check-config.sh`; rebuild; then run a container with outbound
-  networking. Do not treat a daemon started with `--iptables=false` as the
-  final fix.
+- **Series-11 candidate fix:** enable IPv4/IPv6 policy routing, nftables,
+  connection tracking, NAT/masquerading and the xtables compatibility modules
+  in `kernel/debondragon.config`. After rebooting series 11, verify that
+  `tailscale status`, `iptables -L`, `nft list ruleset`, and a Docker container
+  with outbound networking all work. Do not treat a daemon started with its
+  firewall disabled as the final fix.
 
 ### Linux cannot create or reorder UEFI boot entries
 
