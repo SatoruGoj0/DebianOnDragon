@@ -1,8 +1,31 @@
-# Unreleased: kernel 7.2.0-debondragon-5, debondragon-support 0.4.0
+# Unreleased: kernel 7.2.0-debondragon-7, debondragon-support 0.4.1
 
-Not a tagged release, and **not verified on the 83N3**. Status stays
-Experimental until someone hears sound. Installs beside series 4; series 4
-remains the rollback (docs/kernel-upgrade.md, "Try kernel series 5").
+Not a tagged release. The battery/DSP handoff, Wi-Fi, Bluetooth, touchpad and
+boot were verified on the 83N3. The audio changes remain Experimental until
+someone hears sound. It installs beside the older kernels, which remain the
+rollback (docs/kernel-upgrade.md, "Try kernel series 7").
+
+## Battery status and the UEFI DSP handoff
+
+Battery telemetry now works on hardware. The PMIC GLINK battery manager reports
+AC online, the BYD L24B3PK2 battery present, charging status, voltage and energy
+(62.24/62.86 Wh during the test, about 99%).
+
+UEFI has already started the ADSP on this laptop, while its secure monitor
+rejects a normal PAS reset. Kernel series 7 therefore preserves UEFI's SMP2P
+state, detects and attaches to the running DSP, avoids the early platform/RPMsg
+PMIC-GLINK probe race, and exposes the configured firmware path so `pd-mapper`
+can find the adjacent service maps. The ADSP and CDSP devicetree nodes select
+this attach-only mode with `qcom,broken-reset`.
+
+The signed Lenovo firmware still cannot be redistributed. The Windows export
+and Linux install helpers now include `adsps.jsn` with the other service maps.
+After `debondragon-firmware` and a reboot, the kernel attaches to ADSP and the
+battery power-supply devices appear.
+
+Support 0.4.1 also selects GRUB's firmware text console because graphical GRUB
+input is severely delayed by this laptop's GOP. This affects the boot menu only,
+not Linux graphics.
 
 ## Why the laptop was silent
 
@@ -38,7 +61,7 @@ Without `qcadsp8380.mbn` (and the matching DTBs) under
 
 ## What changed
 
-Kernel series 5, default board (the `-speakers` file is the same hardware,
+Kernel series 7, default board (the `-speakers` file is the same hardware,
 so an old `DEBONDRAGON_DTB` still boots):
 
 - Two WSA8845 on SoundWire 0, prefixes `SpkrLeft` and `SpkrRight`, CRD
@@ -47,7 +70,7 @@ so an old `DEBONDRAGON_DTB` still boots):
 - Internal mics: `VA DMIC0/1` to WCD `MIC BIAS3` and `VA MIC BIAS1`.
 - DisplayPort audio links stay deleted. HDMI audio is unsupported.
 
-`debondragon-support` 0.4.0:
+`debondragon-support` 0.4.1:
 
 - UCM enables speakers at PA volume 6 and WSA digital volume 81, and
   headphones in class-AB. Speaker controls are written only when they
@@ -59,14 +82,14 @@ so an old `DEBONDRAGON_DTB` still boots):
   name. That file has no DisplayPort graphs.
 
 `DEBONDRAGON_HDMI=auto` already treats series 4 and later as HDMI-ok, so
-series 5 keeps HDMI video on.
+series 7 keeps HDMI video on.
 
 ## How to test
 
 `docs/hardware-testing.md`, section "Audio". Short version: install
-support 0.4.0 and `linux-image-7.2.0-debondragon-5` beside series 4, run
+support 0.4.1 and `linux-image-7.2.0-debondragon-7` beside series 4, run
 `sudo debondragon-firmware` (or export the firmware from Windows), reboot
-into series 5, and check `alsaucm -c hw:0 list _verbs` (HiFi),
+into series 7, and check `alsaucm -c hw:0 list _verbs` (HiFi),
 `pactl list short sinks` (Speaker, and Headphones when the jack is
 plugged), then play `hw:0,1` (speakers) and `hw:0,0` (headphones) at a
 moderate volume. Headset mic is `hw:0,2`, internal mics are `hw:0,3`.

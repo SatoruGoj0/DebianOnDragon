@@ -36,11 +36,11 @@ Working.
 |---|---|---|---|
 | Boot (GRUB, kernel, initramfs, NVMe root) | **Working** | v0.1.4 | Installed system boots; GRUB entry created from Windows (Linux can't write UEFI variables on this machine) |
 | Internal display (eDP, 1920x1200) | **Working** | v0.1.3 | msm DRM drives the panel (`eDP-1 connected`) |
-| GPU acceleration (Adreno X1-45) | **Working** | v0.1.0 | Reported working under Hyprland; needs `debondragon-firmware` |
+| GPU acceleration (Adreno X1-45) | **Blocked** | — | Display works, but the available generic zap shader is rejected by the secure monitor (`-22`), leaving software rendering. Needs the exact signed 83N3 `qcdxkmsucpurwa.mbn` from its Windows display driver; see `TO-FIX.md` |
 | Keyboard (I2C HID) | **Working** | v0.1.0 | Reported working |
 | Touchscreen (ELAN 04F3:43B8) | **Working** | v0.1.0 | Reported working |
 | Wi-Fi (WCN7850, ath12k) | **Working** | v0.1.0 | Reported working |
-| Bluetooth (WCN7850) | **Partial** | v0.1.0 | Firmware loads and the controller initialises (boot log); pairing not yet tested |
+| Bluetooth (WCN7850) | **Working** | unreleased (kernel series 7) | Controller initialises and was confirmed operational alongside Wi-Fi on hardware |
 | Touchpad (ELAN 04F3:327E) | **Working** | v0.3.0 | Verified on hardware with kernel 7.2.0-debondragon-3: interrupts on TLMM 19 (decoded from the DSDT; the CRD's TLMM 3 never fired), continuous pointer motion in libinput, normal use. `check-dtb.sh` keeps TLMM 19 / level-low / pull-up in every future build |
 | Display brightness | **Partial** | v0.2.0 | Adjusting works on hardware. Started at minimum after every boot: systemd-backlight restored a stale 204/4095 (its 5% floor) because hard resets skip the save. support 0.2.1 saves the level once a minute when it changed and restores it exactly; without a saved level it starts at `DEBONDRAGON_MIN_BRIGHTNESS` (default 30%) |
 | HDMI video output (1920x1080@60) | **Working** | v0.4.0 | Verified on hardware with kernel 7.2.0-debondragon-4 and a Samsung LS27D300G: DP link HBR2 x4, link training succeeds first time. Fix: DP lane orientation `data-lanes = <3 2 1 0>`. Converter: Parade PS176 |
@@ -49,20 +49,22 @@ Working.
 | Internal camera (USB 13d3:54bf) | **Working** | v0.2.0 | Reported working on hardware (UVC on usb_2 behind the PTN3222 repeater) |
 | Fan / EC thermal control | **Unsupported, off** | — | `debondragon-ec-check` on hardware: version reads, but fan count and thermal capabilities return 0. Those commands (0x0E, 0x42) aren't in this EC's ACPI command map, so the `qcom-hamoa-ec` protocol doesn't match. Driver stays blacklisted; the EC controls the fan by itself |
 | SoC temperature sensors | **Working** | v0.1.0 | CPU/GPU/PMIC zones read 37–40 °C on hardware |
-| Headphones, headset mic, internal mics | **Experimental** | v0.3.0 | Card, codecs and DSP come up on hardware, and support 0.2.1 made the UCM profile load. Kernel series 5 keeps that card and drives the headphone jack in class-AB (the Debian class-H sequence does not drive a WCD9385). Internal mics get the VA-macro bias. Sound output is not yet confirmed on hardware |
-| Internal speakers | **Experimental** | unreleased (kernel series 5) | Default board: two WSA8845 on SoundWire 0 (Windows INF, ThinkBook/T14s layout). The kernel caps PA volume at 0 dB. There is no active speaker-protection algorithm. Not yet tested on hardware; keep the volume moderate |
+| Headphones, headset mic, internal mics | **Experimental** | v0.3.0 | Card, codecs and DSP come up on hardware, and support 0.2.1 made the UCM profile load. Kernel series 7 keeps that card and drives the headphone jack in class-AB (the Debian class-H sequence does not drive a WCD9385). Internal mics get the VA-macro bias. Sound output is not yet confirmed on hardware |
+| Internal speakers | **Experimental** | unreleased (kernel series 7) | Default board: two WSA8845 on SoundWire 0 (Windows INF, ThinkBook/T14s layout). The kernel caps PA volume at 0 dB. There is no active speaker-protection algorithm. Not yet tested on hardware; keep the volume moderate |
 | USB-A ports (2, multiport controller) | **Working** | v0.1.0 | Both ports used on hardware (mouse, install stick); USB 3 lanes enabled, speed not yet measured |
 | USB-C ports (2, `usb_1_ss0/ss1`) | **Untested** | v0.1.0 | First port's controller (`usb_1_ss0`) comes up. The second (`usb_1_ss1`) never probes: the CRD puts its eUSB2 repeater in a PMIC (SPMI SID 0xa) that this laptop doesn't have (board notes). The CRD retimers don't answer, so role switching / alt mode don't work |
 | Third USB controller (`usb_1_ss2`) | **N/A** | v0.2.0 | Disabled in this laptop's ACPI; its PHY carries HDMI |
 | USB-C DisplayPort alt mode | **Unsupported** | — | Disabled: it blocked the internal display while ADSP firmware was missing |
-| Battery status, charging info | **Untested** | v0.1.0 | Need the ADSP firmware from `debondragon-firmware` |
+| Battery status, charging info | **Working** | unreleased (kernel series 7) | Verified through PMIC GLINK: AC online, BYD L24B3PK2 present, status and energy reported; needs the 83N3 ADSP firmware from `debondragon-firmware` |
 | SD card reader (BayHub, pcie5) | **Untested** | v0.1.0 | |
 | Suspend / resume | **Untested** | — | |
 | Fingerprint reader | **Unsupported** | — | |
 
 ## Remaining hardware (after v0.4.0)
 
-- **Audio** (kernel series 5, support 0.4.0, not yet tested on hardware):
+The detailed, evidence-backed backlog is in [TO-FIX.md](TO-FIX.md).
+
+- **Audio** (kernel series 7, support 0.4.1, not yet tested on hardware):
   speakers, headphones and mics are on the default board. The device-signed
   ADSP firmware still has to be copied with `debondragon-firmware` (or
   `windows/Export-Firmware.ps1`); without it the sound card never probes.
@@ -108,6 +110,13 @@ docker run --rm --privileged -v "$PWD:/src" -w /src debian:trixie ./build.sh
 Output in `out/`: the ISO, `linux-image-*.deb`, `linux-headers-*.deb`,
 `debondragon-support_*_all.deb` and `SHA256SUMS`. `PACKAGES_ONLY=1` stops after
 the packages (no ISO); `REBUILD_KERNEL=1` forces a kernel rebuild.
+
+The kernel source tag and every downloaded downstream patch are pinned (patch
+downloads are also SHA-256 checked), so a clean checkout reproduces the same
+kernel source and configuration. The ISO is repeatably buildable, but not
+bit-for-bit reproducible indefinitely: Debian `trixie` and linux-firmware
+`main` continue to move. Device-signed Lenovo firmware is deliberately absent
+from both Git and the ISO; install it afterward with `debondragon-firmware`.
 
 Every kernel build runs these checks and fails on a regression:
 

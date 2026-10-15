@@ -5,8 +5,8 @@ been seen working on the laptop. This page lists the tests for each
 **Experimental** item and what to send back.
 
 Run every test on the kernel that implements it (`uname -r`). The touchpad
-test is series 3, HDMI is series 4, and the audio test is series 5 with
-support 0.4.0. When done, collect everything with:
+test is series 3, HDMI is series 4, and the battery/audio tests use series 7
+with support 0.4.1. When done, collect everything with:
 
 ```bash
 sudo debondragon-report
@@ -122,22 +122,38 @@ bluetoothctl power on; bluetoothctl scan on
 ```
 Pair a device and report whether it works.
 
+## Battery and AC
+
+**Working on kernel series 7 (verified on hardware).** Install the matching
+83N3 firmware with `sudo debondragon-firmware`, reboot, and check:
+
+```bash
+upower -d
+for d in /sys/class/power_supply/*; do
+    echo "$(basename "$d")"; grep -H . "$d"/{present,status,online,energy_now,energy_full,voltage_now} 2>/dev/null
+done
+```
+
+The test machine reported AC online and a present BYD L24B3PK2 battery with
+status, voltage, current energy and full energy. If the devices are absent,
+check `systemctl status pd-mapper` and the `remoteproc`/`pmic_glink` lines in
+`sudo dmesg`.
+
 ## Untested items
 
 These are compiled but nobody has tested them yet. Any results help:
 
 - USB-C data on both ports (plug in a USB-C stick, both orientations), and
   USB-A speed (`lsusb -t` shows 5000M for a USB 3 stick)
-- battery status (`upower -d`)
 - SD card reader
 - suspend: `systemctl suspend`, then wake with the power button
 
 ## Audio: speakers, headphones, microphones
 
-Needs kernel `7.2.0-debondragon-5` (or later) and `debondragon-support`
-0.4.0. Speakers, the headphone jack and the microphones are on the default
+Needs kernel `7.2.0-debondragon-7` (or later) and `debondragon-support`
+0.4.1. Speakers, the headphone jack and the microphones are on the default
 devicetree. Install the packages beside the kernel you already trust and
-boot series 5 once (`docs/kernel-upgrade.md`, "Test a new kernel once").
+boot series 7 once (`docs/kernel-upgrade.md`, "Test a new kernel once").
 Series 4 stays the rollback: it has headphones and mics, and no speaker
 amps.
 

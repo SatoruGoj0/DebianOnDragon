@@ -224,7 +224,7 @@ commented out, so this is a two-speaker layout like the ThinkBook 16, not
 the CRD's four. The WCD9385 reset (TLMM 191) is held deasserted by
 firmware, as on the CRD.
 
-Kernel series 5 enables that two-speaker card on the default board.
+Kernel series 7 enables that two-speaker card on the default board.
 The CRD's four-amp playback link waits for a second pair on swr3; those
 parts are absent, so that link is replaced with the two WSA8845 already
 described on swr0 (`speaker@0,0` / `speaker@0,1`, port maps left as the
@@ -240,7 +240,7 @@ Internal mics are the two VA-macro DMICs. They need both WCD `MIC BIAS3`
 and `VA MIC BIAS1`. The CRD's extra DMIC2/DMIC3 route to `MIC BIAS1` is
 not this laptop.
 
-`debondragon-support` 0.4.0 installs the T14s AudioReach topology under
+`debondragon-support` 0.4.1 installs the T14s AudioReach topology under
 the card name and a UCM profile that drives speakers, headphones, the
 headset mic and the internal mics. It does not include Debian's speaker
 sequence (that writes PA volume 12, which this kernel rejects; the limit
@@ -257,6 +257,16 @@ the default board, so an old `DEBONDRAGON_DTB` setting still boots.
 None of this playback path has been confirmed audible on the 83N3. The
 amp type is the CRD WSA8845 at the addresses Windows and the other X1
 laptops use; a SoundWire bind log from this machine is still the check.
+
+**Battery and DSP handoff (kernel series 7).** UEFI leaves the ADSP running,
+but Linux v7.2 originally overwrote its SMP2P state and then tried a PAS reset
+that this machine's secure monitor rejects. A downstream SMP2P/remoteproc
+handoff series, plus an attach-only `qcom,broken-reset` mode on ADSP and CDSP,
+lets Linux attach to the booted DSP. A PMIC-GLINK probe-order fix handles the
+RPMsg endpoint that appears during early boot, and remoteproc sysfs retains the
+configured firmware path so `pd-mapper` finds the adjacent JSON service maps.
+With the matching 83N3 ADSP firmware installed, hardware reports AC online and
+the BYD L24B3PK2 battery's status, voltage and energy through `qcom-battmgr`.
 
 **smb2360 PMICs (v0.2.0 boot log).** The CRD has three smb2360 at SPMI
 SIDs 0x7, 0xa and 0xb, each with the eUSB2 repeater of one USB-C port. On
