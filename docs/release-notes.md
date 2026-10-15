@@ -27,6 +27,13 @@ varies between boots) and decoded all
 VP9 sample. Low-resolution HEVC still triggers a firmware session error and is
 tracked in `TO-FIX.md`.
 
+The Iris encoder is also functional. GStreamer 1.26.5 encoded 90-frame
+1280x720 H.264 and HEVC test streams, and ffprobe read all 90 frames from each
+output without a kernel error. Ubuntu FFmpeg 7.1.1's `h264_v4l2m2m` currently
+segfaults in libavcodec's V4L2 frame-copy path before producing a frame, so
+encoding is supported through GStreamer while that userspace integration bug
+remains open in `TO-FIX.md`.
+
 Kernel series 11 also enables IPv4 and IPv6 policy routing plus the nftables,
 connection-tracking, NAT and masquerading modules required by Tailscale and
 Docker. Series 10 had a working TUN device, bridge and veth support, but

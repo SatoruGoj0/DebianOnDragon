@@ -197,6 +197,31 @@ realtime) and HEVC (21.8x) samples, plus all 30 frames of a 640x360 VP9
 sample. A 640x360 HEVC sample instead triggers firmware session error
 `0x4000003`; that known gap is tracked in `TO-FIX.md`.
 
+## Hardware video encoding
+
+Use GStreamer for the direct encoder test. Video node numbering changes, but
+the dynamically registered `v4l2h264enc` and `v4l2h265enc` elements select the
+Iris Encoder node automatically:
+
+```bash
+gst-launch-1.0 -e videotestsrc num-buffers=90 pattern=smpte \
+  ! video/x-raw,format=NV12,width=1280,height=720,framerate=30/1 \
+  ! v4l2h264enc output-io-mode=mmap capture-io-mode=mmap \
+  ! filesink location=/tmp/iris-test.h264
+ffprobe -v error -count_frames -select_streams v:0 \
+  -show_entries stream=codec_name,width,height,nb_read_frames \
+  -of default=nw=1 /tmp/iris-test.h264
+```
+
+Repeat with `v4l2h265enc` and a `.hevc` output. On 2026-10-15 both pipelines
+encoded all 90 1280x720 frames; ffprobe read 90 frames from each output and the
+kernel logged no Iris error.
+
+Do not use FFmpeg's `h264_v4l2m2m` as the encoder acceptance test yet. Ubuntu
+FFmpeg 7.1.1 selects the Iris encoder but segfaults in libavcodec's V4L2 frame
+copy before the first frame. The working GStreamer path isolates that as a
+userspace integration bug; it is tracked in `TO-FIX.md`.
+
 ## Untested items
 
 These are compiled but nobody has tested them yet. Any results help:

@@ -39,6 +39,25 @@ the user-facing support matrix; keep the evidence and likely cause here.
 
 ## Firmware and accelerator gaps
 
+### FFmpeg's V4L2 encoder crashes; GStreamer encoding works
+
+- **Working:** GStreamer 1.26.5's `v4l2h264enc` and `v4l2h265enc` each
+  encoded 90 generated 1280x720 NV12 frames through the Iris encoder. FFprobe
+  read all 90 frames from both outputs, software decode of the H.264 output
+  completed, and the kernel logged no Iris error. The encoder was
+  `/dev/video3` on this boot, but video node numbering can change.
+- **Symptom:** Ubuntu FFmpeg 7.1.1's `h264_v4l2m2m` selects `iris_driver`,
+  negotiates NV12 input and H.264 output, then segfaults before producing its
+  first frame. The output is empty.
+- **Cause boundary:** the crash backtrace reaches `memcpy` from libavcodec's
+  V4L2 frame-submission path below `avcodec_send_frame`. Since the same kernel,
+  firmware, format and encoder work through GStreamer without a kernel error,
+  this is an FFmpeg V4L2 userspace interoperability bug, not evidence that the
+  hardware encoder or Iris firmware is broken.
+- **Fix to investigate:** reproduce against current upstream FFmpeg, identify
+  the NV12/multiplanar copy assumption, and send a minimal reproducer and
+  backtrace upstream. Until fixed, use GStreamer's V4L2 encoders.
+
 ### Low-resolution HEVC can fault the Iris firmware session
 
 - **Working:** forced V4L2 mem2mem tests decode all 90 frames of 1280x720
