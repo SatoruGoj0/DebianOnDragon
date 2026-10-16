@@ -110,21 +110,37 @@ def action_for(code, value):
     return None
 
 
-def uid_from_seat(text):
-    """Active session uid from a logind seat file, or None."""
-    uid = None
-    active = False
+def _prop(text, key):
+    prefix = key + "="
     for line in text.splitlines():
-        if line.startswith("ACTIVE_UID="):
-            try:
-                uid = int(line.split("=", 1)[1].strip())
-            except ValueError:
-                return None
-        elif line.startswith("ACTIVE="):
-            active = line.split("=", 1)[1].strip() == "1"
-    if active and uid is not None and uid > 0:
-        return uid
+        line = line.strip()
+        if line.startswith(prefix):
+            return line[len(prefix):].strip()
     return None
+
+
+def uid_from_login(seat_text, session_text):
+    """Uid of the seat's active user session.
+
+    `loginctl show-seat seat0 -p ActiveSession` names the session (on this
+    laptop, 2). Session 1 is the per-user manager, class manager, and has
+    no seat; its uid must not be used. The session must be class user and
+    Active=yes. The seat file's ACTIVE= field is that session id, not a
+    boolean, so it is not parsed.
+    """
+    if not _prop(seat_text, "ActiveSession"):
+        return None
+    if _prop(session_text, "Class") != "user":
+        return None
+    if _prop(session_text, "Active") not in ("yes", "1"):
+        return None
+    try:
+        uid = int(_prop(session_text, "User"))
+    except (TypeError, ValueError):
+        return None
+    if uid <= 0:
+        return None
+    return uid
 
 
 def selftest():
@@ -152,9 +168,19 @@ def selftest():
     seen = set()
     assert report_denied(["/dev/input/event7"], seen) == [denied]
     assert report_denied(["/dev/input/event7"], seen) == []
-    assert uid_from_seat("ACTIVE=1\nACTIVE_UID=1000\n") == 1000
-    assert uid_from_seat("ACTIVE=0\nACTIVE_UID=1000\n") is None
-    assert uid_from_seat("ACTIVE=1\nACTIVE_UID=0\n") is None
+    # This laptop: session 1 is the manager (no seat), session 2 is Hyprland.
+    seat = "ActiveSession=2\n"
+    wayland = (
+        "User=1000\nClass=user\nActive=yes\nState=active\n"
+        "Type=wayland\nSeat=seat0\n"
+    )
+    manager = "User=1000\nClass=manager\nActive=yes\nSeat=\n"
+    assert uid_from_login(seat, wayland) == 1000
+    assert uid_from_login(seat, manager) is None
+    assert uid_from_login("ActiveSession=1\n", manager) is None
+    assert uid_from_login("ActiveSession=\n", wayland) is None
+    assert uid_from_login(seat, "User=1000\nClass=user\nActive=no\n") is None
+    assert uid_from_login(seat, "User=0\nClass=user\nActive=yes\n") is None
     print("ok")
 
 
@@ -238,14 +264,39 @@ def open_devices():
     return kept, denied
 
 
-def session_uid():
-    seat = os.environ.get("DEBONDRAGON_VOLKEYS_SEAT", "/run/systemd/seats/seat0")
-    try:
-        with open(seat, encoding="utf-8") as fh:
-            text = fh.read()
-    except OSError:
+def loginctl_show(kind, ident, *props):
+    if not ident or any(c not in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" for c in ident):
         return None
-    return uid_from_seat(text)
+    cmd = ["loginctl", f"show-{kind}", ident]
+    for prop in props:
+        cmd.extend(["-p", prop])
+    try:
+        out = subprocess.run(
+            cmd, check=False, capture_output=True, text=True, timeout=5
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if out.returncode != 0:
+        return None
+    return out.stdout
+
+
+def session_uid():
+    """Uid from `loginctl show-seat seat0 -p ActiveSession` and that session."""
+    seat_text = os.environ.get("DEBONDRAGON_VOLKEYS_SEAT_SHOW")
+    if seat_text is None:
+        seat_text = loginctl_show("seat", "seat0", "ActiveSession")
+    if not seat_text:
+        return None
+    sid = _prop(seat_text, "ActiveSession")
+    if not sid:
+        return None
+    session_text = os.environ.get("DEBONDRAGON_VOLKEYS_SESSION_SHOW")
+    if session_text is None:
+        session_text = loginctl_show("session", sid, "User", "Class", "Active")
+    if session_text is None:
+        return None
+    return uid_from_login(seat_text, session_text)
 
 
 def apply_action(args):

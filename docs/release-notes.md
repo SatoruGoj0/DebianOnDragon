@@ -1,3 +1,35 @@
+# Unreleased (support 0.5.2)
+
+No new kernel. v0.5.0 stays on `9dbf932` (kernel series 6, support 0.5.1).
+
+## Mute and volume ignored the Hyprland session
+
+Support 0.5.1 opens the keyboard, then logged `no active seat` on every
+key. `loginctl list-sessions` on this laptop has session 1 as class
+`manager` with no seat, and session 2 as the Hyprland session on
+`seat0` (`ActiveSession=2`, uid 1000, class user). The seat file's
+`ACTIVE=` field is that session id, not a boolean, so a check for
+`ACTIVE=1` skipped session 2. Support 0.5.2 asks `loginctl show-seat
+seat0 -p ActiveSession` and uses that session's `User` when `Class=user`
+and `Active=yes`. `pactl` still runs as that uid with
+`XDG_RUNTIME_DIR=/run/user/<uid>`. Not confirmed on hardware yet.
+
+## The fan curve write was acknowledged and the fan stayed off
+
+Support 0.5.1 logged `programmed fan 1 curve for profiles 1-7`. Under an
+8-core load the hottest zone was `cpu1-3-btm` at 73.8 °C and fan 1 was
+still `0x02 0x00 0x00` (0 rpm). An I2C ACK is not proof the EC stored
+the curve. Support 0.5.2 reads slot `0x61` back after the write and logs
+the bytes. `debondragon-fan probe` reads fan 1 slots for profiles 1–7,
+plus slot `0x61` with a zero second byte. It still does not write the
+profile, debug mode, or EC enable. Qualcomm's Hamoa driver has no
+separate apply-LUT command: it writes the profile register and the LUT,
+and its only other init writes are SoC Tj, modern-standby, and SCI
+enable (`0x35` = 1). `0x35` = 0 is "SCI EC Disable" and is not written.
+The fan is still Experimental.
+
+---
+
 # DebOnDragon v0.5.0
 
 Kernel `7.2.0-debondragon-6` (Linux v7.2) and `debondragon-support` 0.5.1.

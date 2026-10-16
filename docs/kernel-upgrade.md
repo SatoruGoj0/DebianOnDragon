@@ -88,8 +88,19 @@ systemctl is-active debondragon-fan.service
 sudo journalctl -u debondragon-fan -b --no-pager | tail -n 20
 ```
 
+Support 0.5.2 is the volume-key seat fix and a read-back of fan curve
+slot `0x61`. The 0.5.1 curve write was acknowledged and the fan was
+still stopped at 73.8 °C, so 0.5.2 does not add another EC write. If
+0.5.1 is already installed:
+
+```bash
+sudo apt install -o Dpkg::Options::=--force-confold ./debondragon-support_0.5.2_all.deb
+systemctl is-active debondragon-volkeys.service
+```
+
 Then the tests in docs/hardware-testing.md, "Fan and thermals" and
-"Mute and volume keys".
+"Mute and volume keys". The fan reads on that page work on 0.5.1
+without this package. Do not disable the fan reporter first.
 
 Series 5 remains bootable from the "DebOnDragon kernels" submenu, without the new
 trips and without the reporter (the reporter is a userspace service; if
