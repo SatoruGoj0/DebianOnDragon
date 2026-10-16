@@ -189,6 +189,10 @@ expect "pulse refresh leaves a real sink alone" "$out" ""
 # --- volume keys -----------------------------------------------------------
 expect "volume key mapping" \
 	"$(DEBONDRAGON_VOLKEYS_SELFTEST=1 "$root/usr/local/sbin/debondragon-volkeys")" ok
+expect "volume keys follow loginctl ActiveSession" \
+	"$(grep -c 'loginctl_show' "$root/usr/local/sbin/debondragon-volkeys")" 3
+expect "volume keys do not treat ACTIVE=1 as a boolean" \
+	"$(grep -c 'ACTIVE_UID' "$root/usr/local/sbin/debondragon-volkeys")" 0
 rule=$root/etc/udev/rules.d/72-debondragon-volkeys.rules
 expect "volume-key udev rule tags uaccess" "$(grep -c 'TAG+="uaccess"' "$rule")" 1
 expect "volume-key udev rule does not assign group input" "$(grep -c 'GROUP=' "$rule")" 0
@@ -245,6 +249,8 @@ expect "fan curve does not program fan 2" \
 	"$(printf '%s\n' "$sample" | grep -c '0x28 0x[1-7]2 ')" 0
 expect "fan curve does not write debug mode, the profile, trips, or EC enable" \
 	"$(printf '%s\n' "$sample" | grep -c -E '0x30|w2@0x76 0x24|0x25|0x35')" 0
+expect "fan run reads slot 0x61 back instead of writing it" \
+	"$(printf '%s\n' "$sample" | grep -c '^read lut readback fan1 profile 6: w5@0x76 0x28 0x61 0x01 0x00 0x00 r65@0x76$')" 1
 expect "fan run clears modern-standby before reporting" \
 	"$(printf '%s\n' "$sample" | grep -c '^report 0x23 0x00$')" 1
 echo 40000 > "$tmp/thermal/thermal_zone0/temp"
@@ -277,6 +283,10 @@ expect "fan probe reads fan status and the curve" \
 	"$(printf '%s\n' "$probe" | grep -c '^read fan1 status 0x21: w2@0x76 0x21 0x01 r1@0x76$')" 1
 expect "fan probe reads the fan-1 profile-6 curve" \
 	"$(printf '%s\n' "$probe" | grep -c '^read lut fan1 profile 6: w5@0x76 0x28 0x61 0x01 0x00 0x00 r65@0x76$')" 1
+expect "fan probe reads every fan-1 profile slot" \
+	"$(printf '%s\n' "$probe" | grep -c '^read lut fan1 profile [1-7]: w5@0x76 0x28 0x[1-7]1 ')" 7
+expect "fan probe also reads slot 0x61 with a zero second byte" \
+	"$(printf '%s\n' "$probe" | grep -c '^read lut fan1 profile 6 arg0: w5@0x76 0x28 0x61 0x00 0x00 0x00 r65@0x76$')" 1
 expect "fan probe does not write debug mode or set the curve" \
 	"$(printf '%s\n' "$probe" | grep -c -E '0x30|w68@')" 0
 expect "fan probe does not write modern-standby or the trip register" \

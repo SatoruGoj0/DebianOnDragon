@@ -229,6 +229,30 @@ program_curves() {
 	done
 }
 
+# Read slot 0x61 back. An I2C ACK on the 68-byte set is not proof the EC
+# stored the curve. This does not write. The 52 °C step we send is
+# 0x0c 0x34 0x2d (1200 rpm, 52 °C, 45 °C).
+log_curve_readback() {
+	local bus=$1 raw
+	if [ "${DEBONDRAGON_FAN_DRY:-}" = 1 ]; then
+		ec_read "lut readback fan1 profile 6" w5@0x76 0x28 0x61 0x01 0x00 0x00 r65@0x76
+		return 0
+	fi
+	if raw=$(i2ctransfer -f -y "$bus" w5@0x76 0x28 0x61 0x01 0x00 0x00 r65@0x76 2>/dev/null); then
+		case $raw in
+		*"0x0c 0x34 0x2d"*)
+			echo "debondragon-fan: lut 0x61 readback contains the 52 C step" >&2
+			;;
+		*)
+			echo "debondragon-fan: lut 0x61 readback does not contain the curve" >&2
+			;;
+		esac
+		echo "debondragon-fan: lut 0x61 readback: $raw" >&2
+	else
+		echo "debondragon-fan: lut 0x61 readback: no answer" >&2
+	fi
+}
+
 ms_status() {
 	local bus=$1 mode=$2
 	if [ "${DEBONDRAGON_FAN_DRY:-}" = 1 ]; then
@@ -312,6 +336,7 @@ cmd_run() {
 	ms_status "$bus" 0x00 || exit 1
 	if [ "${DEBONDRAGON_FAN_ONCE:-}" = 1 ]; then
 		program_curves "$bus" || echo "debondragon-fan: fan curve was not accepted; temperature report still attempted" >&2
+		log_curve_readback "$bus"
 		report_temps "$bus"
 		exit $?
 	fi
@@ -327,6 +352,7 @@ cmd_run() {
 				if [ "$curve_note" != 1 ]; then
 					curve_note=1
 					echo "debondragon-fan: programmed fan 1 curve for profiles 1-7, source 0x01, cap 4000 rpm" >&2
+					log_curve_readback "$bus"
 				fi
 			elif [ "$curve_note" != 2 ]; then
 				curve_note=2
@@ -413,10 +439,17 @@ cmd_probe() {
 	ec_read "lut count 0x27 arg 0" w2@0x76 0x27 0x00 r1@0x76
 	ec_read "lut count 0x27 arg 1" w2@0x76 0x27 0x01 r1@0x76
 	# Get LUT: 5-byte command (0x28, id, temp source, 0, 0) and a 65-byte
-	# read. The id is (profile << 4) | fan. Fan 1 profile 6, the profile
-	# this laptop reported, is 0x61. This does not issue the 68-byte set.
-	ec_read "lut fan1 profile 6" w5@0x76 0x28 0x61 0x01 0x00 0x00 r65@0x76
-	ec_read "lut fan1 profile 1" w5@0x76 0x28 0x11 0x01 0x00 0x00 r65@0x76
+	# read. The id is (profile << 4) | fan. Fan 1 profile 6 is 0x61.
+	# This does not issue the 68-byte set. The second read of 0x61 uses
+	# a zero second byte, in case the EC does not take a temp source there.
+	local profile id
+	for profile in 1 2 3 4 5 6 7; do
+		id=$(printf '0x%02x' $(((profile << 4) | 1)))
+		ec_read "lut fan1 profile $profile" w5@0x76 0x28 "$id" 0x01 0x00 0x00 r65@0x76
+	done
+	ec_read "lut fan1 profile 6 arg0" w5@0x76 0x28 0x61 0x00 0x00 0x00 r65@0x76
+	# Firmware version. Qualcomm reads 4 bytes from 0x0e. Not a write.
+	ec_read "firmware 0x0e" w1@0x76 0x0e r4@0x76
 }
 
 cmd_enable() {

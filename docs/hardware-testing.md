@@ -115,9 +115,10 @@ writes modern-standby status (register 0x23).
 
 On this laptop, support 0.5.0's temperature reports left the fan
 physically stopped at 72.7 °C, and a light-load read at 55.9 °C was the
-same: fan 1 at 0 rpm, fan 2 absent, profile 0x06. 0.5.1 is the fix to
-try. If the reporter was already enabled, installing the 0.5.1 package
-restarts it. Do not disable it first.
+same: fan 1 at 0 rpm, fan 2 absent, profile 0x06. Support 0.5.1 then
+wrote a curve; under load at 73.8 °C the fan was still stopped. Do not
+disable the reporter. The reads below check whether that curve was
+stored.
 
 ```bash
 sudo apt install -o Dpkg::Options::=--force-confold ./debondragon-support_0.5.1_all.deb
@@ -139,10 +140,35 @@ sleep 30
 sudo debondragon-fan status
 ```
 
-Fan 1 rpm should be above 0 once the hottest zone is in the mid-50s, and
-you should hear airflow. Paste `status` and the journal tail back. If
-rpm is still 0, also paste `sudo debondragon-fan probe` (read-only) and
-do not hand-write any register.
+**Support 0.5.1 on this laptop.** The journal logged `programmed fan 1
+curve for profiles 1-7, source 0x01, cap 4000 rpm`. After 30 seconds of
+8-core load the hottest zone was 73.8 °C and fan 1 was still
+`0x02 0x00 0x00` (0 rpm). Leave the reporter running. These reads do
+not write a register. Paste the whole output. `sudo` matters.
+
+```bash
+sudo debondragon-fan probe
+BUS=$(for a in /sys/bus/i2c/devices/i2c-*; do
+	case $(readlink -f "$a/of_node" 2>/dev/null) in
+	*i2c@b94000) echo "${a##*/i2c-}" ;;
+	esac
+done)
+echo "bus $BUS"
+echo "--- profile ---"
+sudo i2ctransfer -f -y "$BUS" w1@0x76 0x24 r1
+echo "--- fan 1 curve slots, profiles 1-7, temp source 0x01 ---"
+for id in 0x11 0x21 0x31 0x41 0x51 0x61 0x71; do
+	echo "lut $id"
+	sudo i2ctransfer -f -y "$BUS" w5@0x76 0x28 "$id" 0x01 0x00 0x00 r65
+done
+echo "--- slot 0x61 with a zero second byte ---"
+sudo i2ctransfer -f -y "$BUS" w5@0x76 0x28 0x61 0x00 0x00 0x00 r65
+echo "--- firmware 0x0e ---"
+sudo i2ctransfer -f -y "$BUS" w1@0x76 0x0e r4
+```
+
+Do not write `0x24`, `0x25`, `0x30`, or `0x35`. `0x35` = 0 is the DSDT
+"SCI EC Disable" command.
 
 **Safety.** After `enable`, do not `systemctl stop debondragon-fan` and
 walk away. If temperature reports stop for more than a couple of minutes,
@@ -255,8 +281,12 @@ node as root, ignores every key except mute and volume, and calls
 `pactl` as the active seat user. If the kernel exposes a separate
 consumer-control node (volume keys, no letter keys) on the `a84000.i2c`
 bus, a udev rule tags only that node `uaccess` for the active seat.
-Installing support 0.5.1 restarts that system service. Reboot only if
-it does not come up active.
+Support 0.5.1 opened the keyboard and then logged `no active seat` for
+every key. Session 1 on this laptop is the logind manager and has no
+seat; Hyprland is session 2 on `seat0`. Support 0.5.2 uses
+`loginctl show-seat seat0 -p ActiveSession` and that session's user.
+Installing it restarts the system service. Reboot only if it does not
+come up active.
 
 1. The system service is running. `sudo` on the journal matters: this
    user is not in group `adm`.
