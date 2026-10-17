@@ -71,15 +71,40 @@ if [ "$1" = configure ]; then
 	fi
 	systemctl daemon-reload 2>/dev/null || true
 	systemctl enable debondragon-backlight-save.timer 2>/dev/null || true
-	systemctl --global enable debondragon-volkeys.service 2>/dev/null || true
-	# Fan reporting writes the EC. It stays off until debondragon-fan enable,
-	# including across this upgrade. A disable stamp must survive it.
+	# 0.4.1 started this in the user session, which cannot open the keyboard
+	# node (root:input, mode 660). That package enabled it with a wants
+	# symlink. The unit file is gone, so disable has no [Install] section
+	# to follow; remove the link directly. The packaged mask
+	# (/etc/systemd/user/debondragon-volkeys.service -> /dev/null) stops a
+	# leftover enable.
+	rm -f /etc/systemd/user/default.target.wants/debondragon-volkeys.service \
+		/usr/lib/systemd/user/default.target.wants/debondragon-volkeys.service
+	systemctl --global disable --now debondragon-volkeys.service 2>/dev/null || true
+	if [ -d /run/systemd/system ]; then
+		for userdir in /run/user/[0-9]*; do
+			[ -d "$userdir" ] || continue
+			uid=${userdir##*/}
+			account=$(getent passwd "$uid" | cut -d: -f1) || true
+			[ -n "$account" ] || continue
+			systemctl --user --machine="${account}@" daemon-reload 2>/dev/null || true
+			systemctl --user --machine="${account}@" stop debondragon-volkeys.service 2>/dev/null || true
+		done
+	fi
+	systemctl enable debondragon-volkeys.service 2>/dev/null || true
+	# Fan reporting writes the EC. It stays off until debondragon-fan enable.
+	# A disable stamp must survive the upgrade. If it is already running,
+	# restart it so the new curve is installed; a few seconds of silence
+	# is inside the EC's hung-OS window.
 	if [ -e /etc/debondragon/fan-disabled ]; then
 		systemctl disable --now debondragon-fan.service 2>/dev/null || true
+	elif [ -d /run/systemd/system ] && systemctl is-active --quiet debondragon-fan.service 2>/dev/null; then
+		systemctl restart debondragon-fan.service 2>/dev/null || true
 	fi
 	if [ -d /run/systemd/system ]; then
 		udevadm control --reload 2>/dev/null || true
+		udevadm trigger --subsystem-match=input --action=change 2>/dev/null || true
 		systemctl start debondragon-backlight-save.timer 2>/dev/null || true
+		systemctl restart debondragon-volkeys.service 2>/dev/null || true
 	fi
 fi
 EOF
@@ -90,7 +115,18 @@ cat > "$pkg/DEBIAN/prerm" <<'EOF'
 set -e
 if [ "$1" = remove ]; then
 	systemctl disable --now debondragon-backlight-save.timer 2>/dev/null || true
-	systemctl --global disable debondragon-volkeys.service 2>/dev/null || true
+	systemctl --global disable --now debondragon-volkeys.service 2>/dev/null || true
+	if [ -d /run/systemd/system ]; then
+		for userdir in /run/user/[0-9]*; do
+			[ -d "$userdir" ] || continue
+			uid=${userdir##*/}
+			account=$(getent passwd "$uid" | cut -d: -f1) || true
+			[ -n "$account" ] || continue
+			systemctl --user --machine="${account}@" daemon-reload 2>/dev/null || true
+			systemctl --user --machine="${account}@" stop debondragon-volkeys.service 2>/dev/null || true
+		done
+	fi
+	systemctl disable --now debondragon-volkeys.service 2>/dev/null || true
 	# Park the EC before the reporter disappears, if it was running.
 	if systemctl is-active --quiet debondragon-fan.service 2>/dev/null; then
 		/usr/local/sbin/debondragon-fan suspend || true

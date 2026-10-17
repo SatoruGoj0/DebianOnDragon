@@ -67,18 +67,19 @@ hardware video codec with the Lenovo firmware. Compared with series 10, it
 adds policy routing, nftables, connection tracking and NAT so Tailscale and
 Docker can configure networking; compared with series 11, it adds Tailscale's
 connmark reverse-path-filter support. It also contains series 6's CPU/GPU
-passive thermal trips. Support 0.5.0 is the matching
+passive thermal trips. Support 0.5.2 is the matching
 userspace (firmware helper, UCM, topology, `alsa-ucm-conf`, responsive GRUB
-console and opt-in EC temperature reporter). Hardware H.264, HEVC (at 720p)
+console, the system-service volume keys and the opt-in EC fan reporter).
+Hardware H.264, HEVC (at 720p)
 and VP9 decoding, H.264/HEVC encoding through GStreamer, and Adreno
 acceleration are verified on the 83N3. The audio setup is inherited from the
 hardware-verified series-5 work, but should be rechecked after this upgrade.
 Keep series 11 installed as the rollback while testing series 13.
 
-1. Install support 0.5.0 first. `--force-confold` keeps your edited
+1. Install support 0.5.2 first. `--force-confold` keeps your edited
    `/etc/default/debondragon`:
    ```bash
-   sudo apt install -o Dpkg::Options::=--force-confold ./debondragon-support_0.5.0_all.deb
+   sudo apt install -o Dpkg::Options::=--force-confold ./debondragon-support_0.5.2_all.deb
    ```
 2. Pin the kernel you already trust (series 11), install
    `linux-image-7.2.0-debondragon-13`, and boot it once with `grub-reboot`.
@@ -94,26 +95,54 @@ Keep series 11 installed as the rollback while testing series 13.
    battery, Snap applications, audio, hardware video decoding and networking
    work. If it regresses, the series-11 submenu entry is the rollback.
 
-## Upgrade to series 6 (support 0.5.0)
+## Upgrade to v0.5.0 (kernel series 6, support 0.5.1)
 
-Series 6 is the kernel with CPU/GPU passive trips. Support 0.5.0 is the
-matching userspace: everything in 0.4.1, plus `debondragon-fan`. There is
-no release tag for this yet. v0.4.0 (series 5, support 0.4.1) stays as it
-is. HDMI stays on (`DEBONDRAGON_HDMI=auto` treats series 4 and later as
-HDMI-ok).
+Series 6 is the kernel with CPU/GPU passive trips. v0.4.0 (series 5,
+support 0.4.1) stays as it is. HDMI stays on (`DEBONDRAGON_HDMI=auto`
+treats series 4 and later as HDMI-ok).
 
-The fan reporter does not start on install. After the new kernel is the
-one you are booting:
+Support 0.5.0, from the untagged series-6 image, added `debondragon-fan`
+and still ran the volume keys as a user service. Support 0.5.1 programs
+the fan curve and moves mute and volume to a system service. The 0.4.1
+user service could not open the keyboard node. Do not add your user to
+group `input`.
+
+From v0.4.0, install series 6 and support 0.5.1 together, then reboot.
+The fan reporter does not start on install.
 
 ```bash
 sudo apt install -o Dpkg::Options::=--force-confold \
-  ./debondragon-support_0.5.0_all.deb \
+  ./debondragon-support_0.5.1_all.deb \
   ./linux-image-7.2.0-debondragon-6_*_arm64.deb
 sudo reboot
 ```
 
-Then the tests in docs/hardware-testing.md, "Fan and thermals". Series 5
-remains bootable from the "DebOnDragon kernels" submenu, without the new
+If the untagged 0.5.0 package is already installed and the reporter is
+enabled, install 0.5.1 on its own. No new kernel and no reboot. The
+package restarts the reporter, which takes a few seconds; leave it
+running after that.
+
+```bash
+sudo apt install -o Dpkg::Options::=--force-confold ./debondragon-support_0.5.1_all.deb
+systemctl is-active debondragon-fan.service
+sudo journalctl -u debondragon-fan -b --no-pager | tail -n 20
+```
+
+Support 0.5.2 is the volume-key seat fix and a read-back of fan curve
+slot `0x61`. The 0.5.1 curve write was acknowledged and the fan was
+still stopped at 73.8 °C, so 0.5.2 does not add another EC write. If
+0.5.1 is already installed:
+
+```bash
+sudo apt install -o Dpkg::Options::=--force-confold ./debondragon-support_0.5.2_all.deb
+systemctl is-active debondragon-volkeys.service
+```
+
+Then the tests in docs/hardware-testing.md, "Fan and thermals" and
+"Mute and volume keys". The fan reads on that page work on 0.5.1
+without this package. Do not disable the fan reporter first.
+
+Series 5 remains bootable from the "DebOnDragon kernels" submenu, without the new
 trips and without the reporter (the reporter is a userspace service; if
 you boot series 5 while it is enabled it still reports, which is safe,
 and the series 5 devicetree simply has no 75 °C trip).

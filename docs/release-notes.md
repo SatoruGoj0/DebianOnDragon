@@ -1,4 +1,4 @@
-# Unreleased: kernel 7.2.0-debondragon-13, debondragon-support 0.5.0
+# Unreleased: kernel 7.2.0-debondragon-13, debondragon-support 0.5.2
 
 Not a tagged release. Kernel series 13 includes the thermal changes from
 series 6 and installs beside the older kernels. It boots on the 83N3; battery,
@@ -6,32 +6,10 @@ Wi-Fi, Bluetooth, eDP, GPU/Vulkan, Snap, Iris video, Tailscale and Docker were
 regression-tested, and the keyboard/touchpad enumerate. Series 11 remains the
 installed rollback.
 
-When `DEBONDRAGON_DEFAULT_KERNEL` is set, support 0.5.0 now puts that kernel
+When `DEBONDRAGON_DEFAULT_KERNEL` is set, support 0.5.2 now puts that kernel
 first in GRUB's top-level menu, makes it the persistent default, and loads its
 matching devicetree. The complete per-kernel submenu remains available for
 rollback and HDMI-off entries.
-
-## The fan was not seeing the SoC
-
-On series 5, light use left every SoC thermal zone at 59–63 °C while the
-battery read 30 °C and the PMICs 37 °C. The zones matching each other is
-a fan that is off or barely spinning. Windows feeds die temperature to
-the EC ("Temp to EC", register 0x20). Linux never did, and the CPU zones
-had no passive trip short of a 115 °C shutdown.
-
-Kernel `7.2.0-debondragon-6` adds a 75 °C passive trip on the CPU and
-CPUSS zones (cluster 0 cools cpu0–3, cluster 1 cools cpu4–7) and lowers
-the GPU passive trip from 95 °C to 85 °C. The 115 °C critical trips stay.
-Nothing in the devicetree writes the EC.
-
-`debondragon-support` 0.5.0 adds `debondragon-fan`. It is off until
-`sudo debondragon-fan enable`. It reports SoC temperature (register 0x20,
-decidegrees Celsius, sensors 0x01/0x02/0x03) and tells the EC about
-suspend (register 0x23). It does not set RPM, replace the fan curve, or
-write debug mode. `qcom-hamoa-ec` stays blacklisted: on this EC that
-driver's reads are the wrong protocol and its probe would write debug
-mode. Not confirmed on hardware. Steps and the power-off warning are in
-docs/hardware-testing.md, "Fan and thermals".
 
 The battery/DSP handoff, Wi-Fi, Bluetooth, touchpad and boot were verified on
 the 83N3. The audio configuration is inherited from the
@@ -53,7 +31,7 @@ commit `43899c55d79b`, enables Iris, and selects the device-signed Lenovo
 `qcvss8380.mbn`. The earlier `7.2.2-ideapad-iris1+` experiment used generic
 firmware and the secure monitor rejected it with `-22`. Hardware testing found
 that this 83N3 also rejects the display driver's non-PA image but accepts
-`qcvss8380_pa.mbn`. Support 0.5.0 exports the PA image and installs it at the
+`qcvss8380_pa.mbn`. Support 0.5.2 exports the PA image and installs it at the
 series-10 path. FFmpeg selected the `iris_driver` decoder node (device numbering
 varies between boots) and decoded all
 90 frames of 1280x720 H.264 and HEVC samples, plus all 30 frames of a 640x360
@@ -112,6 +90,165 @@ Support 0.4.1 and later also select GRUB's firmware text console because
 graphical GRUB input is severely delayed by this laptop's GOP. This affects
 the boot menu only, not Linux graphics.
 
+## Series 10 support package
+
+`debondragon-support` 0.4.3:
+
+- UCM enables speakers at PA volume 6 and WSA digital volume 81, and
+  headphones in class-AB. Speaker controls are written only when they
+  exist, so this package still loads headphones on a series-4 kernel.
+- Depends on `alsa-ucm-conf` (>= 1.2.12). Recommends PulseAudio (or
+  PipeWire's Pulse compatibility) and `alsa-utils`. The ISO installs
+  those packages.
+- Restarts PulseAudio when the late ADSP sound card appears and handles the
+  mute and volume keys.
+- The redistributable T14s topology is still installed under the card
+  name. That file has no DisplayPort graphs.
+- The Windows and Linux firmware helpers require the device-signed Iris
+  `qcvss8380_pa.mbn` and install it at the series-10 non-suffixed path.
+
+`DEBONDRAGON_HDMI=auto` already treats series 4 and later as HDMI-ok, so
+series 10 keeps HDMI video on.
+
+## Series 13 audio result
+
+The sound card does not probe on series 13 (the identical state is present on
+series 11). The ADSP attaches and PMIC GLINK battery telemetry works, but its
+GLINK edge does not publish the `adsp_apps` GPR channel. The APR/GPR audio bus
+therefore stays empty, Q6PRM does not provide the LPASS clocks, and LPI
+pinctrl, SoundWire and the machine card remain deferred. This is now tracked
+with the exact dependency chain in `TO-FIX.md`; it is not a UCM or PulseAudio
+problem because no ALSA card exists yet.
+
+## Mute and volume ignored the Hyprland session
+
+Support 0.5.1 opens the keyboard, then logged `no active seat` on every
+key. `loginctl list-sessions` on this laptop has session 1 as class
+`manager` with no seat, and session 2 as the Hyprland session on
+`seat0` (`ActiveSession=2`, uid 1000, class user). The seat file's
+`ACTIVE=` field is that session id, not a boolean, so a check for
+`ACTIVE=1` skipped session 2. Support 0.5.2 asks `loginctl show-seat
+seat0 -p ActiveSession` and uses that session's `User` when `Class=user`
+and `Active=yes`. `pactl` still runs as that uid with
+`XDG_RUNTIME_DIR=/run/user/<uid>`. Not confirmed on hardware yet.
+
+## The fan curve write was acknowledged and the fan stayed off
+
+Support 0.5.1 logged `programmed fan 1 curve for profiles 1-7`. Under an
+8-core load the hottest zone was `cpu1-3-btm` at 73.8 °C and fan 1 was
+still `0x02 0x00 0x00` (0 rpm). An I2C ACK is not proof the EC stored
+the curve. Support 0.5.2 reads slot `0x61` back after the write and logs
+the bytes. `debondragon-fan probe` reads fan 1 slots for profiles 1–7,
+plus slot `0x61` with a zero second byte. It still does not write the
+profile, debug mode, or EC enable. Qualcomm's Hamoa driver has no
+separate apply-LUT command: it writes the profile register and the LUT,
+and its only other init writes are SoC Tj, modern-standby, and SCI
+enable (`0x35` = 1). `0x35` = 0 is "SCI EC Disable" and is not written.
+The fan is still Experimental.
+
+## Still open on series 13
+
+- Restore the ADSP `adsp_apps`/GPR path so the series-5 speaker and headphone
+  setup can bind again; microphones still need their first hardware test.
+- No active speaker protection. The PA is capped at 0 dB; keep the volume
+  moderate.
+- HDMI audio stays silent.
+
+---
+
+# DebOnDragon v0.5.0
+
+Kernel `7.2.0-debondragon-6` (Linux v7.2) and `debondragon-support` 0.5.1.
+Series 6 installs beside series 5. v0.4.0 stays on series 5 and support 0.4.1.
+
+The support package is 0.5.1. The 0.5.0 package was already installed from
+the untagged series-6 image, and a deb with the same version would not
+upgrade it. There is no new kernel in 0.5.1.
+
+## The fan was not seeing the SoC
+
+On series 5, light use left every SoC thermal zone at 59–63 °C while the
+battery read 30 °C and the PMICs 37 °C. The zones matching each other is
+a fan that is off or barely spinning. Windows feeds die temperature to
+the EC ("Temp to EC", register 0x20). Linux never did, and the CPU zones
+had no passive trip short of a 115 °C shutdown.
+
+Kernel `7.2.0-debondragon-6` adds a 75 °C passive trip on the CPU and
+CPUSS zones (cluster 0 cools cpu0–3, cluster 1 cools cpu4–7) and lowers
+the GPU passive trip from 95 °C to 85 °C. The 115 °C critical trips stay.
+Nothing in the devicetree writes the EC.
+
+`debondragon-support` 0.5.0 adds `debondragon-fan`. It is off until
+`sudo debondragon-fan enable`. It reports SoC temperature (register 0x20,
+decidegrees Celsius, sensors 0x01/0x02/0x03) and tells the EC about
+suspend (register 0x23). It does not set RPM, replace the fan curve, or
+write debug mode. `qcom-hamoa-ec` stays blacklisted: on this EC that
+driver's reads are the wrong protocol and its probe would write debug
+mode. Steps and the power-off warning are in
+docs/hardware-testing.md, "Fan and thermals".
+
+## The fan stayed off at 72.7 °C
+
+On series 6 with support 0.5.0 the reporter was running and the writes
+were the decidegree `0x20` reports above. Idle SoC zones were 48–50 °C.
+After 90 seconds of all-core load the hottest zone was `cpu0-0-btm` at
+72.7 °C. Fan 1 answered `0x02 0x00 0x00` (0 rpm) and fan 2 answered
+`0x00 0x00 0x00`. The fan was physically stopped: no sound, no airflow.
+The 0 rpm decode is right. 72.7 °C is already above the DSDT active trip
+for the SoC fan zone (0x0D3E, about 66 °C).
+
+A later light-load read, with the reporter still running, gave the same
+shape. Hottest zone 55.9 °C, battery 30.3 °C. Fan 1 status `0x00` and
+speed `0x02 0x00 0x00` (byte count 2, 0 rpm). Fan 2 speed
+`0x00 0x00 0x00` (byte count 0: no second fan). EC thermistors
+`0x29`–`0x2d` all `0x00`. Profile `0x24` was `0x06`, which is the
+best-performance-on-AC profile, not a fan-off mode. The curve reads used
+LUT ids `0x00`, `0x10` and `0x01`. The id the DSDT and Qualcomm's driver
+use for fan 1 profile 6 is `0x61` (`profile << 4 | fan`), so those buffers
+were not the active curve. One of them trailed into `0x03 0x00 0x18 0x01`,
+the EC firmware version from register `0x0e`.
+
+Qualcomm's Hamoa driver sends sensor `0x01` only, in 0.1 °C units
+(651 means 65.1 °C), and it programs the fan LUT itself. The unit we were
+already sending matches that. Sending tenths of Kelvin for 72.7 °C would
+look like 345.9 °C, so the unit is not changed. What was missing is the
+curve: temperature reports with no LUT left the fan at 0 rpm.
+
+Support 0.5.1, once the reporter is enabled, writes that curve for fan 1
+and profiles 1–7. The table is the Hamoa breakpoints. Speed is off below
+52 °C, 1600 rpm at 55 °C, 2800 rpm at 70 °C, and never above 4000 rpm.
+The write is register `0x28`, 68 bytes, temp source `0x01`. It does not
+change the selected profile, set a direct RPM, or write debug mode
+(`0x30`) or EC enable (`0x35`). `qcom-hamoa-ec` stays blacklisted. The
+temperature report is now sensor `0x01` only. `debondragon-fan probe`
+stays read-only and reads the `0x61` slot. Not confirmed on hardware:
+the fan is still Experimental until it is heard to spin.
+
+## Mute and volume keys could not open the keyboard
+
+Support 0.4.1 started `debondragon-volkeys` in the user session. On the
+83N3 the keys arrive on `platform-a84000.i2c-event-kbd` (`KEY_MUTE`,
+`KEY_VOLUMEDOWN`, `KEY_VOLUMEUP`). That node is mode 660, `root:input`.
+The session user is not in group `input`, so the open failed, and the
+program logged nothing.
+
+Support 0.5.1 runs it as a system service. It opens the node as root,
+ignores every key except mute and volume, and runs `pactl` as the
+active seat user. If it cannot open a device it logs that, and the
+message says not to add the user to group `input`. A udev rule grants
+`uaccess` only to a consumer-control node on `a84000.i2c` that is not
+the typing keyboard. The 0.4.1 user service is masked and its autostart
+entry is removed. Not confirmed on hardware. Steps:
+docs/hardware-testing.md, "Mute and volume keys".
+
+---
+
+# DebOnDragon v0.4.0
+
+Kernel `7.2.0-debondragon-5` (Linux v7.2) and `debondragon-support` 0.4.1.
+Series 5 is the default. It installs beside earlier kernels
+(docs/kernel-upgrade.md, "Upgrade to v0.4.0").
+
 ## Audio works
 
 Verified on the 83N3 with series 5 and support 0.4.0: the sound card and
@@ -145,30 +282,13 @@ with `debondragon-firmware` or `windows/Export-Firmware.ps1`.
 
 ## Mute and volume keys
 
-F1, F2 and F3 (mute, volume down, volume up) are reported by the ITE keyboard
-on a consumer-control evdev node, separate from the typing keys. Support 0.4.1
-and later run `debondragon-volkeys`, which calls `pactl` for `KEY_MUTE`,
-`KEY_VOLUMEDOWN` and `KEY_VOLUMEUP`.
-
-## Series 10 support package
-
-`debondragon-support` 0.4.3:
-
-- UCM enables speakers at PA volume 6 and WSA digital volume 81, and
-  headphones in class-AB. Speaker controls are written only when they
-  exist, so this package still loads headphones on a series-4 kernel.
-- Depends on `alsa-ucm-conf` (>= 1.2.12). Recommends PulseAudio (or
-  PipeWire's Pulse compatibility) and `alsa-utils`. The ISO installs
-  those packages.
-- Restarts PulseAudio when the late ADSP sound card appears and handles the
-  mute and volume keys.
-- The redistributable T14s topology is still installed under the card
-  name. That file has no DisplayPort graphs.
-- The Windows and Linux firmware helpers require the device-signed Iris
-  `qcvss8380_pa.mbn` and install it at the series-10 non-suffixed path.
-
-`DEBONDRAGON_HDMI=auto` already treats series 4 and later as HDMI-ok, so
-series 10 keeps HDMI video on.
+F1, F2 and F3 (mute, volume down, volume up) did nothing. Support 0.4.1
+runs `debondragon-volkeys` in the user session and calls `pactl` for
+`KEY_MUTE`, `KEY_VOLUMEDOWN` and `KEY_VOLUMEUP`. Hardware later showed
+those events on the typing-keyboard node
+(`platform-a84000.i2c-event-kbd`), which that user service cannot open,
+and the failure was silent. The fix is in support 0.5.1 (above). v0.4.0
+itself is unchanged.
 
 ## Why series 5 had to describe the speakers
 
@@ -178,24 +298,6 @@ and the UCM profile stopped using the Debian sequences that this kernel rejects
 (PA volume 12, digital volume 84, class-H headphones). Details are in the board
 notes. Series 4 remains a rollback: its devicetree does not wait for the speaker
 amplifiers.
-
-## Series 13 audio result
-
-The sound card does not probe on series 13 (the identical state is present on
-series 11). The ADSP attaches and PMIC GLINK battery telemetry works, but its
-GLINK edge does not publish the `adsp_apps` GPR channel. The APR/GPR audio bus
-therefore stays empty, Q6PRM does not provide the LPASS clocks, and LPI
-pinctrl, SoundWire and the machine card remain deferred. This is now tracked
-with the exact dependency chain in `TO-FIX.md`; it is not a UCM or PulseAudio
-problem because no ALSA card exists yet.
-
-## Still open on series 13
-
-- Restore the ADSP `adsp_apps`/GPR path so the series-5 speaker and headphone
-  setup can bind again; microphones still need their first hardware test.
-- No active speaker protection. The PA is capped at 0 dB; keep the volume
-  moderate.
-- HDMI audio stays silent.
 
 ---
 

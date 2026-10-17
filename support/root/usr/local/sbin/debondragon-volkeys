@@ -1,19 +1,24 @@
 #!/usr/bin/env python3
 """Mute and volume keys for the IdeaPad Slim 3 15Q8X10.
 
-The keyboard is the ITE controller at ACPI QTEC0001 (HID vendor 048D).
-Windows shows it as one I2C HID device with several collections. Collection
-2 is a standard consumer-control device: mute, volume down, volume up.
-Linux hid-input turns those usages into KEY_MUTE, KEY_VOLUMEDOWN and
-KEY_VOLUMEUP on their own evdev node.
+The keyboard is the ITE controller at ACPI QTEC0001 (HID vendor 048D),
+on the i2c controller a84000. Windows shows several HID collections.
+Collection 2 is consumer control: mute, volume down, volume up. Linux
+hid-input turns those usages into KEY_MUTE, KEY_VOLUMEDOWN and
+KEY_VOLUMEUP.
 
-That node has no letter keys, so X.org's libinput "keyboard" catchall does
-not open it, and Hyprland has no binding for those keys. The keys reach
-the kernel and then stop. This program reads that node and asks PulseAudio
-(or PipeWire's pulse interface) to change the default sink.
+On the 83N3 those events are delivered on the evdev node udev names
+platform-a84000.i2c-event-kbd. That node is the typing keyboard
+(mode 660, root:input). The logged-in user is not in group input, and
+must not be: that group can read every keyboard. A user service therefore
+cannot open the device, and 0.4.1 failed with no log line.
 
-A full keyboard, one that also has letter keys, is left alone so this does
-not steal typing. DEBONDRAGON_VOLKEYS_SELFTEST=1 checks the mapping and exits.
+This program runs as a system service. It opens the device as root,
+discards every event that is not mute or volume, and asks the active
+seat's PulseAudio (or PipeWire pulse interface) to change the default
+sink. A consumer-control node that has the volume keys and no letter
+keys is preferred, so the typing keyboard is not read when a separate
+node exists. DEBONDRAGON_VOLKEYS_SELFTEST=1 checks the mapping and exits.
 """
 
 import array
@@ -21,6 +26,7 @@ import errno
 import fcntl
 import glob
 import os
+import pwd
 import select
 import struct
 import subprocess
@@ -33,6 +39,7 @@ KEY_VOLUMEDOWN = 114
 KEY_VOLUMEUP = 115
 EV_KEY = 0x01
 VOL_KEYS = (KEY_MUTE, KEY_VOLUMEDOWN, KEY_VOLUMEUP)
+INTERNAL_BUS = "a84000.i2c"
 
 # struct input_event on arm64/amd64: two 64-bit time fields, then type,
 # code, value.
@@ -54,13 +61,39 @@ def key_bits(fd):
     return found
 
 
+def has_volume(keys):
+    return any(code in keys for code in VOL_KEYS)
+
+
 def wants_device(keys):
     """Consumer-control node: a volume key, and not the typing keyboard."""
-    if not any(code in keys for code in VOL_KEYS):
-        return False
-    if KEY_A in keys:
-        return False
-    return True
+    return has_volume(keys) and KEY_A not in keys
+
+
+def pick_devices(records):
+    """Choose which opened devices to keep.
+
+    records are (name, keys, on_internal_bus). A consumer-control node on
+    the internal keyboard bus wins over the typing keyboard, so letter keys
+    are not read when a separate node exists. A USB keyboard that also has
+    volume keys is left alone. Other consumer-only nodes (a headset) are
+    kept either way.
+    """
+    volume = [rec for rec in records if has_volume(rec[1])]
+    internal_consumer = [rec for rec in volume if rec[2] and KEY_A not in rec[1]]
+    other_consumer = [rec for rec in volume if not rec[2] and KEY_A not in rec[1]]
+    internal_keyboard = [rec for rec in volume if rec[2] and KEY_A in rec[1]]
+    if internal_consumer:
+        return internal_consumer + other_consumer
+    return internal_keyboard + other_consumer
+
+
+def permission_denied_message(path):
+    return (
+        f"cannot open {path}: permission denied. "
+        "Mute and volume will do nothing until this device can be read. "
+        "Do not add the user to group input; that exposes every keyboard."
+    )
 
 
 def action_for(code, value):
@@ -77,6 +110,39 @@ def action_for(code, value):
     return None
 
 
+def _prop(text, key):
+    prefix = key + "="
+    for line in text.splitlines():
+        line = line.strip()
+        if line.startswith(prefix):
+            return line[len(prefix):].strip()
+    return None
+
+
+def uid_from_login(seat_text, session_text):
+    """Uid of the seat's active user session.
+
+    `loginctl show-seat seat0 -p ActiveSession` names the session (on this
+    laptop, 2). Session 1 is the per-user manager, class manager, and has
+    no seat; its uid must not be used. The session must be class user and
+    Active=yes. The seat file's ACTIVE= field is that session id, not a
+    boolean, so it is not parsed.
+    """
+    if not _prop(seat_text, "ActiveSession"):
+        return None
+    if _prop(session_text, "Class") != "user":
+        return None
+    if _prop(session_text, "Active") not in ("yes", "1"):
+        return None
+    try:
+        uid = int(_prop(session_text, "User"))
+    except (TypeError, ValueError):
+        return None
+    if uid <= 0:
+        return None
+    return uid
+
+
 def selftest():
     assert wants_device({KEY_MUTE, KEY_VOLUMEDOWN, KEY_VOLUMEUP})
     assert not wants_device({KEY_MUTE, KEY_A})
@@ -87,11 +153,59 @@ def selftest():
     assert action_for(KEY_VOLUMEDOWN, 1) == ("set-sink-volume", "@DEFAULT_SINK@", "-5%")
     assert action_for(KEY_VOLUMEUP, 2) == ("set-sink-volume", "@DEFAULT_SINK@", "+5%")
     assert action_for(KEY_VOLUMEUP, 0) is None
+    consumer = ("consumer", {KEY_MUTE}, True)
+    keyboard = ("keyboard", {KEY_MUTE, KEY_A, KEY_VOLUMEDOWN}, True)
+    usb = ("usb", {KEY_VOLUMEUP, KEY_A}, False)
+    headset = ("headset", {KEY_VOLUMEUP}, False)
+    assert [rec[0] for rec in pick_devices([consumer, keyboard])] == ["consumer"]
+    assert [rec[0] for rec in pick_devices([keyboard, usb])] == ["keyboard"]
+    assert pick_devices([usb]) == []
+    assert [rec[0] for rec in pick_devices([headset])] == ["headset"]
+    assert [rec[0] for rec in pick_devices([keyboard, headset])] == ["keyboard", "headset"]
+    denied = permission_denied_message("/dev/input/event7")
+    assert denied.startswith("cannot open /dev/input/event7: permission denied")
+    assert "group input" in denied
+    seen = set()
+    assert report_denied(["/dev/input/event7"], seen) == [denied]
+    assert report_denied(["/dev/input/event7"], seen) == []
+    # This laptop: session 1 is the manager (no seat), session 2 is Hyprland.
+    seat = "ActiveSession=2\n"
+    wayland = (
+        "User=1000\nClass=user\nActive=yes\nState=active\n"
+        "Type=wayland\nSeat=seat0\n"
+    )
+    manager = "User=1000\nClass=manager\nActive=yes\nSeat=\n"
+    assert uid_from_login(seat, wayland) == 1000
+    assert uid_from_login(seat, manager) is None
+    assert uid_from_login("ActiveSession=1\n", manager) is None
+    assert uid_from_login("ActiveSession=\n", wayland) is None
+    assert uid_from_login(seat, "User=1000\nClass=user\nActive=no\n") is None
+    assert uid_from_login(seat, "User=0\nClass=user\nActive=yes\n") is None
     print("ok")
 
 
+def log(msg):
+    print(f"debondragon-volkeys: {msg}", file=sys.stderr, flush=True)
+
+
+_other_open_errors = set()
+
+
+def report_denied(paths, already):
+    lines = []
+    for path in paths:
+        if path in already:
+            continue
+        already.add(path)
+        lines.append(permission_denied_message(path))
+    return lines
+
+
 def take_lock():
-    run = os.environ.get("XDG_RUNTIME_DIR") or f"/run/user/{os.getuid()}"
+    if os.geteuid() == 0:
+        run = "/run/debondragon"
+    else:
+        run = os.environ.get("XDG_RUNTIME_DIR") or f"/run/user/{os.getuid()}"
     os.makedirs(run, exist_ok=True)
     lock = open(os.path.join(run, "debondragon-volkeys.lock"), "w")
     try:
@@ -101,30 +215,120 @@ def take_lock():
     return lock
 
 
+def on_internal_bus(path):
+    name = os.path.basename(path)
+    sysfs = os.environ.get("DEBONDRAGON_VOLKEYS_SYSFS", "/sys/class/input")
+    try:
+        real = os.path.realpath(os.path.join(sysfs, name))
+    except OSError:
+        return False
+    return INTERNAL_BUS in real
+
+
+def input_dir():
+    return os.environ.get("DEBONDRAGON_VOLKEYS_INPUT", "/dev/input")
+
+
 def open_devices():
-    fds = []
-    for path in sorted(glob.glob("/dev/input/event*")):
+    """Return (kept fds, denied paths). Unwanted fds are closed."""
+    opened = []
+    denied = []
+    for path in sorted(glob.glob(os.path.join(input_dir(), "event*"))):
         try:
             fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
-        except OSError:
+        except OSError as err:
+            if err.errno in (errno.EACCES, errno.EPERM):
+                denied.append(path)
+            elif path not in _other_open_errors:
+                _other_open_errors.add(path)
+                log(f"cannot open {path}: {err.strerror}")
             continue
         try:
-            if wants_device(key_bits(fd)):
-                fds.append(fd)
-            else:
-                os.close(fd)
-        except OSError:
+            keys = key_bits(fd)
+        except OSError as err:
             os.close(fd)
-    return fds
+            log(f"cannot read keys from {path}: {err.strerror}")
+            continue
+        if not has_volume(keys):
+            os.close(fd)
+            continue
+        opened.append((fd, path, keys, on_internal_bus(path)))
+    chosen = pick_devices([(path, keys, internal) for _, path, keys, internal in opened])
+    chosen_paths = {rec[0] for rec in chosen}
+    kept = []
+    for fd, path, keys, internal in opened:
+        if path in chosen_paths:
+            kept.append((fd, path, KEY_A in keys))
+        else:
+            os.close(fd)
+    return kept, denied
+
+
+def loginctl_show(kind, ident, *props):
+    if not ident or any(c not in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" for c in ident):
+        return None
+    cmd = ["loginctl", f"show-{kind}", ident]
+    for prop in props:
+        cmd.extend(["-p", prop])
+    try:
+        out = subprocess.run(
+            cmd, check=False, capture_output=True, text=True, timeout=5
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if out.returncode != 0:
+        return None
+    return out.stdout
+
+
+def session_uid():
+    """Uid from `loginctl show-seat seat0 -p ActiveSession` and that session."""
+    seat_text = os.environ.get("DEBONDRAGON_VOLKEYS_SEAT_SHOW")
+    if seat_text is None:
+        seat_text = loginctl_show("seat", "seat0", "ActiveSession")
+    if not seat_text:
+        return None
+    sid = _prop(seat_text, "ActiveSession")
+    if not sid:
+        return None
+    session_text = os.environ.get("DEBONDRAGON_VOLKEYS_SESSION_SHOW")
+    if session_text is None:
+        session_text = loginctl_show("session", sid, "User", "Class", "Active")
+    if session_text is None:
+        return None
+    return uid_from_login(seat_text, session_text)
 
 
 def apply_action(args):
-    subprocess.run(
-        ["pactl", *args],
-        check=False,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+    cmd = ["pactl", *args]
+    kwargs = {
+        "check": False,
+        "stdout": subprocess.DEVNULL,
+        "stderr": subprocess.DEVNULL,
+    }
+    if os.geteuid() == 0:
+        uid = session_uid()
+        if uid is None:
+            log("no active seat; mute and volume were not applied")
+            return
+        try:
+            pw = pwd.getpwuid(uid)
+        except KeyError:
+            log(f"active seat uid {uid} has no passwd entry")
+            return
+        runtime = f"/run/user/{uid}"
+        kwargs["user"] = pw.pw_uid
+        kwargs["group"] = pw.pw_gid
+        kwargs["extra_groups"] = []
+        kwargs["env"] = {
+            "PATH": "/usr/bin:/bin",
+            "HOME": pw.pw_dir,
+            "USER": pw.pw_name,
+            "LOGNAME": pw.pw_name,
+            "XDG_RUNTIME_DIR": runtime,
+            "DBUS_SESSION_BUS_ADDRESS": f"unix:path={runtime}/bus",
+        }
+    subprocess.run(cmd, **kwargs)
 
 
 def main():
@@ -132,16 +336,35 @@ def main():
     # letting it be garbage-collected, drops the lock and a second copy starts.
     lock = take_lock()
     fds = []
+    logged_denied = set()
+    logged_fallback = False
+    logged_missing = False
     try:
         while True:
-            current = open_devices()
-            for fd in fds:
+            current, denied = open_devices()
+            for line in report_denied(denied, logged_denied):
+                log(line)
+            for fd, _, _ in fds:
                 os.close(fd)
             fds = current
             if not fds:
+                if denied and not logged_missing:
+                    logged_missing = True
+                    log("no mute or volume device is open")
+                elif not denied:
+                    logged_missing = False
                 time.sleep(2)
                 continue
-            readable, _, _ = select.select(fds, [], [], 2.0)
+            logged_missing = False
+            if any(fallback for _, _, fallback in fds) and not logged_fallback:
+                logged_fallback = True
+                names = ", ".join(path for _, path, fallback in fds if fallback)
+                log(
+                    "volume keys are on the typing keyboard "
+                    f"({names}); reading it as root and ignoring every key "
+                    "except mute and volume"
+                )
+            readable, _, _ = select.select([fd for fd, _, _ in fds], [], [], 2.0)
             for fd in readable:
                 while True:
                     try:
@@ -159,7 +382,7 @@ def main():
                     if action:
                         apply_action(action)
     finally:
-        for fd in fds:
+        for fd, _, _ in fds:
             os.close(fd)
         lock.close()
 

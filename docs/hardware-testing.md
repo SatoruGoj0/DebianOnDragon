@@ -6,8 +6,9 @@ been seen working on the laptop. This page lists the tests for each
 
 Run every test on the kernel that implements it (`uname -r`). The touchpad
 test is series 3, HDMI is series 4, audio is series 5, the battery test uses
-series 7, and hardware video uses series 10. Fan trips need kernel series 6;
-the fan reporter needs support 0.5.0. Volume keys need support 0.4.1 or later.
+series 7, and hardware video uses series 10. Fan trips need kernel series 6.
+Volume keys and the fan curve need support 0.5.1; the fan-curve readback and
+the active-seat fix need support 0.5.2.
 When done, collect everything with:
 
 ```bash
@@ -80,7 +81,7 @@ crash-safe logging, are in **docs/hdmi-testing.md**.
 3. If `lsusb` doesn't list it, send the report: its USB and `dmesg` sections
    show whether the eUSB2 repeater at i2c5 0x4b answered.
 
-## Fan and thermals (kernel series 6, support 0.5.0)
+## Fan and thermals (kernel series 6, support 0.5.1)
 
 **What series 5 did.** Light use, laptop warm to the touch: every SoC zone
 (cpu0/cpu1 clusters, cpuss, gpuss, nsp, aoss, mem, video, camera) read
@@ -106,32 +107,70 @@ uname -r    # 7.2.0-debondragon-6
 grep . /sys/class/thermal/thermal_zone*/type /sys/class/thermal/thermal_zone*/trip_point_*_temp /sys/class/thermal/thermal_zone*/trip_point_*_type | grep -E 'passive|75000|85000'
 ```
 
-**Fan reporter (opt-in, writes the EC).** It sends only the temperature
-report (register 0x20, decidegrees Celsius, sensors 0x01 CPU-aggregate,
-0x02 the CPU zone, 0x03 the GPU zone) and, around suspend, modern-standby
-status (register 0x23). It does not set RPM, replace the fan curve, or
-clear any EC failsafe. The EC decides the speed.
+**Fan reporter (opt-in, writes the EC).** Support 0.5.1 sends SoC Tj
+(register 0x20, sensor 0x01, decidegrees Celsius: 65.1 °C is 651) and
+installs a fan-1 curve (register 0x28) for profiles 1–7. The curve is
+off below 52 °C, about 1600 rpm at 55 °C, about 2800 rpm at 70 °C, and
+never above 4000 rpm. It does not change the selected profile, write
+debug mode (`0x30`), or write EC enable (`0x35`). Around suspend it
+writes modern-standby status (register 0x23).
 
-Read first. This writes nothing:
+On this laptop, support 0.5.0's temperature reports left the fan
+physically stopped at 72.7 °C, and a light-load read at 55.9 °C was the
+same: fan 1 at 0 rpm, fan 2 absent, profile 0x06. Support 0.5.1 then
+wrote a curve; under load at 73.8 °C the fan was still stopped. Do not
+disable the reporter. The reads below check whether that curve was
+stored.
 
 ```bash
+sudo apt install -o Dpkg::Options::=--force-confold ./debondragon-support_0.5.1_all.deb
+systemctl is-active debondragon-fan.service
+sudo journalctl -u debondragon-fan -b --no-pager | tail -n 20
 sudo debondragon-fan status
 ```
 
-Then turn reporting on and watch the fan. Stop the load with Ctrl-C; leave
+`sudo` on the journal matters: this user is not in group `adm`, so a
+plain `journalctl` is empty. The journal line to look for is
+`programmed fan 1 curve for profiles 1-7`.
+
+Then put a short load on and listen. Stop the load with Ctrl-C. Leave
 the reporter running.
 
 ```bash
-sudo debondragon-fan enable
 for i in $(seq 8); do timeout 90 sh -c 'while :; do :; done' & done
-watch -n2 'sudo debondragon-fan status'
+sleep 30
+sudo debondragon-fan status
 ```
 
-Send back: `status` before enable (fan RPM at the 60 °C soak), `status`
-after a minute of load (RPM and the hottest zone), and whether you can
-hear the fan. Expected if the report is in the unit the EC's curve uses:
-RPM rises from 0 once the die is warm, and the SoC stops sitting at 60 °C
-with the fan stopped. Not confirmed yet.
+**Support 0.5.1 on this laptop.** The journal logged `programmed fan 1
+curve for profiles 1-7, source 0x01, cap 4000 rpm`. After 30 seconds of
+8-core load the hottest zone was 73.8 °C and fan 1 was still
+`0x02 0x00 0x00` (0 rpm). Leave the reporter running. These reads do
+not write a register. Paste the whole output. `sudo` matters.
+
+```bash
+sudo debondragon-fan probe
+BUS=$(for a in /sys/bus/i2c/devices/i2c-*; do
+	case $(readlink -f "$a/of_node" 2>/dev/null) in
+	*i2c@b94000) echo "${a##*/i2c-}" ;;
+	esac
+done)
+echo "bus $BUS"
+echo "--- profile ---"
+sudo i2ctransfer -f -y "$BUS" w1@0x76 0x24 r1
+echo "--- fan 1 curve slots, profiles 1-7, temp source 0x01 ---"
+for id in 0x11 0x21 0x31 0x41 0x51 0x61 0x71; do
+	echo "lut $id"
+	sudo i2ctransfer -f -y "$BUS" w5@0x76 0x28 "$id" 0x01 0x00 0x00 r65
+done
+echo "--- slot 0x61 with a zero second byte ---"
+sudo i2ctransfer -f -y "$BUS" w5@0x76 0x28 0x61 0x00 0x00 0x00 r65
+echo "--- firmware 0x0e ---"
+sudo i2ctransfer -f -y "$BUS" w1@0x76 0x0e r4
+```
+
+Do not write `0x24`, `0x25`, `0x30`, or `0x35`. `0x35` = 0 is the DSDT
+"SCI EC Disable" command.
 
 **Safety.** After `enable`, do not `systemctl stop debondragon-fan` and
 walk away. If temperature reports stop for more than a couple of minutes,
@@ -145,9 +184,10 @@ sudo reboot
 ```
 
 `disable` tells the EC the OS is suspended before it stops the updates.
-Reboot so that notice does not linger. If the fan never moves after
-`enable`, disable it and send the `status` output. Do not try other I2C
-writes; a wrong temperature unit can look like an overtemp.
+Reboot so that notice does not linger. The curve write is runtime state;
+a reboot without the reporter running returns the EC to the behavior it
+had before 0.5.1. Do not write `0x30`, `0x24`, `0x25`, or `0x35`
+yourself, and do not hand-send a different `0x20` value.
 
 ## Thermal sensors
 
@@ -203,7 +243,7 @@ reused.
 
 ## Hardware video decoding
 
-Needs kernel `7.2.0-debondragon-10` (or later), support 0.5.0, the authenticated
+Needs kernel `7.2.0-debondragon-10` (or later), support 0.5.2, the authenticated
 `qcvss8380_pa.mbn` installed by `debondragon-firmware`, `v4l-utils`, and
 `ffmpeg`. The helper copies that PA image to the non-suffixed path requested
 by the series-10 devicetree. The non-PA image is rejected with error `-22`.
@@ -327,16 +367,37 @@ HDMI audio stays silent.
 
 ## Mute and volume keys
 
-F1, F2 and F3 are mute, volume down and volume up. The keyboard sends
-them as consumer-control keys (`KEY_MUTE`, `KEY_VOLUMEDOWN`,
-`KEY_VOLUMEUP`) on their own input device, separate from the typing
-keys. Support 0.4.1 runs `debondragon-volkeys`, which calls `pactl` for
-those keys. Log out and back in (or reboot) after installing 0.4.1.
+F1, F2 and F3 are mute, volume down and volume up. On the 83N3,
+`libinput` reports `KEY_MUTE`, `KEY_VOLUMEDOWN` and `KEY_VOLUMEUP` on
+the typing-keyboard node
+(`/dev/input/by-path/platform-a84000.i2c-event-kbd`). That node is
+`root:input` mode 660. Support 0.4.1 started `debondragon-volkeys` in
+the user session, which cannot open it, and the failure was silent.
+Do not add your user to group `input`: that group can read every
+keyboard.
 
-1. The service is running:
+Support 0.5.1 runs the same program as a system service. It reads that
+node as root, ignores every key except mute and volume, and calls
+`pactl` as the active seat user. If the kernel exposes a separate
+consumer-control node (volume keys, no letter keys) on the `a84000.i2c`
+bus, a udev rule tags only that node `uaccess` for the active seat.
+Support 0.5.1 opened the keyboard and then logged `no active seat` for
+every key. Session 1 on this laptop is the logind manager and has no
+seat; Hyprland is session 2 on `seat0`. Support 0.5.2 uses
+`loginctl show-seat seat0 -p ActiveSession` and that session's user.
+Installing it restarts the system service. Reboot only if it does not
+come up active.
+
+1. The system service is running. `sudo` on the journal matters: this
+   user is not in group `adm`.
    ```bash
-   systemctl --user is-active debondragon-volkeys.service
+   systemctl is-active debondragon-volkeys.service
+   sudo journalctl -u debondragon-volkeys -b --no-pager
    ```
+   A line that says it is reading the typing keyboard as root is the
+   expected path on this machine. `cannot open …: permission denied`
+   means the device still cannot be read; the same line says not to
+   join group `input`.
 2. Press F1, F2 and F3 with a tune playing. F1 mutes, F2 lowers the
    volume, F3 raises it, in steps of 5%. The panel icon should follow.
 3. If nothing changes, see which event the key actually produces:
@@ -346,4 +407,5 @@ those keys. Log out and back in (or reboot) after installing 0.4.1.
    A working key prints `KEY_MUTE`, `KEY_VOLUMEDOWN` or `KEY_VOLUMEUP`.
    `KEY_F1` / `KEY_F2` / `KEY_F3` means the keyboard is in function-key
    mode (Fn+Esc toggles Fn Lock; the Esc LED shows it). Send the
-   `libinput` lines and `debondragon-report`.
+   `libinput` lines, `journalctl -u debondragon-volkeys -b`, and
+   `debondragon-report`.
