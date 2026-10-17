@@ -1,4 +1,7 @@
 /work/
+# Scratch build directories used for local kernel iterations (work2, work6,
+# and so on). The canonical build still uses /work/.
+/work[0-9]*/
 /out/
 *.iso
 *.deb

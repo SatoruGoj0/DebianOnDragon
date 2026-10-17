@@ -20,6 +20,8 @@ to the old one: the old kernel, its modules and its devicetree stay installed.
 
 GRUB uses them like this:
 
+- If `DEBONDRAGON_DEFAULT_KERNEL` is set, the first top-level entry boots that
+  kernel with its own devicetree. It is also GRUB's persistent default.
 - **Debian GNU/Linux** and **Advanced options** (Debian's normal entries) load
   `debondragon.dtb`, i.e. the newest devicetree, for whichever kernel you pick.
 - **DebOnDragon kernels (each with its own devicetree)**: one entry per
@@ -54,6 +56,44 @@ tests in `docs/hdmi-testing.md` pass.
    Expected: `-4: HDMI on`, `-4-hdmi-off: HDMI off`, `-3: HDMI off`.
 4. Run the tests in `docs/hdmi-testing.md`, then make -4 the default as
    described there.
+
+## Try kernel series 13 (battery, audio, thermals, Snap, video and VPN support)
+
+Series 13 contains the verified UEFI-to-Linux DSP handoff needed for battery
+status, the speaker amplifiers on the default devicetree, and SquashFS LZO
+plus extended attributes so Ubuntu's browser and desktop snaps can mount and
+retain their confinement capabilities. It also enables the X1P42100 Iris
+hardware video codec with the Lenovo firmware. Compared with series 10, it
+adds policy routing, nftables, connection tracking and NAT so Tailscale and
+Docker can configure networking; compared with series 11, it adds Tailscale's
+connmark reverse-path-filter support. It also contains series 6's CPU/GPU
+passive thermal trips. Support 0.5.2 is the matching
+userspace (firmware helper, UCM, topology, `alsa-ucm-conf`, responsive GRUB
+console, the system-service volume keys and the opt-in EC fan reporter).
+Hardware H.264, HEVC (at 720p)
+and VP9 decoding, H.264/HEVC encoding through GStreamer, and Adreno
+acceleration are verified on the 83N3. The audio setup is inherited from the
+hardware-verified series-5 work, but should be rechecked after this upgrade.
+Keep series 11 installed as the rollback while testing series 13.
+
+1. Install support 0.5.2 first. `--force-confold` keeps your edited
+   `/etc/default/debondragon`:
+   ```bash
+   sudo apt install -o Dpkg::Options::=--force-confold ./debondragon-support_0.5.2_all.deb
+   ```
+2. Pin the kernel you already trust (series 11), install
+   `linux-image-7.2.0-debondragon-13`, and boot it once with `grub-reboot`.
+   The steps are the next section; use `-11` where that section says `-2`,
+   and `-13` where it says `-3`.
+3. Copy the device firmware if you have not already (`sudo debondragon-firmware`)
+   and verify battery status before running the audio tests. HDMI video stays
+   on for series 13
+   (`DEBONDRAGON_HDMI=auto` treats series 4 and later as HDMI-ok). HDMI
+   audio does not play.
+4. Check `tailscale status`, `iptables -L`, `sudo nft list ruleset`, and a
+   Docker container with outbound networking. Make series 13 the default after
+   battery, Snap applications, audio, hardware video decoding and networking
+   work. If it regresses, the series-11 submenu entry is the rollback.
 
 ## Upgrade to v0.5.0 (kernel series 6, support 0.5.1)
 
@@ -158,7 +198,9 @@ default. Needs `debondragon-support` 0.2.1 or later.
    ```bash
    sudo grep -m1 'set default=' /boot/grub/grub.cfg
    ```
-   It shows `debondragon-kernels>debondragon-7.2.0-debondragon-2`.
+   With current support it shows `debondragon-default`, the first top-level
+   menu entry. Support 0.2.1 through 0.4.1 instead show
+   `debondragon-kernels>debondragon-7.2.0-debondragon-2`.
 3. **Install the new kernel** (it installs beside the old one):
    ```bash
    sudo apt install ./linux-image-7.2.0-debondragon-3_*_arm64.deb
@@ -186,7 +228,8 @@ default. Needs `debondragon-support` 0.2.1 or later.
    sudo sed -i 's/^DEBONDRAGON_DEFAULT_KERNEL=.*/DEBONDRAGON_DEFAULT_KERNEL=7.2.0-debondragon-3/' /etc/default/debondragon
    sudo update-grub
    ```
-   Keep -2 installed as the rollback.
+   The new default appears first in GRUB. Keep -2 installed in the
+   "DebOnDragon kernels" submenu as the rollback.
 
 ## Upgrade
 

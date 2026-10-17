@@ -61,6 +61,16 @@ report() {
 	section "USB devices (camera 13d3:54bf on usb_2)"
 	lsusb 2>&1
 	ls -l /sys/class/video4linux/ 2>&1
+	section "V4L2 devices and Iris hardware codec"
+	v4l2-ctl --list-devices 2>&1
+	for v in /dev/video*; do
+		[ -e "$v" ] || continue
+		echo "--- $v"
+		v4l2-ctl -d "$v" --all 2>&1 | head -30
+		v4l2-ctl -d "$v" --list-formats-out 2>&1
+		v4l2-ctl -d "$v" --list-formats 2>&1
+	done
+	dmesg | grep -iE 'qcom-iris|video-codec|qcvss|videocc' | tail -50
 	section "HDMI / DP connectors and modes"
 	for c in /sys/class/drm/card*-*; do
 		[ -e "$c" ] || continue

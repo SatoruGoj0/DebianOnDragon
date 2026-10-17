@@ -21,6 +21,9 @@ done
 for m in msm panel-edp pwm_bl leds-qcom-lpg simple-bridge display-connector \
          phy-qcom-qmp-combo i2c-hid-of hid-multitouch i2c-qcom-geni \
          phy-nxp-ptn3222 uvcvideo dwc3-qcom qcom-hamoa-ec ath12k btqca \
+         qcom-iris videocc-x1p42100 \
+         nf_tables nf_conntrack nf_nat nft_compat nft_ct nft_masq nft_nat \
+         xt_mark xt_connmark xt_comment xt_MASQUERADE \
          snd-soc-x1e80100 snd-soc-wcd938x snd-soc-wcd938x-sdw snd-soc-wsa884x \
          snd-soc-lpass-rx-macro snd-soc-lpass-tx-macro snd-soc-lpass-va-macro \
          snd-soc-lpass-wsa-macro soundwire-qcom qcom_q6v5_pas; do

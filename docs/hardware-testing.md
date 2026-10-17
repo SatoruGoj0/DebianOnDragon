@@ -5,8 +5,10 @@ been seen working on the laptop. This page lists the tests for each
 **Experimental** item and what to send back.
 
 Run every test on the kernel that implements it (`uname -r`). The touchpad
-test is series 3, HDMI is series 4, and audio is series 5. Volume keys
-and the fan curve need support 0.5.1. Fan trips need kernel series 6.
+test is series 3, HDMI is series 4, audio is series 5, the battery test uses
+series 7, and hardware video uses series 10. Fan trips need kernel series 6.
+Volume keys and the fan curve need support 0.5.1; the fan-curve readback and
+the active-seat fix need support 0.5.2.
 When done, collect everything with:
 
 ```bash
@@ -203,13 +205,111 @@ bluetoothctl power on; bluetoothctl scan on
 ```
 Pair a device and report whether it works.
 
+## Battery and AC
+
+**Working on kernel series 7 (verified on hardware).** Install the matching
+83N3 firmware with `sudo debondragon-firmware`, reboot, and check:
+
+```bash
+upower -d
+for d in /sys/class/power_supply/*; do
+    echo "$(basename "$d")"; grep -H . "$d"/{present,status,online,energy_now,energy_full,voltage_now} 2>/dev/null
+done
+```
+
+The test machine reported AC online and a present BYD L24B3PK2 battery with
+status, voltage, current energy and full energy. If the devices are absent,
+check `systemctl status pd-mapper` and the `remoteproc`/`pmic_glink` lines in
+`sudo dmesg`.
+
+## GPU acceleration
+
+Support 0.4.3 exports the Qualcomm display driver's platform-authenticated
+`qcdxkmsucpurwa.mbn` and rebuilds the installed initramfs images. After a
+reboot, verify that the secure monitor accepts it and Mesa selects Turnip:
+
+```bash
+sudo dmesg | grep -Ei 'adreno|gpu hw init|qcdxkms'
+vulkaninfo --summary
+```
+
+**Verified on the 83N3 (2026-10-15):** display driver 31.0.133.1's INF lists
+the machine's `ACPI\\VEN_QCOM&DEV_0D17&SUBSYS_CRD08380&REV_002F` ID. Its
+`qcdxkmsucpurwa.mbn` (SHA-256
+`2dc2883e76a8649f2b73c8c5f55f600ef6b1423acbbf30478c2d6e32a28af3a3`)
+was accepted, and `vulkaninfo` enumerated `Adreno X1-45` with the Mesa Turnip
+driver. An older cross-vendor copy was rejected with `-22` and must not be
+reused.
+
+## Hardware video decoding
+
+Needs kernel `7.2.0-debondragon-10` (or later), support 0.5.2, the authenticated
+`qcvss8380_pa.mbn` installed by `debondragon-firmware`, `v4l-utils`, and
+`ffmpeg`. The helper copies that PA image to the non-suffixed path requested
+by the series-10 devicetree. The non-PA image is rejected with error `-22`.
+The older `7.2.2-ideapad-iris1+` experiment selected the generic
+`qcom/vpu/vpu30_p1_s7.mbn`; the secure monitor rejected it with error `-22`.
+
+1. Confirm the Iris driver loaded without a firmware/authentication error and
+   identify its V4L2 mem2mem nodes:
+   ```bash
+   sudo dmesg | grep -Ei 'qcom-iris|video-codec|qcvss|videocc'
+   v4l2-ctl --list-devices
+   for d in /dev/video*; do echo "=== $d ==="; v4l2-ctl -d "$d" --all 2>/dev/null | head -20; done
+   ```
+   The integrated UVC camera is not the decoder. Iris should appear as a
+   separate Qualcomm codec with both compressed input and raw capture formats.
+2. Decode a local H.264 file explicitly through V4L2 mem2mem:
+   ```bash
+   ffmpeg -benchmark -c:v h264_v4l2m2m -i sample-h264.mp4 -an -f null -
+   ```
+   Repeat with `hevc_v4l2m2m` or `vp9_v4l2m2m` and a matching sample. The log
+   must name the V4L2 mem2mem decoder and finish without falling back to the
+   software decoder.
+3. Send `sudo dmesg` plus the exact FFmpeg output if firmware authentication,
+   format negotiation, or decode fails. Browser acceleration comes only after
+   this direct test passes.
+
+**Verified on the 83N3 (2026-10-15):** Qualcomm display driver 31.0.133.1's
+`qcvss8380_pa.mbn` (SHA-256
+`725711497ca962d76f62c4f3309dff51cf9f18b499bc252feb17588b9de3cfb1`)
+registered Iris Decoder and Iris Encoder nodes. FFmpeg selected `/dev/video2`
+with `iris_driver` and decoded all 90 frames of 1280x720 H.264 (15.5x
+realtime) and HEVC (21.8x) samples, plus all 30 frames of a 640x360 VP9
+sample. A 640x360 HEVC sample instead triggers firmware session error
+`0x4000003`; that known gap is tracked in `TO-FIX.md`.
+
+## Hardware video encoding
+
+Use GStreamer for the direct encoder test. Video node numbering changes, but
+the dynamically registered `v4l2h264enc` and `v4l2h265enc` elements select the
+Iris Encoder node automatically:
+
+```bash
+gst-launch-1.0 -e videotestsrc num-buffers=90 pattern=smpte \
+  ! video/x-raw,format=NV12,width=1280,height=720,framerate=30/1 \
+  ! v4l2h264enc output-io-mode=mmap capture-io-mode=mmap \
+  ! filesink location=/tmp/iris-test.h264
+ffprobe -v error -count_frames -select_streams v:0 \
+  -show_entries stream=codec_name,width,height,nb_read_frames \
+  -of default=nw=1 /tmp/iris-test.h264
+```
+
+Repeat with `v4l2h265enc` and a `.hevc` output. On 2026-10-15 both pipelines
+encoded all 90 1280x720 frames; ffprobe read 90 frames from each output and the
+kernel logged no Iris error.
+
+Do not use FFmpeg's `h264_v4l2m2m` as the encoder acceptance test yet. Ubuntu
+FFmpeg 7.1.1 selects the Iris encoder but segfaults in libavcodec's V4L2 frame
+copy before the first frame. The working GStreamer path isolates that as a
+userspace integration bug; it is tracked in `TO-FIX.md`.
+
 ## Untested items
 
 These are compiled but nobody has tested them yet. Any results help:
 
 - USB-C data on both ports (plug in a USB-C stick, both orientations), and
   USB-A speed (`lsusb -t` shows 5000M for a USB 3 stick)
-- battery status (`upower -d`)
 - SD card reader
 - suspend: `systemctl suspend`, then wake with the power button
 

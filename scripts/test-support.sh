@@ -2,8 +2,8 @@
 # Behaviour tests for debondragon-support, run against a fake /sys and fake
 # config files (no root, nothing on the running system is touched):
 #   - debondragon-backlight: restore/save rules
-#   - /etc/default/grub.d/debondragon.cfg: kernel command line, GRUB default,
-#     Windows Boot Manager (os-prober) kept
+#   - /etc/default/grub.d/debondragon.cfg and 02_debondragon_default: text
+#     terminal, kernel command line, first/default entry, Windows kept
 #   - the UCM long-name file selects the 83N3 profile, which drives speakers
 #     when the amps are bound and headphones in class-AB
 # Usage: scripts/test-support.sh
@@ -31,9 +31,11 @@ echo 204 > "$tmp/sys/backlight/brightness"; bl restore
 expect "no saved level: raised to the 30% default" "$(bri)" 1228
 echo 100 > "$tmp/sys/backlight/brightness"; bl save
 expect "save stores the current level" "$(cat "$tmp/var/backlight-backlight")" 100
-touch -d '2000-01-01' "$tmp/var/backlight-backlight"; bl save
+touch -d '2000-01-01' "$tmp/var/backlight-backlight"
+old_mtime=$(stat -c %Y "$tmp/var/backlight-backlight")
+bl save
 expect "unchanged level is not rewritten" "$(stat -c %Y "$tmp/var/backlight-backlight")" \
-	"$(date -d '2000-01-01' +%s)"
+	"$old_mtime"
 echo 204 > "$tmp/sys/backlight/brightness"; bl restore
 expect "saved low level restored exactly (deliberate setting kept)" "$(bri)" 100
 echo 0 > "$tmp/sys/backlight/brightness"; bl save
@@ -64,6 +66,8 @@ grubvars() { # prints default|cmdline|os-prober for the current $tmp/default
 base="clk_ignore_unused pd_ignore_unused regulator_ignore_unused"
 off="video=HDMI-A-1:d"
 cp "$root/etc/default/debondragon" "$tmp/default"
+expect "GRUB uses the responsive firmware text console" \
+	"$(GRUB_CMDLINE_LINUX=""; . "$tmp/grub.cfg"; echo "$GRUB_TERMINAL")" console
 expect "shipped defaults are DEBONDRAGON_HDMI=auto" "$(grep -c '^DEBONDRAGON_HDMI=auto$' "$tmp/default")" 1
 fakeboot 7.2.0-debondragon-3 7.2.0-debondragon-4
 expect "auto, newest kernel -4: HDMI on, Debian default entry, Windows kept" "$(grubvars)" "0|$base|false"
@@ -76,12 +80,32 @@ expect "DEBONDRAGON_HDMI=off: HDMI off even with -4" "$(grubvars)" "0|$base $off
 echo DEBONDRAGON_HDMI=on >> "$tmp/default"; fakeboot 7.2.0-debondragon-3
 expect "DEBONDRAGON_HDMI=on: no video= even with -3" "$(grubvars)" "0|$base|false"
 printf 'DEBONDRAGON_DEFAULT_KERNEL=7.2.0-debondragon-3\n' > "$tmp/default"; fakeboot 7.2.0-debondragon-3 7.2.0-debondragon-4
-expect "DEBONDRAGON_DEFAULT_KERNEL pins the submenu entry" "$(grubvars)" \
-	"debondragon-kernels>debondragon-7.2.0-debondragon-3|$base|false"
+expect "DEBONDRAGON_DEFAULT_KERNEL pins the first top-level entry" "$(grubvars)" \
+	"debondragon-default|$base|false"
 rm "$tmp/default"
 expect "no defaults file: auto" "$(grubvars)" "0|$base|false"
 
-# Kernel submenu, with grub-mkconfig_lib stubbed out.
+# First/default entry and kernel submenu, with grub-mkconfig_lib stubbed out.
+sed -e "s|/etc/default/debondragon|$tmp/default|g" -e "s|/boot/|$tmp/boot/|g" \
+    -e 's|^\. /usr/share/grub/grub-mkconfig_lib$|prepare_grub_to_access_device() { :; }; make_system_path_relative_to_its_root() { echo "$1"; }|' \
+    "$root/etc/grub.d/02_debondragon_default" > "$tmp/02"
+default_entry() {
+	GRUB_DEVICE_UUID=u GRUB_CMDLINE_LINUX="$base $off" GRUB_CMDLINE_LINUX_DEFAULT=quiet \
+		grub_probe="echo x #" sh "$tmp/02" 2>/dev/null
+}
+fakeboot 7.2.0-debondragon-3 7.2.0-debondragon-4
+printf 'DEBONDRAGON_DTB=x.dtb\nDEBONDRAGON_HDMI=auto\nDEBONDRAGON_DEFAULT_KERNEL=7.2.0-debondragon-4\n' > "$tmp/default"
+first=$(default_entry)
+expect "top-level default has the stable GRUB id" \
+	"$(printf '%s\n' "$first" | grep -c -- '--id debondragon-default')" 1
+expect "top-level default loads the pinned kernel and its DTB" \
+	"$(printf '%s\n' "$first" | grep -Ec 'vmlinuz-7\.2\.0-debondragon-4|debondragon-7\.2\.0-debondragon-4\.dtb')" 2
+expect "top-level series 4 default enables HDMI" \
+	"$(printf '%s\n' "$first" | grep -c "$off" || true)" 0
+printf 'DEBONDRAGON_DTB=x.dtb\nDEBONDRAGON_DEFAULT_KERNEL=7.2.0-debondragon-99\n' > "$tmp/default"
+expect "missing pinned kernel does not create a broken top-level entry" \
+	"$(default_entry | wc -l)" 0
+
 sed -e "s|/etc/default/debondragon|$tmp/default|g" -e "s|/boot/|$tmp/boot/|g" \
     -e 's|^\. /usr/share/grub/grub-mkconfig_lib$|prepare_grub_to_access_device() { :; }; make_system_path_relative_to_its_root() { echo "$1"; }|' \
     "$root/etc/grub.d/42_debondragon_kernels" > "$tmp/42"
@@ -96,7 +120,7 @@ expect "submenu auto: -4 on, -4 fallback off, -3 off" "$(submenu auto | tr '\n' 
 	"debondragon-7.2.0-debondragon-4: on debondragon-7.2.0-debondragon-4-hdmi-off: off debondragon-7.2.0-debondragon-3: off "
 expect "submenu off: every entry off" "$(submenu off | tr '\n' ' ')" \
 	"debondragon-7.2.0-debondragon-4: off debondragon-7.2.0-debondragon-3: off "
-expect "submenu has the id GRUB_DEFAULT uses" \
+expect "rollback submenu has a stable GRUB id" \
 	"$(grep -c -- "--id debondragon-kernels" "$root/etc/grub.d/42_debondragon_kernels")" 1
 
 # --- UCM -------------------------------------------------------------------
@@ -108,6 +132,8 @@ expect "long-name file selects the 83N3 card profile" \
 	"$(grep -c 'X1E80100-LENOVO-IdeaPad-Slim3-15Q8X10.conf' "$ucm")" 1
 expect "truncated card name has a profile" \
 	"$([ -f "$root/usr/share/alsa/ucm2/conf.d/x1e80100/X1E80100-LENOVO-IdeaPad-Slim3-1.conf" ] && echo yes)" yes
+expect "support package accepts Ubuntu 25.10 alsa-ucm-conf" \
+	"$(grep -c 'alsa-ucm-conf (>= 1.2.12)' "$here/support/build-support-deb.sh")" 1
 expect "headphones use class-AB, not the ULP mode" \
 	"$(grep -c "RX HPH Mode' CLS_AB_LOHIFI" "$hifi")" 1
 # grep -c prints one count per file. Sum them; print 0 when nothing matches.
@@ -123,15 +149,23 @@ expect "no DisplayPort mixer writes (absent from the T14s topology)" \
 expect "speakers are skipped when the amp controls are absent" \
 	"$(grepc "Control \"name='SpkrLeft PA Volume'\"" "$hifi" "$card")" 2
 
-# --- firmware finder -------------------------------------------------------
+# --- Device-signed firmware helpers ----------------------------------------
 fw=$root/usr/local/sbin/debondragon-firmware
+expect "Linux firmware helper requires the authenticated Iris PA firmware" \
+	"$(sed -n '/^required=(/,/)/p' "$fw" | grep -c 'qcvss8380_pa.mbn')" 1
+expect "Linux firmware helper selects PA image at the series-10 path" \
+	"$(grep -c 'install -m 0644.*qcvss8380_pa.mbn.*qcvss8380.mbn' "$fw")" 1
+expect "Windows helper exports the authenticated Iris PA firmware" \
+	"$(grep -c "'qcvss8380_pa.mbn'" "$here/windows/Export-Firmware.ps1")" 1
+expect "Windows helper does not export the rejected non-PA Iris image" \
+	"$(grep -c "'qcvss8380.mbn'" "$here/windows/Export-Firmware.ps1" || true)" 0
 help=$(DEBONDRAGON_FIRMWARE_DRY=1 "$fw" --help)
 expect "firmware --help exits 0" "$?" 0
 expect "firmware --help is usage text" "$(printf '%s\n' "$help" | grep -c 'Usage: debondragon-firmware')" 1
 win=$tmp/win
 store=$win/Windows/System32/DriverStore/FileRepository/hidi2c
 mkdir -p "$store"
-for blob in qcadsp8380.mbn adsp_dtbs.elf qccdsp8380.mbn cdsp_dtbs.elf qcdxkmsucpurwa.mbn; do
+for blob in qcadsp8380.mbn adsp_dtbs.elf qccdsp8380.mbn cdsp_dtbs.elf qcdxkmsucpurwa.mbn qcvss8380_pa.mbn; do
 	echo x > "$store/$blob"
 done
 mkdir -p "$tmp/bin"
@@ -162,6 +196,10 @@ expect "firmware dry-run names the DriverStore" \
 	"$(printf '%s\n' "$dry" | grep -c "source $win/Windows/System32/DriverStore/FileRepository$")" 1
 expect "firmware dry-run would install the ADSP firmware" \
 	"$(printf '%s\n' "$dry" | grep -c 'would-install qcadsp8380.mbn')" 1
+expect "firmware dry-run would install the authenticated Iris firmware" \
+	"$(printf '%s\n' "$dry" | grep -c 'would-install qcvss8380_pa.mbn')" 1
+expect "firmware dry-run would select the PA image at the kernel path" \
+	"$(printf '%s\n' "$dry" | grep -c 'would-select qcvss8380_pa.mbn as qcvss8380.mbn')" 1
 
 # --- PulseAudio late card --------------------------------------------------
 cat > "$tmp/bin/pactl" <<EOF

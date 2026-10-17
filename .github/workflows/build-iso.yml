@@ -5,6 +5,8 @@ on:
     branches: [main]
     tags: ['v*']
     paths-ignore: ['**.md', 'docs/**', 'hardware-reports/**']
+  pull_request:
+    paths-ignore: ['**.md', 'docs/**', 'hardware-reports/**']
   workflow_dispatch:
     inputs:
       release:
@@ -13,7 +15,7 @@ on:
         default: false
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: build-iso-${{ github.ref }}
@@ -40,10 +42,13 @@ jobs:
         run: scripts/test-support.sh
 
   build:
+    if: github.event_name != 'pull_request'
     needs: checks
     # Native arm64: the root filesystem is assembled with chroot.
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 300
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 

@@ -38,8 +38,8 @@ sudo dd if=debondragon-trixie-arm64.iso of=/dev/sdX bs=4M status=progress conv=f
    signed Secure Boot GRUB doesn't allow that.
 3. Save and exit, then press **F12** for the boot menu and choose the USB stick.
 
-Plug the stick into the **USB-A port**. USB-C ports depend on firmware that
-isn't loaded until later.
+Plug the stick into the **USB-A port**. USB-C support is not yet reliable on
+this board and also depends on firmware that is not loaded until later.
 
 ## Boot menu
 
@@ -72,11 +72,15 @@ sudo debondragon-firmware /media/$USER/<stick>/debondragon-firmware
 sudo debondragon-firmware
 ```
 
-Reboot. This enables battery status, USB-C, GPU acceleration and the DSPs.
-The audio DSP is one of those files: without it the sound card never
-appears. `debondragon-firmware` with no arguments finds a Windows
-partition that is already mounted. `debondragon-firmware --help` prints
-the usage.
+Reboot. The matching ADSP firmware enables the verified battery status path
+and is required for audio; without it the sound card never appears. The
+helper also installs the CDSP, GPU and Iris video files when Windows provides
+them. Support 0.4.3 selects the authenticated Iris `_pa` variant. GPU
+acceleration and direct H.264 hardware decoding are verified with Qualcomm
+display driver 31.0.133.1's signed files. Firmware does not fix the outstanding
+USB-C wiring or the browser/userspace integration checks in `TO-FIX.md`.
+With no arguments, `debondragon-firmware` also finds a Windows partition that
+is already mounted; `debondragon-firmware --help` prints the usage.
 
 ## If something doesn't work
 

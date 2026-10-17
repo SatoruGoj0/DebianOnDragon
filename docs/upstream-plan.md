@@ -11,12 +11,14 @@ be searched there by hand before anything is sent.
 
 ## 1. Baseline and what DebOnDragon changes
 
-DebOnDragon builds **unmodified Linux v7.2** (`KERNEL_REF=v7.2`). There
-are **no kernel source patches**. Everything kernel-side is:
+DebOnDragon builds Linux v7.2 (`KERNEL_REF=v7.2`) with a small, pinned
+SMP2P/remoteproc handoff series needed to attach to firmware-started DSPs on
+the 83N3. Everything kernel-side is:
 
 | DebOnDragon change | Where | Upstream class |
 |---|---|---|
 | Board devicetree (`dts/*.dtsi`, `*.dts`) | added to `arch/arm64/boot/dts/qcom` at build time | Board-specific DT addition (needs rework, §3) |
+| UEFI DSP handoff patches (`kernel/patches/` plus SHA-checked downstream commits) | applied to Linux v7.2 at build time | General Qualcomm SMP2P/remoteproc fixes; rebase and submit the remaining 7.2 adaptations independently |
 | `-speakers` board file | `dts/...-speakers.dts` | Same hardware as the default board (kept so an old `DEBONDRAGON_DTB` still boots). Upstream gets one board file |
 | Config fragment (`kernel/debondragon.config`) | distro kernel config | Distro configuration. Checked against linux-next `arch/arm64/configs/defconfig`: every driver of the verified hardware is enabled there directly or selected by one that is, except `MMC_SDHCI_PCI` (BayHub SD reader, untested; an `arm64: defconfig` patch once it's verified). The rest (tethering, DP AUX chardev, lockup detectors, EC module) is DebOnDragon's choice |
 | Kernel command line `clk_ignore_unused pd_ignore_unused regulator_ignore_unused` | GRUB | **Temporary workaround**, must be understood and dropped (§4, B2) |
@@ -29,7 +31,7 @@ Userspace and packaging (belong outside the kernel):
 |---|---|
 | UCM profile (HiFi: speakers, headphones, headset mic, DMICs) | alsa-ucm-conf (`ucm2/Qualcomm/x1e80100/`, DMI match in `x1e80100.conf`) |
 | DSP topology (`...-tplg.bin`, today a renamed T14s topology) | linux-firmware (`qcom/x1e80100/LENOVO/83N3/`) |
-| Device-signed ADSP/CDSP/GPU firmware | Not redistributable; stays in the user's Windows partition (`debondragon-firmware`) |
+| Device-signed ADSP/CDSP/GPU/Iris firmware | Not redistributable; stays in the user's Windows partition (`debondragon-firmware`) |
 | GRUB devicetree entries, per-kernel DTB sync, HDMI switch, brightness save/restore | Distribution integration (Debian: DTB handling in GRUB / flash-kernel); DebOnDragon-only meanwhile |
 
 ## 2. Hardware status per DT node (DebOnDragon kernel -4)
@@ -43,7 +45,9 @@ Userspace and packaging (belong outside the kernel):
 | Touchpad | i2c19 0x15, **TLMM 19** level-low, pull-up | Verified (v0.3.0) |
 | HDMI | mdss_dp2 → usb_1_ss2 QMP DP (**data-lanes <3 2 1 0>**) → Parade PS176 → connector | Video + extended desktop verified (v0.4.0); hotplug/teardown not yet |
 | Camera | usb_2 + PTN3222 (i2c5 0x4b, reset TLMM 7) | Verified |
-| Wi-Fi / Bluetooth | WCN7850 pcie4 / uart14 | Verified / partial |
+| Wi-Fi / Bluetooth | WCN7850 pcie4 / uart14 | Verified |
+| Battery / AC | ADSP PMIC GLINK (`qcom-battmgr`) | Verified on series 7 with device firmware |
+| Hardware video codec | Iris `video-codec@aa00000`, X1P42100 videoCC | Series 10; direct decode not yet verified |
 | USB-A | usb_mp | Verified |
 | USB-C port 1 | usb_1_ss0, smb2360 SID 0x7 | Controller up; retimers absent, role switch/alt mode broken |
 | USB-C port 2 | usb_1_ss1 | Never probes (repeater PMIC SID 0xa absent; 0xb suspected) |

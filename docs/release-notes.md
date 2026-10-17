@@ -1,6 +1,124 @@
-# Unreleased (support 0.5.2)
+# Unreleased: kernel 7.2.0-debondragon-13, debondragon-support 0.5.2
 
-No new kernel. v0.5.0 stays on `9dbf932` (kernel series 6, support 0.5.1).
+Not a tagged release. Kernel series 13 includes the thermal changes from
+series 6 and installs beside the older kernels. It boots on the 83N3; battery,
+Wi-Fi, Bluetooth, eDP, GPU/Vulkan, Snap, Iris video, Tailscale and Docker were
+regression-tested, and the keyboard/touchpad enumerate. Series 11 remains the
+installed rollback.
+
+When `DEBONDRAGON_DEFAULT_KERNEL` is set, support 0.5.2 now puts that kernel
+first in GRUB's top-level menu, makes it the persistent default, and loads its
+matching devicetree. The complete per-kernel submenu remains available for
+rollback and HDMI-off entries.
+
+The battery/DSP handoff, Wi-Fi, Bluetooth, touchpad and boot were verified on
+the 83N3. The audio configuration is inherited from the
+hardware-verified series-5 work but has not been rechecked on series 13. It
+installs beside the older kernels, which remain the rollback
+(docs/kernel-upgrade.md, "Try kernel series 13").
+
+Kernel series 9 enables SquashFS LZO decompression and extended attributes.
+Ubuntu's Chromium, Firefox and several desktop runtime snaps use
+LZO-compressed SquashFS images; series 7 could not mount them. Series 8 could
+mount them, but discarded the file capabilities that strict Snap confinement
+requires. Series 8 remains available as the tested hardware rollback.
+
+Kernel series 10 enables the Qualcomm Iris hardware video codec. Linux 7.2
+already contains the X1P42100 Iris and video clock drivers, but its
+`purwa.dtsi` still inherits X1E80100 clocks and leaves Iris disabled. The board
+now carries the X1P clock and operating-point override merged upstream in
+commit `43899c55d79b`, enables Iris, and selects the device-signed Lenovo
+`qcvss8380.mbn`. The earlier `7.2.2-ideapad-iris1+` experiment used generic
+firmware and the secure monitor rejected it with `-22`. Hardware testing found
+that this 83N3 also rejects the display driver's non-PA image but accepts
+`qcvss8380_pa.mbn`. Support 0.5.2 exports the PA image and installs it at the
+series-10 path. FFmpeg selected the `iris_driver` decoder node (device numbering
+varies between boots) and decoded all
+90 frames of 1280x720 H.264 and HEVC samples, plus all 30 frames of a 640x360
+VP9 sample. Low-resolution HEVC still triggers a firmware session error and is
+tracked in `TO-FIX.md`.
+
+The Iris encoder is also functional. GStreamer 1.26.5 encoded 90-frame
+1280x720 H.264 and HEVC test streams, and ffprobe read all 90 frames from each
+output without a kernel error. Ubuntu FFmpeg 7.1.1's `h264_v4l2m2m` currently
+segfaults in libavcodec's V4L2 frame-copy path before producing a frame, so
+encoding is supported through GStreamer while that userspace integration bug
+remains open in `TO-FIX.md`.
+
+Kernel series 11 also enables IPv4 and IPv6 policy routing plus the nftables,
+connection-tracking, NAT and masquerading modules required by Tailscale and
+Docker. Series 10 had a working TUN device, bridge and veth support, but
+Tailscale still failed because policy routing returned `EOPNOTSUPP` and
+Debian's iptables nft backend could not open its netfilter socket.
+hardware. Series 13 adds the connmark extension used by Tailscale's
+reverse-path-filter workaround. On hardware, `xt_connmark` loads, Tailscale
+enables that workaround without its previous health warning and reaches a
+peer, and a newly pulled Docker container has HTTPS egress.
+
+Moonlight 6.1.0 exposed a separate userspace crash after successful Iris HEVC
+decode: Ubuntu's libplacebo 7.349 called an unavailable Vulkan host-pointer
+function while uploading the decoded frame. Backporting upstream libplacebo
+commit `6eaaa9a68be5` fixes the crash while retaining both the Vulkan renderer
+and Iris hardware decoding. This is tracked as a userspace packaging issue in
+`TO-FIX.md`; `scripts/build-libplacebo-hotfix.sh` builds the removable local
+package. It is not another firmware failure.
+
+The same Qualcomm display driver 31.0.133.1 supplies an authenticated
+`qcdxkmsucpurwa.mbn`. With that file, Mesa Turnip enumerates Adreno X1-45 and
+Vulkan initializes successfully. The rejected firmware files are not part of
+the repository or support package; device-signed files remain user-supplied.
+
+## Battery status and the UEFI DSP handoff
+
+Battery telemetry now works on hardware. The PMIC GLINK battery manager reports
+AC online, the BYD L24B3PK2 battery present, charging status, voltage and energy
+(62.24/62.86 Wh during the test, about 99%).
+
+UEFI has already started the ADSP on this laptop, while its secure monitor
+rejects a normal PAS reset. Kernel series 7 therefore preserves UEFI's SMP2P
+state, detects and attaches to the running DSP, avoids the early platform/RPMsg
+PMIC-GLINK probe race, and exposes the configured firmware path so `pd-mapper`
+can find the adjacent service maps. The ADSP and CDSP devicetree nodes select
+this attach-only mode with `qcom,broken-reset`.
+
+The signed Lenovo firmware still cannot be redistributed. The Windows export
+and Linux install helpers now include `adsps.jsn` with the other service maps.
+After `debondragon-firmware` and a reboot, the kernel attaches to ADSP and the
+battery power-supply devices appear.
+
+Support 0.4.1 and later also select GRUB's firmware text console because
+graphical GRUB input is severely delayed by this laptop's GOP. This affects
+the boot menu only, not Linux graphics.
+
+## Series 10 support package
+
+`debondragon-support` 0.4.3:
+
+- UCM enables speakers at PA volume 6 and WSA digital volume 81, and
+  headphones in class-AB. Speaker controls are written only when they
+  exist, so this package still loads headphones on a series-4 kernel.
+- Depends on `alsa-ucm-conf` (>= 1.2.12). Recommends PulseAudio (or
+  PipeWire's Pulse compatibility) and `alsa-utils`. The ISO installs
+  those packages.
+- Restarts PulseAudio when the late ADSP sound card appears and handles the
+  mute and volume keys.
+- The redistributable T14s topology is still installed under the card
+  name. That file has no DisplayPort graphs.
+- The Windows and Linux firmware helpers require the device-signed Iris
+  `qcvss8380_pa.mbn` and install it at the series-10 non-suffixed path.
+
+`DEBONDRAGON_HDMI=auto` already treats series 4 and later as HDMI-ok, so
+series 10 keeps HDMI video on.
+
+## Series 13 audio result
+
+The sound card does not probe on series 13 (the identical state is present on
+series 11). The ADSP attaches and PMIC GLINK battery telemetry works, but its
+GLINK edge does not publish the `adsp_apps` GPR channel. The APR/GPR audio bus
+therefore stays empty, Q6PRM does not provide the LPASS clocks, and LPI
+pinctrl, SoundWire and the machine card remain deferred. This is now tracked
+with the exact dependency chain in `TO-FIX.md`; it is not a UCM or PulseAudio
+problem because no ALSA card exists yet.
 
 ## Mute and volume ignored the Hyprland session
 
@@ -27,6 +145,14 @@ separate apply-LUT command: it writes the profile register and the LUT,
 and its only other init writes are SoC Tj, modern-standby, and SCI
 enable (`0x35` = 1). `0x35` = 0 is "SCI EC Disable" and is not written.
 The fan is still Experimental.
+
+## Still open on series 13
+
+- Restore the ADSP `adsp_apps`/GPR path so the series-5 speaker and headphone
+  setup can bind again; microphones still need their first hardware test.
+- No active speaker protection. The PA is capped at 0 dB; keep the volume
+  moderate.
+- HDMI audio stays silent.
 
 ---
 
@@ -151,8 +277,8 @@ existing mount was ignored). It now uses an NTFS filesystem that is
 already mounted. `--help` prints the usage; it used to be treated as a
 folder path. Passing the FileRepository path still works.
 
-The device-signed ADSP firmware is still not in the image. Copy it with
-`debondragon-firmware` or `windows/Export-Firmware.ps1`.
+The device-signed ADSP and Iris firmware is still not in the image. Copy it
+with `debondragon-firmware` or `windows/Export-Firmware.ps1`.
 
 ## Mute and volume keys
 
@@ -166,12 +292,12 @@ itself is unchanged.
 
 ## Why series 5 had to describe the speakers
 
-Support 0.2.1 already made PulseAudio show a Headphones sink. Nothing
-played until the default devicetree enabled the two WSA8845 on SoundWire
-0 and the UCM profile stopped using the Debian sequences that this kernel
-rejects (PA volume 12, digital volume 84, class-H headphones). Details
-are in the board notes. Series 4 remains a rollback: its devicetree does
-not wait for the speaker amplifiers.
+Support 0.2.1 already made PulseAudio show a Headphones sink. Nothing played
+until the default devicetree enabled the two WSA8845 amplifiers on SoundWire 0
+and the UCM profile stopped using the Debian sequences that this kernel rejects
+(PA volume 12, digital volume 84, class-H headphones). Details are in the board
+notes. Series 4 remains a rollback: its devicetree does not wait for the speaker
+amplifiers.
 
 ---
 
